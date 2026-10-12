@@ -61,7 +61,7 @@ PanelWindow {
         }
 
         // Tamaños por modo
-        width: mode === "expanded" ? 520 : mode === "notif" ? 430 : mode === "media" ? 370 : mode === "volume" ? 300 : 460
+        width: mode === "expanded" ? 520 : mode === "notif" ? 430 : mode === "media" ? 370 : mode === "volume" ? 300 : 330
         height: mode === "expanded" ? 112 : mode === "notif" ? 74 : mode === "media" ? 58 : mode === "volume" ? 42 : 30
 
         Behavior on width {
@@ -134,9 +134,10 @@ PanelWindow {
                     }
                 }
 
-                // Izquierda: workspaces + puntos de estado
+                // Izquierda: workspaces + puntos de estado (pegados a la hora)
                 Row {
-                    anchors.left: parent.left
+                    anchors.right: clockText.left
+                    anchors.rightMargin: 16
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: 4
 
@@ -168,6 +169,7 @@ PanelWindow {
 
                 // Centro: hora
                 Text {
+                    id: clockText
                     anchors.centerIn: parent
                     text: Qt.formatDateTime(clock.date, "HH:mm")
                     color: "#ffffff"
@@ -175,9 +177,10 @@ PanelWindow {
                     font.bold: true
                 }
 
-                // Derecha: wifi + batería
+                // Derecha: wifi + batería (pegados a la hora)
                 Row {
-                    anchors.right: parent.right
+                    anchors.left: clockText.right
+                    anchors.leftMargin: 16
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: 10
 
