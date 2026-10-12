@@ -140,28 +140,9 @@ PanelWindow {
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: 4
 
-                    Repeater {
-                        model: Hyprland.workspaces
-                        delegate: Rectangle {
-                            required property var modelData
-                            width: 18
-                            height: 18
-                            radius: 6
-                            anchors.verticalCenter: parent.verticalCenter
-                            color: modelData.focused ? Theme.blue : Theme.surface0
-                            Behavior on color {
-                                ColorAnimation {
-                                    duration: 150
-                                }
-                            }
-                            Text {
-                                anchors.centerIn: parent
-                                text: modelData.name
-                                color: modelData.focused ? Theme.islandBg : Theme.text
-                                font.pixelSize: 10
-                                font.bold: modelData.focused
-                            }
-                        }
+                    WsRow {
+                        cell: 18
+                        anchors.verticalCenter: parent.verticalCenter
                     }
 
                     // Punto verde: reproduciendo
@@ -272,37 +253,10 @@ PanelWindow {
                 }
 
                 // Workspaces (arriba-izquierda)
-                Row {
+                WsRow {
                     anchors.top: parent.top
                     anchors.left: parent.left
-                    spacing: 5
-                    Repeater {
-                        model: Hyprland.workspaces
-                        delegate: Rectangle {
-                            required property var modelData
-                            width: 24
-                            height: 24
-                            radius: 7
-                            color: modelData.focused ? Theme.blue : Theme.surface0
-                            Behavior on color {
-                                ColorAnimation {
-                                    duration: 150
-                                }
-                            }
-                            Text {
-                                anchors.centerIn: parent
-                                text: modelData.name
-                                color: modelData.focused ? Theme.islandBg : Theme.text
-                                font.pixelSize: 12
-                                font.bold: modelData.focused
-                            }
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: Hyprland.dispatch("workspace " + modelData.id)
-                            }
-                        }
-                    }
+                    cell: 24
                 }
 
                 // Reloj (arriba-derecha)
@@ -574,6 +528,55 @@ PanelWindow {
     }
 
     // --- Componentes internos reutilizables ---
+
+    // Workspaces persistentes 1..N (siempre visibles; resalta activo y ocupados)
+    component WsRow: Row {
+        property int cell: 20
+        spacing: 4
+
+        Repeater {
+            model: Config.workspaceCount
+            delegate: Rectangle {
+                id: wsCell
+                required property int index
+                readonly property int wsId: index + 1
+                readonly property bool focused: Hyprland.focusedWorkspace?.id === wsId
+                readonly property bool occupied: Hyprland.workspaces.values.some(w => w.id === wsId)
+
+                width: wsCell.focused ? cell * 1.4 : cell // el activo un poco más ancho
+                height: cell
+                radius: cell * 0.3
+                color: wsCell.focused ? Theme.blue : (wsCell.occupied ? Theme.surface1 : Theme.surface0)
+
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 150
+                    }
+                }
+                Behavior on width {
+                    NumberAnimation {
+                        duration: 200
+                        easing.type: Easing.OutCubic
+                    }
+                }
+
+                Text {
+                    anchors.centerIn: parent
+                    text: wsCell.wsId
+                    color: wsCell.focused ? Theme.islandBg : (wsCell.occupied ? Theme.text : Theme.overlay0)
+                    font.pixelSize: Math.round(cell * 0.55)
+                    font.bold: wsCell.focused
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: Hyprland.dispatch("workspace " + wsCell.wsId)
+                }
+            }
+        }
+    }
+
     component IslandStat: Row {
         property string label: ""
         property real value: 0

@@ -9,4 +9,7 @@ Singleton {
 
     // Separación de la barra respecto al borde superior
     property int topMargin: 6
+
+    // Nº de workspaces fijos que se muestran siempre (1..N), aunque estén vacíos
+    property int workspaceCount: 5
 }
