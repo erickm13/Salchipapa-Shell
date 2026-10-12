@@ -141,8 +141,8 @@ PanelWindow {
                     spacing: 4
 
                     WsRow {
-                        barHeight: 5
-                        baseWidth: 9
+                        barWidth: 5
+                        baseLen: 7
                         anchors.verticalCenter: parent.verticalCenter
                     }
 
@@ -257,9 +257,9 @@ PanelWindow {
                 WsRow {
                     anchors.top: parent.top
                     anchors.left: parent.left
-                    anchors.topMargin: 6
-                    barHeight: 7
-                    baseWidth: 12
+                    anchors.topMargin: 2
+                    barWidth: 6
+                    baseLen: 9
                 }
 
                 // Reloj (arriba-derecha)
@@ -532,11 +532,11 @@ PanelWindow {
 
     // --- Componentes internos reutilizables ---
 
-    // Workspaces persistentes 1..N como barras de carga (sin número).
-    // Activo = barra larga (acento); ocupado = barra media; vacío = punto corto.
+    // Workspaces persistentes 1..N como barras de carga VERTICALES (sin número).
+    // Activo = barra alta (acento); ocupado = barra media; vacío = corta.
     component WsRow: Row {
-        property int barHeight: 6
-        property int baseWidth: 10 // ancho de un ws vacío
+        property int barWidth: 6
+        property int baseLen: 8 // alto de un ws vacío
         spacing: 6
 
         Repeater {
@@ -549,12 +549,12 @@ PanelWindow {
                 readonly property bool occupied: Hyprland.workspaces.values.some(w => w.id === wsId)
 
                 anchors.verticalCenter: parent.verticalCenter
-                width: wsCell.focused ? baseWidth * 2.8 : (wsCell.occupied ? baseWidth * 1.4 : baseWidth)
-                height: barHeight
-                radius: height / 2
+                width: barWidth
+                height: wsCell.focused ? baseLen * 2.8 : (wsCell.occupied ? baseLen * 1.6 : baseLen)
+                radius: width / 2
                 color: wsCell.focused ? Theme.blue : (wsCell.occupied ? Theme.overlay0 : Theme.surface0)
 
-                Behavior on width {
+                Behavior on height {
                     NumberAnimation {
                         duration: 250
                         easing.type: Easing.OutCubic
