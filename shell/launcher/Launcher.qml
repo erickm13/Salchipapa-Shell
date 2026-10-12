@@ -5,6 +5,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
+import Quickshell.Widgets
 import "../common"
 
 Scope {
@@ -56,7 +57,7 @@ Scope {
         id: win
 
         visible: root.active
-        color: "#66000000" // atenúa el fondo
+        color: "transparent" // sin atenuado: solo se ve el panel (como caelestia)
         anchors {
             top: true
             bottom: true
@@ -64,6 +65,7 @@ Scope {
             right: true
         }
         WlrLayershell.layer: WlrLayer.Overlay
+        WlrLayershell.exclusionMode: ExclusionMode.Ignore
         WlrLayershell.keyboardFocus: root.active ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
         onVisibleChanged: if (visible)
@@ -189,17 +191,14 @@ Scope {
                         visible: index === root.sel
                     }
 
-                    Image {
+                    IconImage {
                         id: appIcon
                         anchors.left: parent.left
                         anchors.leftMargin: 14
                         anchors.verticalCenter: parent.verticalCenter
-                        width: 32
-                        height: 32
-                        sourceSize.width: 32
-                        sourceSize.height: 32
-                        source: Quickshell.iconPath(item.modelData.icon, "application-x-executable")
-                        fillMode: Image.PreserveAspectFit
+                        implicitSize: 34
+                        asynchronous: true
+                        source: Quickshell.iconPath(item.modelData.icon, "image-missing")
                     }
 
                     Column {
