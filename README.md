@@ -54,7 +54,9 @@ Para volver atrás: borra el symlink y restaura `~/.config/hypr.bak`.
 | `Super + [1-0]` | Workspace |
 | `Super + Shift + [1-0]` | Mover ventana a workspace |
 | `Super + S` | Scratchpad |
-| `Print` / `Super+Print` | Captura pantalla / región al portapapeles |
+| `Super + Print` | Captura de región (selección con ratón) |
+| `Print` | Captura de pantalla completa |
+| `Super + Shift + Print` | Captura del monitor activo |
 | `Super + Shift + Q` | Salir de Hyprland |
 
 ## Pendiente
