@@ -8,8 +8,10 @@ import Quickshell
 import QtQuick
 import "common"
 import "designs"
+import "launcher"
 
 ShellRoot {
+    // Barra (una por monitor, según el diseño activo)
     Variants {
         model: Quickshell.screens
 
@@ -34,4 +36,7 @@ ShellRoot {
             }
         }
     }
+
+    // Lanzador de apps (Super+R)
+    Launcher {}
 }
