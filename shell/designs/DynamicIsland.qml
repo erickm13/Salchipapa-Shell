@@ -362,42 +362,84 @@ PanelWindow {
                             font.pixelSize: 32
                             font.bold: true
                         }
-                        Row {
+                        Item {
                             anchors.horizontalCenter: parent.horizontalCenter
-                            spacing: 8
-                            Repeater {
-                                model: 7
-                                delegate: Column {
-                                    id: cal
-                                    required property int index
-                                    readonly property date d: {
-                                        const b = new Date(clock.date);
-                                        b.setDate(b.getDate() + (index - 3));
-                                        return b;
-                                    }
-                                    readonly property bool today: index === 3
-                                    readonly property bool weekend: d.getDay() === 0 || d.getDay() === 6
-                                    spacing: 3
+                            width: calRow.width
+                            height: calRow.height
 
-                                    Text {
-                                        anchors.horizontalCenter: parent.horizontalCenter
-                                        text: ["D", "L", "M", "X", "J", "V", "S"][cal.d.getDay()]
-                                        color: cal.today ? Theme.green : (cal.weekend ? Theme.red : Theme.overlay0)
-                                        font.pixelSize: 10
-                                    }
-                                    Rectangle {
-                                        anchors.horizontalCenter: parent.horizontalCenter
-                                        width: 24
-                                        height: 24
-                                        radius: 12
-                                        color: cal.today ? Theme.green : "transparent"
-                                        Text {
-                                            anchors.centerIn: parent
-                                            text: cal.d.getDate()
-                                            color: cal.today ? Theme.islandBg : (cal.weekend ? Theme.red : Theme.text)
-                                            font.pixelSize: 12
-                                            font.bold: cal.today
+                            Row {
+                                id: calRow
+                                spacing: 8
+                                Repeater {
+                                    model: 7
+                                    delegate: Column {
+                                        id: cal
+                                        required property int index
+                                        readonly property date d: {
+                                            const b = new Date(clock.date);
+                                            b.setDate(b.getDate() + (index - 3));
+                                            return b;
                                         }
+                                        readonly property bool today: index === 3
+                                        readonly property bool weekend: d.getDay() === 0 || d.getDay() === 6
+                                        spacing: 3
+
+                                        Text {
+                                            anchors.horizontalCenter: parent.horizontalCenter
+                                            text: ["D", "L", "M", "X", "J", "V", "S"][cal.d.getDay()]
+                                            color: cal.today ? Theme.green : (cal.weekend ? Theme.red : Theme.overlay0)
+                                            font.pixelSize: 10
+                                        }
+                                        Rectangle {
+                                            anchors.horizontalCenter: parent.horizontalCenter
+                                            width: 24
+                                            height: 24
+                                            radius: 12
+                                            color: cal.today ? Theme.green : "transparent"
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: cal.d.getDate()
+                                                color: cal.today ? Theme.islandBg : (cal.weekend ? Theme.red : Theme.text)
+                                                font.pixelSize: 12
+                                                font.bold: cal.today
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Desvanecido en los lados (los días lejanos se difuminan)
+                            Rectangle {
+                                anchors.left: parent.left
+                                anchors.top: parent.top
+                                anchors.bottom: parent.bottom
+                                width: 34
+                                gradient: Gradient {
+                                    orientation: Gradient.Horizontal
+                                    GradientStop {
+                                        position: 0
+                                        color: Theme.islandBg
+                                    }
+                                    GradientStop {
+                                        position: 1
+                                        color: "transparent"
+                                    }
+                                }
+                            }
+                            Rectangle {
+                                anchors.right: parent.right
+                                anchors.top: parent.top
+                                anchors.bottom: parent.bottom
+                                width: 34
+                                gradient: Gradient {
+                                    orientation: Gradient.Horizontal
+                                    GradientStop {
+                                        position: 0
+                                        color: "transparent"
+                                    }
+                                    GradientStop {
+                                        position: 1
+                                        color: Theme.islandBg
                                     }
                                 }
                             }
@@ -470,7 +512,7 @@ PanelWindow {
                     }
                 }
 
-                // ===== Reproductor (abajo) =====
+                // ===== Reproductor (abajo, centrado y compacto) =====
                 Item {
                     id: mediaRow
                     anchors.left: parent.left
@@ -478,125 +520,112 @@ PanelWindow {
                     anchors.bottom: parent.bottom
                     height: 46
 
-                    // Carátula
-                    Rectangle {
-                        id: art
-                        anchors.left: parent.left
-                        anchors.verticalCenter: parent.verticalCenter
-                        width: 44
-                        height: 44
-                        radius: 10
-                        color: Theme.surface0
-                        clip: true
-
-                        Image {
-                            anchors.fill: parent
-                            source: Media.active?.trackArtUrl ?? ""
-                            fillMode: Image.PreserveAspectCrop
-                            visible: status === Image.Ready
-                        }
-                        Icon {
-                            anchors.centerIn: parent
-                            text: "music_note"
-                            px: 20
-                            color: Theme.overlay0
-                            visible: !(Media.active?.trackArtUrl)
-                        }
-                    }
-
-                    // Título + artista
-                    Column {
-                        id: mediaText
-                        anchors.left: art.right
-                        anchors.leftMargin: 12
-                        anchors.verticalCenter: parent.verticalCenter
-                        width: 150
-                        spacing: 1
-
-                        Text {
-                            width: parent.width
-                            text: Media.title || "Sin reproducción"
-                            color: "#ffffff"
-                            font.pixelSize: 12
-                            font.bold: true
-                            elide: Text.ElideRight
-                        }
-                        Text {
-                            width: parent.width
-                            text: Media.artist
-                            color: Theme.subtext
-                            font.pixelSize: 11
-                            elide: Text.ElideRight
-                            visible: Media.artist !== ""
-                        }
-                    }
-
-                    // Controles (derecha)
                     Row {
-                        id: mediaCtl
-                        anchors.right: parent.right
-                        anchors.verticalCenter: parent.verticalCenter
-                        spacing: 4
+                        anchors.centerIn: parent
+                        spacing: 12
 
-                        IslandButton {
-                            glyph: "skip_previous"
-                            useIconFont: true
-                            onTapped: Media.prev()
-                        }
-                        IslandButton {
-                            glyph: Media.isPlaying ? "pause" : "play_arrow"
-                            useIconFont: true
-                            onTapped: Media.toggle()
-                        }
-                        IslandButton {
-                            glyph: "skip_next"
-                            useIconFont: true
-                            onTapped: Media.next()
-                        }
-                    }
-
-                    // Progreso (centro)
-                    Item {
-                        anchors.left: mediaText.right
-                        anchors.leftMargin: 16
-                        anchors.right: mediaCtl.left
-                        anchors.rightMargin: 16
-                        anchors.verticalCenter: parent.verticalCenter
-                        height: 20
-
-                        Text {
-                            id: tCur
-                            anchors.left: parent.left
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: island.fmt(island.mediaPos)
-                            color: Theme.subtext
-                            font.pixelSize: 10
-                        }
-                        Text {
-                            id: tTot
-                            anchors.right: parent.right
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: island.fmt(Media.active?.length ?? 0)
-                            color: Theme.subtext
-                            font.pixelSize: 10
-                        }
+                        // Carátula
                         Rectangle {
-                            anchors.left: tCur.right
-                            anchors.right: tTot.left
-                            anchors.leftMargin: 8
-                            anchors.rightMargin: 8
                             anchors.verticalCenter: parent.verticalCenter
-                            height: 4
-                            radius: 2
+                            width: 44
+                            height: 44
+                            radius: 10
                             color: Theme.surface0
+                            clip: true
 
-                            Rectangle {
-                                anchors.left: parent.left
+                            Image {
+                                anchors.fill: parent
+                                source: Media.active?.trackArtUrl ?? ""
+                                fillMode: Image.PreserveAspectCrop
+                                visible: status === Image.Ready
+                            }
+                            Icon {
+                                anchors.centerIn: parent
+                                text: "music_note"
+                                px: 20
+                                color: Theme.overlay0
+                                visible: !(Media.active?.trackArtUrl)
+                            }
+                        }
+
+                        // Título + artista
+                        Column {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 140
+                            spacing: 1
+
+                            Text {
+                                width: parent.width
+                                text: Media.title || "Sin reproducción"
+                                color: "#ffffff"
+                                font.pixelSize: 12
+                                font.bold: true
+                                elide: Text.ElideRight
+                            }
+                            Text {
+                                width: parent.width
+                                text: Media.artist
+                                color: Theme.subtext
+                                font.pixelSize: 11
+                                elide: Text.ElideRight
+                                visible: Media.artist !== ""
+                            }
+                        }
+
+                        // Progreso: tiempo · barra · tiempo
+                        Row {
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 8
+
+                            Text {
                                 anchors.verticalCenter: parent.verticalCenter
-                                height: parent.height
+                                text: island.fmt(island.mediaPos)
+                                color: Theme.subtext
+                                font.pixelSize: 10
+                            }
+                            Rectangle {
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: 150
+                                height: 4
                                 radius: 2
-                                width: parent.width * (Media.active && Media.active.length > 0 ? Math.min(1, island.mediaPos / Media.active.length) : 0)
-                                color: Theme.green
+                                color: Theme.surface0
+
+                                Rectangle {
+                                    anchors.left: parent.left
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    height: parent.height
+                                    radius: 2
+                                    width: parent.width * (Media.active && Media.active.length > 0 ? Math.min(1, island.mediaPos / Media.active.length) : 0)
+                                    color: Theme.green
+                                }
+                            }
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: island.fmt(Media.active?.length ?? 0)
+                                color: Theme.subtext
+                                font.pixelSize: 10
+                            }
+                        }
+
+                        // Controles
+                        Row {
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 4
+
+                            IslandButton {
+                                glyph: "skip_previous"
+                                useIconFont: true
+                                onTapped: Media.prev()
+                            }
+                            IslandButton {
+                                glyph: Media.isPlaying ? "pause" : "play_arrow"
+                                useIconFont: true
+                                onTapped: Media.toggle()
+                            }
+                            IslandButton {
+                                glyph: "skip_next"
+                                useIconFont: true
+                                onTapped: Media.next()
                             }
                         }
                     }
