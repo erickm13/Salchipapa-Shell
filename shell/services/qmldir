@@ -4,3 +4,4 @@ singleton Battery Battery.qml
 singleton Net Net.qml
 singleton Sys Sys.qml
 singleton Notifs Notifs.qml
+singleton Bluetooth Bluetooth.qml
