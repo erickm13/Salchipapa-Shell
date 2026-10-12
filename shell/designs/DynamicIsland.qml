@@ -141,7 +141,7 @@ PanelWindow {
                     spacing: 4
 
                     WsRow {
-                        barWidth: 5
+                        barWidth: 7
                         baseLen: 7
                         anchors.verticalCenter: parent.verticalCenter
                     }
@@ -258,7 +258,7 @@ PanelWindow {
                     anchors.top: parent.top
                     anchors.left: parent.left
                     anchors.topMargin: 2
-                    barWidth: 6
+                    barWidth: 9
                     baseLen: 9
                 }
 
@@ -550,7 +550,7 @@ PanelWindow {
 
                 anchors.verticalCenter: parent.verticalCenter
                 width: barWidth
-                height: wsCell.focused ? baseLen * 2.8 : (wsCell.occupied ? baseLen * 1.6 : baseLen)
+                height: wsCell.focused ? baseLen * 2.0 : (wsCell.occupied ? baseLen * 1.7 : baseLen * 1.3)
                 radius: width / 2
                 color: wsCell.focused ? Theme.blue : (wsCell.occupied ? Theme.overlay0 : Theme.surface0)
 
