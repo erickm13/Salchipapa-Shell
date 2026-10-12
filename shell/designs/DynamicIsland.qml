@@ -61,8 +61,8 @@ PanelWindow {
         }
 
         // Tamaños por modo
-        width: mode === "expanded" ? 500 : mode === "notif" ? 430 : mode === "media" ? 370 : mode === "volume" ? 300 : 240
-        height: mode === "expanded" ? 112 : mode === "notif" ? 74 : mode === "media" ? 58 : mode === "volume" ? 42 : 28
+        width: mode === "expanded" ? 520 : mode === "notif" ? 430 : mode === "media" ? 370 : mode === "volume" ? 300 : 460
+        height: mode === "expanded" ? 112 : mode === "notif" ? 74 : mode === "media" ? 58 : mode === "volume" ? 42 : 30
 
         Behavior on width {
             NumberAnimation {
@@ -134,23 +134,33 @@ PanelWindow {
                     }
                 }
 
+                // Izquierda: workspaces + puntos de estado
                 Row {
                     anchors.left: parent.left
                     anchors.verticalCenter: parent.verticalCenter
-                    spacing: 6
+                    spacing: 4
 
-                    Rectangle {
-                        width: 16
-                        height: 16
-                        radius: 8
-                        anchors.verticalCenter: parent.verticalCenter
-                        color: Theme.blue
-                        Text {
-                            anchors.centerIn: parent
-                            text: Hyprland.focusedWorkspace?.id ?? "?"
-                            color: Theme.islandBg
-                            font.pixelSize: 10
-                            font.bold: true
+                    Repeater {
+                        model: Hyprland.workspaces
+                        delegate: Rectangle {
+                            required property var modelData
+                            width: 18
+                            height: 18
+                            radius: 6
+                            anchors.verticalCenter: parent.verticalCenter
+                            color: modelData.focused ? Theme.blue : Theme.surface0
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: 150
+                                }
+                            }
+                            Text {
+                                anchors.centerIn: parent
+                                text: modelData.name
+                                color: modelData.focused ? Theme.islandBg : Theme.text
+                                font.pixelSize: 10
+                                font.bold: modelData.focused
+                            }
                         }
                     }
 
@@ -174,13 +184,78 @@ PanelWindow {
                     }
                 }
 
+                // Centro: hora
                 Text {
-                    anchors.right: parent.right
-                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.centerIn: parent
                     text: Qt.formatDateTime(clock.date, "HH:mm")
                     color: "#ffffff"
                     font.pixelSize: 14
                     font.bold: true
+                }
+
+                // Derecha: wifi + batería
+                Row {
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 10
+
+                    // Señal de red (3 barras)
+                    Row {
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 2
+                        Rectangle {
+                            width: 3
+                            height: 5
+                            radius: 1
+                            anchors.bottom: parent.bottom
+                            color: Net.online ? Theme.green : Theme.surface1
+                        }
+                        Rectangle {
+                            width: 3
+                            height: 8
+                            radius: 1
+                            anchors.bottom: parent.bottom
+                            color: Net.online ? Theme.green : Theme.surface1
+                        }
+                        Rectangle {
+                            width: 3
+                            height: 11
+                            radius: 1
+                            anchors.bottom: parent.bottom
+                            color: Net.online ? Theme.green : Theme.surface1
+                        }
+                    }
+
+                    // Batería (barra + %)
+                    Row {
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 4
+                        visible: Battery.available
+                        Rectangle {
+                            width: 20
+                            height: 11
+                            radius: 2
+                            anchors.verticalCenter: parent.verticalCenter
+                            color: "transparent"
+                            border.color: Theme.overlay0
+                            border.width: 1
+                            Rectangle {
+                                anchors.left: parent.left
+                                anchors.leftMargin: 1
+                                anchors.verticalCenter: parent.verticalCenter
+                                height: 7
+                                width: Math.max(1, (parent.width - 3) * Battery.percent / 100)
+                                radius: 1
+                                color: Battery.charging ? Theme.green : (Battery.percent <= 20 ? Theme.red : Theme.text)
+                            }
+                        }
+                        Text {
+                            text: Battery.percent + "%"
+                            color: Theme.subtext
+                            font.pixelSize: 11
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
                 }
             }
 
