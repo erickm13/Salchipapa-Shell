@@ -60,12 +60,16 @@ Para volver atrás: borra el symlink y restaura `~/.config/hypr.bak`.
 | `Super + Shift + Print` | Captura del monitor activo |
 | `Super + Shift + Q` | Salir de Hyprland |
 
-## Barra (Quickshell)
+## Barra — Dynamic Island (Quickshell)
 
-En `shell/shell.qml`, con **Quickshell** (QML/Qt6), igual que caelestia.
+En `shell/shell.qml`, con **Quickshell** (QML/Qt6). Estilo *Dynamic Island* de iPhone:
+píldora flotante centrada arriba.
+- **Compacta** (por defecto): número del workspace activo + reloj.
+- **Expandida** (al pasar el ratón): workspaces clicables, reloj con fecha y título de la ventana
+  activa. Se expande con rebote (curva *expressive* de Material 3).
+- Solo la píldora captura el ratón (`mask`); los clics fuera pasan a las ventanas.
 - Probar suelta: `qs -p ~/proyects/Salchipapa-Shell/shell/shell.qml` (se recarga sola al guardar).
 - En la sesión arranca sola desde `conf/autostart.conf`.
-- Tiene: workspaces clicables (izq.), título de la ventana activa (centro), reloj (der.).
 
 ## Pendiente
 
