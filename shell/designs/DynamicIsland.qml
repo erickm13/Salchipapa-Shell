@@ -370,36 +370,36 @@ PanelWindow {
                                 id: calRow
                                 spacing: 8
                                 Repeater {
-                                    model: 7
+                                    model: 5
                                     delegate: Column {
                                         id: cal
                                         required property int index
                                         readonly property date d: {
                                             const b = new Date(clock.date);
-                                            b.setDate(b.getDate() + (index - 3));
+                                            b.setDate(b.getDate() + (index - 2));
                                             return b;
                                         }
-                                        readonly property bool today: index === 3
+                                        readonly property bool today: index === 2
                                         readonly property bool weekend: d.getDay() === 0 || d.getDay() === 6
-                                        spacing: 3
+                                        spacing: 2
+                                        width: 30
 
                                         Text {
                                             anchors.horizontalCenter: parent.horizontalCenter
-                                            text: ["D", "L", "M", "X", "J", "V", "S"][cal.d.getDay()]
+                                            text: cal.today ? ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"][cal.d.getDay()] : ["D", "L", "M", "X", "J", "V", "S"][cal.d.getDay()]
                                             color: cal.today ? Theme.green : (cal.weekend ? Theme.red : Theme.overlay0)
                                             font.pixelSize: 10
+                                            font.bold: cal.today
                                         }
-                                        Rectangle {
+                                        Item {
                                             anchors.horizontalCenter: parent.horizontalCenter
-                                            width: 24
+                                            width: 30
                                             height: 24
-                                            radius: 12
-                                            color: cal.today ? Theme.green : "transparent"
                                             Text {
                                                 anchors.centerIn: parent
                                                 text: cal.d.getDate()
-                                                color: cal.today ? Theme.islandBg : (cal.weekend ? Theme.red : Theme.text)
-                                                font.pixelSize: 12
+                                                color: cal.today ? Theme.green : (cal.weekend ? Theme.red : Theme.text)
+                                                font.pixelSize: cal.today ? 19 : 13
                                                 font.bold: cal.today
                                             }
                                         }
@@ -516,14 +516,14 @@ PanelWindow {
                     id: mediaRow
                     anchors.bottom: parent.bottom
                     anchors.horizontalCenter: parent.horizontalCenter
-                    spacing: 10
+                    spacing: 8
 
                     // Carátula
                     Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
-                        width: 42
-                        height: 42
-                        radius: 10
+                        width: 36
+                        height: 36
+                        radius: 9
                         color: Theme.surface0
                         clip: true
 
@@ -536,7 +536,7 @@ PanelWindow {
                         Icon {
                             anchors.centerIn: parent
                             text: "music_note"
-                            px: 20
+                            px: 17
                             color: Theme.overlay0
                             visible: !(Media.active?.trackArtUrl)
                         }
@@ -545,14 +545,14 @@ PanelWindow {
                     // Título + artista
                     Column {
                         anchors.verticalCenter: parent.verticalCenter
-                        width: 100
-                        spacing: 1
+                        width: 90
+                        spacing: 0
 
                         Text {
                             width: parent.width
                             text: Media.title || "Sin reproducción"
                             color: "#ffffff"
-                            font.pixelSize: 12
+                            font.pixelSize: 11
                             font.bold: true
                             elide: Text.ElideRight
                         }
@@ -560,7 +560,7 @@ PanelWindow {
                             width: parent.width
                             text: Media.artist
                             color: Theme.subtext
-                            font.pixelSize: 11
+                            font.pixelSize: 10
                             elide: Text.ElideRight
                             visible: Media.artist !== ""
                         }
@@ -569,17 +569,17 @@ PanelWindow {
                     // Progreso: tiempo · barra · tiempo
                     Row {
                         anchors.verticalCenter: parent.verticalCenter
-                        spacing: 7
+                        spacing: 6
 
                         Text {
                             anchors.verticalCenter: parent.verticalCenter
                             text: island.fmt(island.mediaPos)
                             color: Theme.subtext
-                            font.pixelSize: 10
+                            font.pixelSize: 9
                         }
                         Rectangle {
                             anchors.verticalCenter: parent.verticalCenter
-                            width: 70
+                            width: 60
                             height: 4
                             radius: 2
                             color: Theme.surface0
@@ -597,7 +597,7 @@ PanelWindow {
                             anchors.verticalCenter: parent.verticalCenter
                             text: island.fmt(Media.active?.length ?? 0)
                             color: Theme.subtext
-                            font.pixelSize: 10
+                            font.pixelSize: 9
                         }
                     }
 
@@ -609,16 +609,19 @@ PanelWindow {
                         IslandButton {
                             glyph: "skip_previous"
                             useIconFont: true
+                            size: 22
                             onTapped: Media.prev()
                         }
                         IslandButton {
                             glyph: Media.isPlaying ? "pause" : "play_arrow"
                             useIconFont: true
+                            size: 22
                             onTapped: Media.toggle()
                         }
                         IslandButton {
                             glyph: "skip_next"
                             useIconFont: true
+                            size: 22
                             onTapped: Media.next()
                         }
                     }
@@ -877,16 +880,17 @@ PanelWindow {
     component IslandButton: Rectangle {
         property string glyph: ""
         property bool useIconFont: false
+        property int size: 26
         signal tapped
-        width: 26
-        height: 26
-        radius: 13
+        width: size
+        height: size
+        radius: size / 2
         color: tapArea.containsMouse ? Theme.surface0 : "transparent"
         Text {
             anchors.centerIn: parent
             text: parent.glyph
             color: "#ffffff"
-            font.pixelSize: parent.useIconFont ? 18 : 12
+            font.pixelSize: parent.useIconFont ? Math.round(parent.size * 0.68) : 12
             font.family: parent.useIconFont ? "Material Symbols Rounded" : Qt.application.font.family
         }
         MouseArea {
