@@ -16,10 +16,11 @@ Scope {
     property string query: ""
 
     // Progreso de apertura (0 cerrado, 1 abierto): la ventana "emerge" de la isla
+    // (misma curva y duración que la expansión de la isla al hover)
     property real t: active ? 1 : 0
     Behavior on t {
         NumberAnimation {
-            duration: 320
+            duration: 480
             easing.type: Easing.BezierSpline
             easing.bezierCurve: Theme.spring
         }
@@ -97,11 +98,11 @@ Scope {
             readonly property real contentOpacity: Math.max(0, (root.t - 0.5) / 0.5)
 
             anchors.horizontalCenter: parent.horizontalCenter
-            y: 44 // justo debajo de la isla
-            // Emerge de la isla: crece de una semilla tipo píldora a panel completo
-            width: 300 + (fullW - 300) * root.t
-            height: 34 + (fullH - 34) * root.t
-            radius: 17 + (24 - 17) * root.t
+            y: Config.topMargin // mismo origen que la isla: emerge de ella, no de arriba
+            // Semilla = píldora de la isla (mismo alto/radio); crece a panel completo
+            width: 320 + (fullW - 320) * root.t
+            height: 30 + (fullH - 30) * root.t
+            radius: 15 + (24 - 15) * root.t
             opacity: Math.min(1, root.t * 3)
             clip: true
             color: Theme.islandBg
