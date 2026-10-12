@@ -39,7 +39,8 @@ Para volver atrás: borra el symlink y restaura `~/.config/hypr.bak`.
 | `conf/input.conf` | Teclado, touchpad, gestos |
 | `conf/windowrules.conf` | Reglas de ventana |
 | `conf/keybinds.conf` | Atajos |
-| `conf/autostart.conf` | Arranque (polkit, dunst, fondo…) |
+| `conf/autostart.conf` | Arranque (polkit, dunst, barra…) |
+| `shell/shell.qml` | Barra (Quickshell): workspaces, ventana activa, reloj |
 
 ## Atajos principales
 
@@ -59,9 +60,16 @@ Para volver atrás: borra el symlink y restaura `~/.config/hypr.bak`.
 | `Super + Shift + Print` | Captura del monitor activo |
 | `Super + Shift + Q` | Salir de Hyprland |
 
+## Barra (Quickshell)
+
+En `shell/shell.qml`, con **Quickshell** (QML/Qt6), igual que caelestia.
+- Probar suelta: `qs -p ~/proyects/Salchipapa-Shell/shell/shell.qml` (se recarga sola al guardar).
+- En la sesión arranca sola desde `conf/autostart.conf`.
+- Tiene: workspaces clicables (izq.), título de la ventana activa (centro), reloj (der.).
+
 ## Pendiente
 
-- [ ] Esquema de color propio (bordes, blur)
+- [ ] Ampliar la barra: bandeja, volumen, batería, red, CPU/RAM
+- [ ] Esquema de color propio (bordes, blur, barra)
 - [ ] Herramienta de fondo de pantalla (hyprpaper o swww)
 - [ ] Bloqueo de pantalla (hyprlock + hypridle)
-- [ ] Barra propia (Quickshell/Qt o waybar)
