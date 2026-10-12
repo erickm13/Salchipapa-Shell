@@ -18,8 +18,9 @@ PanelWindow {
         left: true
         right: true
     }
-    implicitHeight: 230
+    implicitHeight: 470
     WlrLayershell.layer: WlrLayer.Top
+    WlrLayershell.keyboardFocus: Overlay.mode !== "" ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
     exclusiveZone: 34 + Config.topMargin
 
     // Solo la píldora captura el ratón; el resto deja pasar los clics
@@ -40,8 +41,8 @@ PanelWindow {
         property bool hovered: false
         property string peek: "" // "", "media", "volume", "notif"
 
-        // Modo efectivo: hover manda; si no, un peek activo; si no, idle
-        readonly property string mode: hovered ? "expanded" : (peek !== "" ? peek : "idle")
+        // Modo efectivo: overlay (launcher/themes) manda; luego hover; luego peek; luego idle
+        readonly property string mode: Overlay.mode !== "" ? Overlay.mode : (hovered ? "expanded" : (peek !== "" ? peek : "idle"))
 
         // Datos del peek de notificación
         property string notifApp: ""
@@ -80,8 +81,8 @@ PanelWindow {
         }
 
         // Tamaños por modo
-        width: mode === "expanded" ? 820 : mode === "notif" ? 430 : mode === "media" ? 370 : mode === "volume" ? 300 : (idleRow.implicitWidth + 28)
-        height: mode === "expanded" ? 190 : mode === "notif" ? 74 : mode === "media" ? 58 : mode === "volume" ? 42 : 30
+        width: mode === "launcher" ? 560 : mode === "themes" ? 720 : mode === "expanded" ? 820 : mode === "notif" ? 430 : mode === "media" ? 370 : mode === "volume" ? 300 : (idleRow.implicitWidth + 28)
+        height: mode === "launcher" ? 440 : mode === "themes" ? 210 : mode === "expanded" ? 190 : mode === "notif" ? 74 : mode === "media" ? 58 : mode === "volume" ? 42 : 30
 
         Behavior on width {
             NumberAnimation {
@@ -135,7 +136,7 @@ PanelWindow {
         Rectangle {
             id: pill
             anchors.fill: parent
-            radius: island.mode === "expanded" ? 26 : height / 2
+            radius: (island.mode === "expanded" || island.mode === "launcher" || island.mode === "themes") ? 26 : height / 2
             color: Theme.islandBg
             border.color: Theme.islandBorder
             border.width: 1
@@ -777,11 +778,39 @@ PanelWindow {
                 }
             }
 
-            // Hover: expande (NoButton => no roba los clics a los botones internos)
+            // ---------- launcher (modo overlay dentro de la isla) ----------
+            LauncherContent {
+                anchors.fill: parent
+                anchors.margins: 8
+                opacity: island.mode === "launcher" ? 1 : 0
+                visible: opacity > 0
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 160
+                    }
+                }
+            }
+
+            // ---------- themes (selector de temas dentro de la isla) ----------
+            ThemeContent {
+                anchors.fill: parent
+                anchors.margins: 8
+                opacity: island.mode === "themes" ? 1 : 0
+                visible: opacity > 0
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 160
+                    }
+                }
+            }
+
+            // Hover: expande (NoButton => no roba los clics a los botones internos).
+            // Desactivado en modos overlay para que el launcher/temas reciban hover y clics.
             MouseArea {
                 anchors.fill: parent
                 hoverEnabled: true
                 acceptedButtons: Qt.NoButton
+                enabled: Overlay.mode === ""
                 onEntered: island.hovered = true
                 onExited: island.hovered = false
             }
