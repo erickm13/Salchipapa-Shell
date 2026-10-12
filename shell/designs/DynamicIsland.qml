@@ -80,8 +80,8 @@ PanelWindow {
         }
 
         // Tamaños por modo
-        width: mode === "expanded" ? 720 : mode === "notif" ? 430 : mode === "media" ? 370 : mode === "volume" ? 300 : 330
-        height: mode === "expanded" ? 200 : mode === "notif" ? 74 : mode === "media" ? 58 : mode === "volume" ? 42 : 30
+        width: mode === "expanded" ? 820 : mode === "notif" ? 430 : mode === "media" ? 370 : mode === "volume" ? 300 : 330
+        height: mode === "expanded" ? 190 : mode === "notif" ? 74 : mode === "media" ? 58 : mode === "volume" ? 42 : 30
 
         Behavior on width {
             NumberAnimation {
@@ -288,15 +288,14 @@ PanelWindow {
                     anchors.top: parent.top
                     anchors.left: parent.left
                     anchors.right: parent.right
-                    anchors.bottom: mediaRow.top
-                    anchors.bottomMargin: 12
+                    anchors.bottom: parent.bottom
 
                     // --- Izquierda: Desktop (workspaces verticales) ---
                     Column {
                         id: leftCol
                         anchors.top: parent.top
                         anchors.left: parent.left
-                        width: 120
+                        width: 100
                         spacing: 6
 
                         Text {
@@ -451,7 +450,7 @@ PanelWindow {
                         id: rightCol
                         anchors.top: parent.top
                         anchors.right: parent.right
-                        width: 220
+                        width: 200
                         spacing: 4
 
                         Text {
@@ -512,121 +511,115 @@ PanelWindow {
                     }
                 }
 
-                // ===== Reproductor (abajo, centrado y compacto) =====
-                Item {
+                // ===== Reproductor (abajo-centro, bajo el calendario) =====
+                Row {
                     id: mediaRow
-                    anchors.left: parent.left
-                    anchors.right: parent.right
                     anchors.bottom: parent.bottom
-                    height: 46
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    spacing: 10
 
+                    // Carátula
+                    Rectangle {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 42
+                        height: 42
+                        radius: 10
+                        color: Theme.surface0
+                        clip: true
+
+                        Image {
+                            anchors.fill: parent
+                            source: Media.active?.trackArtUrl ?? ""
+                            fillMode: Image.PreserveAspectCrop
+                            visible: status === Image.Ready
+                        }
+                        Icon {
+                            anchors.centerIn: parent
+                            text: "music_note"
+                            px: 20
+                            color: Theme.overlay0
+                            visible: !(Media.active?.trackArtUrl)
+                        }
+                    }
+
+                    // Título + artista
+                    Column {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 100
+                        spacing: 1
+
+                        Text {
+                            width: parent.width
+                            text: Media.title || "Sin reproducción"
+                            color: "#ffffff"
+                            font.pixelSize: 12
+                            font.bold: true
+                            elide: Text.ElideRight
+                        }
+                        Text {
+                            width: parent.width
+                            text: Media.artist
+                            color: Theme.subtext
+                            font.pixelSize: 11
+                            elide: Text.ElideRight
+                            visible: Media.artist !== ""
+                        }
+                    }
+
+                    // Progreso: tiempo · barra · tiempo
                     Row {
-                        anchors.centerIn: parent
-                        spacing: 12
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 7
 
-                        // Carátula
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: island.fmt(island.mediaPos)
+                            color: Theme.subtext
+                            font.pixelSize: 10
+                        }
                         Rectangle {
                             anchors.verticalCenter: parent.verticalCenter
-                            width: 44
-                            height: 44
-                            radius: 10
+                            width: 70
+                            height: 4
+                            radius: 2
                             color: Theme.surface0
-                            clip: true
 
-                            Image {
-                                anchors.fill: parent
-                                source: Media.active?.trackArtUrl ?? ""
-                                fillMode: Image.PreserveAspectCrop
-                                visible: status === Image.Ready
-                            }
-                            Icon {
-                                anchors.centerIn: parent
-                                text: "music_note"
-                                px: 20
-                                color: Theme.overlay0
-                                visible: !(Media.active?.trackArtUrl)
-                            }
-                        }
-
-                        // Título + artista
-                        Column {
-                            anchors.verticalCenter: parent.verticalCenter
-                            width: 140
-                            spacing: 1
-
-                            Text {
-                                width: parent.width
-                                text: Media.title || "Sin reproducción"
-                                color: "#ffffff"
-                                font.pixelSize: 12
-                                font.bold: true
-                                elide: Text.ElideRight
-                            }
-                            Text {
-                                width: parent.width
-                                text: Media.artist
-                                color: Theme.subtext
-                                font.pixelSize: 11
-                                elide: Text.ElideRight
-                                visible: Media.artist !== ""
-                            }
-                        }
-
-                        // Progreso: tiempo · barra · tiempo
-                        Row {
-                            anchors.verticalCenter: parent.verticalCenter
-                            spacing: 8
-
-                            Text {
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: island.fmt(island.mediaPos)
-                                color: Theme.subtext
-                                font.pixelSize: 10
-                            }
                             Rectangle {
+                                anchors.left: parent.left
                                 anchors.verticalCenter: parent.verticalCenter
-                                width: 150
-                                height: 4
+                                height: parent.height
                                 radius: 2
-                                color: Theme.surface0
-
-                                Rectangle {
-                                    anchors.left: parent.left
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    height: parent.height
-                                    radius: 2
-                                    width: parent.width * (Media.active && Media.active.length > 0 ? Math.min(1, island.mediaPos / Media.active.length) : 0)
-                                    color: Theme.green
-                                }
-                            }
-                            Text {
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: island.fmt(Media.active?.length ?? 0)
-                                color: Theme.subtext
-                                font.pixelSize: 10
+                                width: parent.width * (Media.active && Media.active.length > 0 ? Math.min(1, island.mediaPos / Media.active.length) : 0)
+                                color: Theme.green
                             }
                         }
-
-                        // Controles
-                        Row {
+                        Text {
                             anchors.verticalCenter: parent.verticalCenter
-                            spacing: 4
+                            text: island.fmt(Media.active?.length ?? 0)
+                            color: Theme.subtext
+                            font.pixelSize: 10
+                        }
+                    }
 
-                            IslandButton {
-                                glyph: "skip_previous"
-                                useIconFont: true
-                                onTapped: Media.prev()
-                            }
-                            IslandButton {
-                                glyph: Media.isPlaying ? "pause" : "play_arrow"
-                                useIconFont: true
-                                onTapped: Media.toggle()
-                            }
-                            IslandButton {
-                                glyph: "skip_next"
-                                useIconFont: true
-                                onTapped: Media.next()
-                            }
+                    // Controles
+                    Row {
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 2
+
+                        IslandButton {
+                            glyph: "skip_previous"
+                            useIconFont: true
+                            onTapped: Media.prev()
+                        }
+                        IslandButton {
+                            glyph: Media.isPlaying ? "pause" : "play_arrow"
+                            useIconFont: true
+                            onTapped: Media.toggle()
+                        }
+                        IslandButton {
+                            glyph: "skip_next"
+                            useIconFont: true
+                            onTapped: Media.next()
                         }
                     }
                 }
