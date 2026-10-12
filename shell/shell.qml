@@ -9,6 +9,7 @@ import QtQuick
 import "common"
 import "designs"
 import "launcher"
+import "theme"
 
 ShellRoot {
     // Barra (una por monitor, según el diseño activo)
@@ -39,4 +40,7 @@ ShellRoot {
 
     // Lanzador de apps (Super+R)
     Launcher {}
+
+    // Selector de temas (Super+T)
+    ThemeSelector {}
 }
