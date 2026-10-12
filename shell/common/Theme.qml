@@ -11,6 +11,8 @@ Singleton {
     readonly property color surface0: "#313244"
     readonly property color surface1: "#45475a"
     readonly property color overlay0: "#6c7086"
+    readonly property color overlay1: "#7f849c"
+    readonly property color overlay2: "#9399b2"
     readonly property color text: "#cdd6f4"
     readonly property color subtext: "#bac2de"
 
