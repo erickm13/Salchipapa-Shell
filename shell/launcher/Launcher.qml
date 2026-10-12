@@ -15,6 +15,16 @@ Scope {
     property int sel: 0
     property string query: ""
 
+    // Progreso de apertura (0 cerrado, 1 abierto): la ventana "emerge" de la isla
+    property real t: active ? 1 : 0
+    Behavior on t {
+        NumberAnimation {
+            duration: 320
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: Theme.spring
+        }
+    }
+
     readonly property var results: {
         const all = DesktopEntries.applications.values;
         const q = query.trim().toLowerCase();
@@ -56,7 +66,7 @@ Scope {
     PanelWindow {
         id: win
 
-        visible: root.active
+        visible: root.active || root.t > 0.01
         color: "transparent" // sin atenuado: solo se ve el panel (como caelestia)
         anchors {
             top: true
@@ -81,11 +91,19 @@ Scope {
         Rectangle {
             id: panel
 
-            width: 560
-            height: 440
+            readonly property real fullW: 560
+            readonly property real fullH: 440
+            // El contenido aparece cuando el panel ya ha crecido
+            readonly property real contentOpacity: Math.max(0, (root.t - 0.5) / 0.5)
+
             anchors.horizontalCenter: parent.horizontalCenter
-            y: parent.height * 0.16
-            radius: 24
+            y: 44 // justo debajo de la isla
+            // Emerge de la isla: crece de una semilla tipo píldora a panel completo
+            width: 300 + (fullW - 300) * root.t
+            height: 34 + (fullH - 34) * root.t
+            radius: 17 + (24 - 17) * root.t
+            opacity: Math.min(1, root.t * 3)
+            clip: true
             color: Theme.islandBg
             border.color: Theme.islandBorder
             border.width: 1
@@ -97,6 +115,7 @@ Scope {
             // --- Buscador ---
             Item {
                 id: search
+                opacity: panel.contentOpacity
                 anchors.top: parent.top
                 anchors.left: parent.left
                 anchors.right: parent.right
@@ -146,6 +165,7 @@ Scope {
 
             Rectangle {
                 id: divider
+                opacity: panel.contentOpacity
                 anchors.top: search.bottom
                 anchors.left: parent.left
                 anchors.right: parent.right
@@ -158,6 +178,7 @@ Scope {
             // --- Lista de apps ---
             ListView {
                 id: list
+                opacity: panel.contentOpacity
                 anchors.top: divider.bottom
                 anchors.left: parent.left
                 anchors.right: parent.right

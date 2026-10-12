@@ -17,6 +17,16 @@ Scope {
     property string query: ""
     property var schemes: [] // [{ name, swatches: [#hex,...] }]
 
+    // Progreso de apertura (0 cerrado, 1 abierto): emerge de la isla
+    property real t: active ? 1 : 0
+    Behavior on t {
+        NumberAnimation {
+            duration: 320
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: Theme.spring
+        }
+    }
+
     readonly property var results: {
         const q = query.trim().toLowerCase();
         return q === "" ? schemes : schemes.filter(s => s.name.toLowerCase().includes(q));
@@ -82,7 +92,7 @@ Scope {
     PanelWindow {
         id: win
 
-        visible: root.active
+        visible: root.active || root.t > 0.01
         color: "transparent"
         anchors {
             top: true
@@ -106,11 +116,17 @@ Scope {
         Rectangle {
             id: panel
 
-            width: 720
-            height: 210
+            readonly property real fullW: 720
+            readonly property real fullH: 210
+            readonly property real contentOpacity: Math.max(0, (root.t - 0.5) / 0.5)
+
             anchors.horizontalCenter: parent.horizontalCenter
-            y: parent.height * 0.5 - height / 2
-            radius: 26
+            y: 44 // justo debajo de la isla
+            width: 300 + (fullW - 300) * root.t
+            height: 34 + (fullH - 34) * root.t
+            radius: 17 + (26 - 17) * root.t
+            opacity: Math.min(1, root.t * 3)
+            clip: true
             color: Theme.islandBg
             border.color: Theme.islandBorder
             border.width: 1
@@ -122,6 +138,7 @@ Scope {
             // --- Buscador + contador ---
             Item {
                 id: header
+                opacity: panel.contentOpacity
                 anchors.top: parent.top
                 anchors.left: parent.left
                 anchors.right: parent.right
@@ -179,6 +196,7 @@ Scope {
 
             Rectangle {
                 id: divider
+                opacity: panel.contentOpacity
                 anchors.top: header.bottom
                 anchors.left: parent.left
                 anchors.right: parent.right
@@ -191,6 +209,7 @@ Scope {
             // --- Carrusel de temas ---
             ListView {
                 id: cards
+                opacity: panel.contentOpacity
                 anchors.top: divider.bottom
                 anchors.left: parent.left
                 anchors.right: parent.right
@@ -271,6 +290,7 @@ Scope {
 
             // Pista
             Text {
+                opacity: panel.contentOpacity
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
                 anchors.margins: 14
