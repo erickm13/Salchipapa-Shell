@@ -18,7 +18,7 @@ PanelWindow {
         left: true
         right: true
     }
-    implicitHeight: 150
+    implicitHeight: 230
     WlrLayershell.layer: WlrLayer.Top
     exclusiveZone: 34 + Config.topMargin
 
@@ -47,6 +47,25 @@ PanelWindow {
         property string notifApp: ""
         property string notifText: ""
 
+        // Estado del dashboard (expandido)
+        property bool nightLight: false
+        property bool gameMode: false
+        property real mediaPos: 0
+
+        function fmt(s: real): string {
+            s = Math.max(0, Math.floor(s));
+            const m = Math.floor(s / 60);
+            const sec = s % 60;
+            return m + ":" + (sec < 10 ? "0" + sec : sec);
+        }
+
+        Timer {
+            interval: 1000
+            running: true
+            repeat: true
+            onTriggered: island.mediaPos = Media.active?.position ?? 0
+        }
+
         Component.onCompleted: ready = true
 
         function showPeek(name: string): void {
@@ -61,8 +80,8 @@ PanelWindow {
         }
 
         // Tamaños por modo
-        width: mode === "expanded" ? 520 : mode === "notif" ? 430 : mode === "media" ? 370 : mode === "volume" ? 300 : 330
-        height: mode === "expanded" ? 112 : mode === "notif" ? 74 : mode === "media" ? 58 : mode === "volume" ? 42 : 30
+        width: mode === "expanded" ? 720 : mode === "notif" ? 430 : mode === "media" ? 370 : mode === "volume" ? 300 : 330
+        height: mode === "expanded" ? 200 : mode === "notif" ? 74 : mode === "media" ? 58 : mode === "volume" ? 42 : 30
 
         Behavior on width {
             NumberAnimation {
@@ -116,10 +135,17 @@ PanelWindow {
         Rectangle {
             id: pill
             anchors.fill: parent
-            radius: height / 2
+            radius: island.mode === "expanded" ? 26 : height / 2
             color: Theme.islandBg
             border.color: Theme.islandBorder
             border.width: 1
+
+            Behavior on radius {
+                NumberAnimation {
+                    duration: 300
+                    easing.type: Easing.OutCubic
+                }
+            }
 
             // ---------- idle (compacto) ----------
             Item {
@@ -244,10 +270,10 @@ PanelWindow {
                 }
             }
 
-            // ---------- expanded (hover) ----------
+            // ---------- expanded (hover): dashboard ----------
             Item {
                 anchors.fill: parent
-                anchors.margins: 14
+                anchors.margins: 18
                 opacity: island.mode === "expanded" ? 1 : 0
                 visible: opacity > 0
                 Behavior on opacity {
@@ -256,102 +282,323 @@ PanelWindow {
                     }
                 }
 
-                // Workspaces (arriba-izquierda)
-                WsRow {
+                // ===== Zona superior: 3 columnas =====
+                Item {
+                    id: topArea
                     anchors.top: parent.top
                     anchors.left: parent.left
-                    anchors.topMargin: 2
-                    barWidth: 9
-                    baseLen: 9
-                }
-
-                // Reloj (arriba-derecha)
-                Text {
-                    anchors.top: parent.top
                     anchors.right: parent.right
-                    anchors.topMargin: 3
-                    text: Qt.formatDateTime(clock.date, "ddd d MMM · HH:mm")
-                    color: "#ffffff"
-                    font.pixelSize: 14
-                    font.bold: true
-                }
+                    anchors.bottom: mediaRow.top
+                    anchors.bottomMargin: 12
 
-                // Título de la ventana activa (centro)
-                Text {
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.verticalCenter: parent.verticalCenter
-                    anchors.verticalCenterOffset: 2
-                    text: Hyprland.activeToplevel?.title ?? "Escritorio"
-                    color: Theme.subtext
-                    font.pixelSize: 12
-                    elide: Text.ElideRight
-                }
+                    // --- Izquierda: Desktop (workspaces verticales) ---
+                    Column {
+                        id: leftCol
+                        anchors.top: parent.top
+                        anchors.left: parent.left
+                        width: 120
+                        spacing: 6
 
-                // Fila de stats (abajo): batería, red, CPU, RAM, volumen
-                Row {
-                    anchors.bottom: parent.bottom
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    spacing: 14
+                        Text {
+                            text: "Desktop"
+                            color: Theme.subtext
+                            font.pixelSize: 12
+                            font.bold: true
+                        }
+                        Repeater {
+                            model: Config.workspaceCount
+                            delegate: Item {
+                                id: dw
+                                required property int index
+                                readonly property int wsId: index + 1
+                                readonly property bool focused: Hyprland.focusedWorkspace?.id === wsId
+                                readonly property bool occupied: Hyprland.workspaces.values.some(w => w.id === wsId)
 
-                    // Batería
-                    Row {
-                        spacing: 4
-                        visible: Battery.available
-                        Rectangle {
-                            width: 20
-                            height: 11
-                            radius: 2
-                            anchors.verticalCenter: parent.verticalCenter
-                            color: "transparent"
-                            border.color: Theme.overlay0
-                            border.width: 1
-                            Rectangle {
-                                anchors.left: parent.left
-                                anchors.leftMargin: 1
-                                anchors.verticalCenter: parent.verticalCenter
-                                height: 7
-                                width: Math.max(1, (parent.width - 3) * Battery.percent / 100)
-                                radius: 1
-                                color: Battery.charging ? Theme.green : (Battery.percent <= 20 ? Theme.red : Theme.text)
+                                width: leftCol.width
+                                height: 17
+
+                                Rectangle {
+                                    id: dwBar
+                                    anchors.left: parent.left
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 3
+                                    height: dw.focused ? 15 : (dw.occupied ? 11 : 7)
+                                    radius: 2
+                                    color: dw.focused ? Theme.green : (dw.occupied ? Theme.overlay2 : Theme.surface1)
+                                    Behavior on height {
+                                        NumberAnimation {
+                                            duration: 150
+                                        }
+                                    }
+                                }
+                                Text {
+                                    anchors.left: dwBar.right
+                                    anchors.leftMargin: 12
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: dw.wsId
+                                    color: dw.focused ? "#ffffff" : (dw.occupied ? Theme.text : Theme.overlay0)
+                                    font.pixelSize: 13
+                                    font.bold: dw.focused
+                                }
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: Hyprland.dispatch("workspace " + dw.wsId)
+                                }
                             }
                         }
+                    }
+
+                    // --- Centro: reloj + calendario ---
+                    Column {
+                        anchors.top: parent.top
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        spacing: 8
+
                         Text {
-                            text: Battery.percent + "%"
-                            color: Theme.subtext
-                            font.pixelSize: 11
-                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: Qt.formatDateTime(clock.date, "HH:mm")
+                            color: "#ffffff"
+                            font.pixelSize: 32
+                            font.bold: true
+                        }
+                        Row {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            spacing: 8
+                            Repeater {
+                                model: 7
+                                delegate: Column {
+                                    id: cal
+                                    required property int index
+                                    readonly property date d: {
+                                        const b = new Date(clock.date);
+                                        b.setDate(b.getDate() + (index - 3));
+                                        return b;
+                                    }
+                                    readonly property bool today: index === 3
+                                    readonly property bool weekend: d.getDay() === 0 || d.getDay() === 6
+                                    spacing: 3
+
+                                    Text {
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        text: ["D", "L", "M", "X", "J", "V", "S"][cal.d.getDay()]
+                                        color: cal.today ? Theme.green : (cal.weekend ? Theme.red : Theme.overlay0)
+                                        font.pixelSize: 10
+                                    }
+                                    Rectangle {
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        width: 24
+                                        height: 24
+                                        radius: 12
+                                        color: cal.today ? Theme.green : "transparent"
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: cal.d.getDate()
+                                            color: cal.today ? Theme.islandBg : (cal.weekend ? Theme.red : Theme.text)
+                                            font.pixelSize: 12
+                                            font.bold: cal.today
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
 
-                    // Red
-                    Text {
-                        text: Net.type === "wifi" ? ("Wi-Fi " + Net.name) : (Net.type === "ethernet" ? "Ethernet" : "Sin red")
-                        color: Net.online ? Theme.subtext : Theme.red
-                        font.pixelSize: 11
-                        elide: Text.ElideRight
-                        width: 120
+                    // --- Derecha: Status ---
+                    Column {
+                        id: rightCol
+                        anchors.top: parent.top
+                        anchors.right: parent.right
+                        width: 220
+                        spacing: 4
+
+                        Text {
+                            text: "Status"
+                            color: Theme.subtext
+                            font.pixelSize: 12
+                            font.bold: true
+                        }
+                        StatusRow {
+                            glyph: Battery.charging ? "battery_charging_full" : "battery_full"
+                            glyphColor: Theme.green
+                            value: Battery.percent + "%"
+                            label: Battery.charging ? "plugged in" : "on battery"
+                        }
+                        StatusRow {
+                            glyph: "wifi"
+                            glyphColor: Net.online ? Theme.green : Theme.overlay0
+                            value: Net.type === "wifi" ? Net.name : (Net.type === "ethernet" ? "Ethernet" : "Sin red")
+                            label: ""
+                        }
+                        StatusRow {
+                            glyph: "bluetooth"
+                            glyphColor: Bluetooth.enabled ? Theme.blue : Theme.overlay0
+                            value: Bluetooth.enabled ? "on" : "off"
+                            label: ""
+                        }
+                        StatusRow {
+                            glyph: Audio.micMuted ? "mic_off" : "mic"
+                            glyphColor: Audio.micMuted ? Theme.red : Theme.green
+                            value: Math.round(Audio.micVolume * 100) + "%"
+                            label: Audio.micMuted ? "mic off" : "mic on"
+                        }
+                        StatusRow {
+                            glyph: "notifications"
+                            glyphColor: Theme.subtext
+                            value: Notifs.count > 0 ? ("" + Notifs.count) : "No"
+                            label: "notifications"
+                        }
+                        Row {
+                            spacing: 6
+                            topPadding: 2
+                            PillButton {
+                                glyph: "dark_mode"
+                                label: "Night light"
+                                on: island.nightLight
+                                onToggled: {
+                                    island.nightLight = !island.nightLight;
+                                    Hyprland.dispatch("exec " + (island.nightLight ? "hyprsunset -t 4000" : "pkill hyprsunset"));
+                                }
+                            }
+                            PillButton {
+                                glyph: "sports_esports"
+                                label: "Game mode"
+                                on: island.gameMode
+                                onToggled: island.gameMode = !island.gameMode
+                            }
+                        }
+                    }
+                }
+
+                // ===== Reproductor (abajo) =====
+                Item {
+                    id: mediaRow
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    height: 46
+
+                    // Carátula
+                    Rectangle {
+                        id: art
+                        anchors.left: parent.left
                         anchors.verticalCenter: parent.verticalCenter
+                        width: 44
+                        height: 44
+                        radius: 10
+                        color: Theme.surface0
+                        clip: true
+
+                        Image {
+                            anchors.fill: parent
+                            source: Media.active?.trackArtUrl ?? ""
+                            fillMode: Image.PreserveAspectCrop
+                            visible: status === Image.Ready
+                        }
+                        Icon {
+                            anchors.centerIn: parent
+                            text: "music_note"
+                            px: 20
+                            color: Theme.overlay0
+                            visible: !(Media.active?.trackArtUrl)
+                        }
                     }
 
-                    // CPU
-                    IslandStat {
-                        label: "CPU"
-                        value: Sys.cpu
-                        barColor: Theme.peach
+                    // Título + artista
+                    Column {
+                        id: mediaText
+                        anchors.left: art.right
+                        anchors.leftMargin: 12
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 150
+                        spacing: 1
+
+                        Text {
+                            width: parent.width
+                            text: Media.title || "Sin reproducción"
+                            color: "#ffffff"
+                            font.pixelSize: 12
+                            font.bold: true
+                            elide: Text.ElideRight
+                        }
+                        Text {
+                            width: parent.width
+                            text: Media.artist
+                            color: Theme.subtext
+                            font.pixelSize: 11
+                            elide: Text.ElideRight
+                            visible: Media.artist !== ""
+                        }
                     }
-                    // RAM
-                    IslandStat {
-                        label: "RAM"
-                        value: Sys.mem
-                        barColor: Theme.mauve
+
+                    // Controles (derecha)
+                    Row {
+                        id: mediaCtl
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 4
+
+                        IslandButton {
+                            glyph: "skip_previous"
+                            useIconFont: true
+                            onTapped: Media.prev()
+                        }
+                        IslandButton {
+                            glyph: Media.isPlaying ? "pause" : "play_arrow"
+                            useIconFont: true
+                            onTapped: Media.toggle()
+                        }
+                        IslandButton {
+                            glyph: "skip_next"
+                            useIconFont: true
+                            onTapped: Media.next()
+                        }
                     }
-                    // Volumen
-                    IslandStat {
-                        label: Audio.muted ? "MUT" : "VOL"
-                        value: Math.min(1, Audio.volume)
-                        barColor: Audio.muted ? Theme.overlay0 : Theme.sapphire
+
+                    // Progreso (centro)
+                    Item {
+                        anchors.left: mediaText.right
+                        anchors.leftMargin: 16
+                        anchors.right: mediaCtl.left
+                        anchors.rightMargin: 16
+                        anchors.verticalCenter: parent.verticalCenter
+                        height: 20
+
+                        Text {
+                            id: tCur
+                            anchors.left: parent.left
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: island.fmt(island.mediaPos)
+                            color: Theme.subtext
+                            font.pixelSize: 10
+                        }
+                        Text {
+                            id: tTot
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: island.fmt(Media.active?.length ?? 0)
+                            color: Theme.subtext
+                            font.pixelSize: 10
+                        }
+                        Rectangle {
+                            anchors.left: tCur.right
+                            anchors.right: tTot.left
+                            anchors.leftMargin: 8
+                            anchors.rightMargin: 8
+                            anchors.verticalCenter: parent.verticalCenter
+                            height: 4
+                            radius: 2
+                            color: Theme.surface0
+
+                            Rectangle {
+                                anchors.left: parent.left
+                                anchors.verticalCenter: parent.verticalCenter
+                                height: parent.height
+                                radius: 2
+                                width: parent.width * (Media.active && Media.active.length > 0 ? Math.min(1, island.mediaPos / Media.active.length) : 0)
+                                color: Theme.green
+                            }
+                        }
                     }
                 }
             }
@@ -607,16 +854,18 @@ PanelWindow {
 
     component IslandButton: Rectangle {
         property string glyph: ""
+        property bool useIconFont: false
         signal tapped
-        width: 24
-        height: 24
-        radius: 12
+        width: 26
+        height: 26
+        radius: 13
         color: tapArea.containsMouse ? Theme.surface0 : "transparent"
         Text {
             anchors.centerIn: parent
             text: parent.glyph
             color: "#ffffff"
-            font.pixelSize: 12
+            font.pixelSize: parent.useIconFont ? 18 : 12
+            font.family: parent.useIconFont ? "Material Symbols Rounded" : Qt.application.font.family
         }
         MouseArea {
             id: tapArea
@@ -624,6 +873,82 @@ PanelWindow {
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             onClicked: parent.tapped()
+        }
+    }
+
+    // Icono (Material Symbols Rounded; el texto es el nombre del icono, ej. "wifi")
+    component Icon: Text {
+        property real px: 18
+        font.family: "Material Symbols Rounded"
+        font.pixelSize: px
+        color: Theme.text
+        verticalAlignment: Text.AlignVCenter
+    }
+
+    // Fila del panel Status: icono + valor + etiqueta
+    component StatusRow: Row {
+        property string glyph: ""
+        property string value: ""
+        property string label: ""
+        property color glyphColor: Theme.text
+        spacing: 8
+        height: 20
+
+        Icon {
+            text: parent.glyph
+            color: parent.glyphColor
+            px: 17
+            anchors.verticalCenter: parent.verticalCenter
+        }
+        Text {
+            text: parent.value
+            color: "#ffffff"
+            font.pixelSize: 12
+            font.bold: true
+            anchors.verticalCenter: parent.verticalCenter
+        }
+        Text {
+            text: parent.label
+            color: Theme.subtext
+            font.pixelSize: 12
+            anchors.verticalCenter: parent.verticalCenter
+        }
+    }
+
+    // Botón tipo píldora (Night light / Game mode)
+    component PillButton: Rectangle {
+        property string glyph: ""
+        property string label: ""
+        property bool on: false
+        signal toggled
+
+        height: 24
+        radius: 12
+        implicitWidth: pbRow.implicitWidth + 18
+        width: implicitWidth
+        color: on ? Theme.surface1 : Theme.surface0
+
+        Row {
+            id: pbRow
+            anchors.centerIn: parent
+            spacing: 5
+            Icon {
+                text: parent.parent.glyph
+                px: 14
+                color: parent.parent.on ? Theme.yellow : Theme.subtext
+                anchors.verticalCenter: parent.verticalCenter
+            }
+            Text {
+                text: parent.parent.label
+                color: Theme.text
+                font.pixelSize: 11
+                anchors.verticalCenter: parent.verticalCenter
+            }
+        }
+        MouseArea {
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            onClicked: parent.toggled()
         }
     }
 }
