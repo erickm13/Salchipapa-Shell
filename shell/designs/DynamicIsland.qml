@@ -141,7 +141,8 @@ PanelWindow {
                     spacing: 4
 
                     WsRow {
-                        cell: 18
+                        barHeight: 5
+                        baseWidth: 9
                         anchors.verticalCenter: parent.verticalCenter
                     }
 
@@ -256,7 +257,9 @@ PanelWindow {
                 WsRow {
                     anchors.top: parent.top
                     anchors.left: parent.left
-                    cell: 24
+                    anchors.topMargin: 6
+                    barHeight: 7
+                    baseWidth: 12
                 }
 
                 // Reloj (arriba-derecha)
@@ -529,10 +532,12 @@ PanelWindow {
 
     // --- Componentes internos reutilizables ---
 
-    // Workspaces persistentes 1..N (siempre visibles; resalta activo y ocupados)
+    // Workspaces persistentes 1..N como barras de carga (sin número).
+    // Activo = barra larga (acento); ocupado = barra media; vacío = punto corto.
     component WsRow: Row {
-        property int cell: 20
-        spacing: 4
+        property int barHeight: 6
+        property int baseWidth: 10 // ancho de un ws vacío
+        spacing: 6
 
         Repeater {
             model: Config.workspaceCount
@@ -543,29 +548,22 @@ PanelWindow {
                 readonly property bool focused: Hyprland.focusedWorkspace?.id === wsId
                 readonly property bool occupied: Hyprland.workspaces.values.some(w => w.id === wsId)
 
-                width: wsCell.focused ? cell * 1.4 : cell // el activo un poco más ancho
-                height: cell
-                radius: cell * 0.3
-                color: wsCell.focused ? Theme.blue : (wsCell.occupied ? Theme.surface1 : Theme.surface0)
+                anchors.verticalCenter: parent.verticalCenter
+                width: wsCell.focused ? baseWidth * 2.8 : (wsCell.occupied ? baseWidth * 1.4 : baseWidth)
+                height: barHeight
+                radius: height / 2
+                color: wsCell.focused ? Theme.blue : (wsCell.occupied ? Theme.overlay0 : Theme.surface0)
 
+                Behavior on width {
+                    NumberAnimation {
+                        duration: 250
+                        easing.type: Easing.OutCubic
+                    }
+                }
                 Behavior on color {
                     ColorAnimation {
                         duration: 150
                     }
-                }
-                Behavior on width {
-                    NumberAnimation {
-                        duration: 200
-                        easing.type: Easing.OutCubic
-                    }
-                }
-
-                Text {
-                    anchors.centerIn: parent
-                    text: wsCell.wsId
-                    color: wsCell.focused ? Theme.islandBg : (wsCell.occupied ? Theme.text : Theme.overlay0)
-                    font.pixelSize: Math.round(cell * 0.55)
-                    font.bold: wsCell.focused
                 }
 
                 MouseArea {
