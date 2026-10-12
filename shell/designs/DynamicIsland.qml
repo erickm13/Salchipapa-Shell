@@ -552,7 +552,7 @@ PanelWindow {
                 width: barWidth
                 height: wsCell.focused ? baseLen * 2.0 : (wsCell.occupied ? baseLen * 1.7 : baseLen * 1.3)
                 radius: width / 2
-                color: wsCell.focused ? Theme.blue : (wsCell.occupied ? Theme.overlay0 : Theme.surface0)
+                color: wsCell.focused ? Theme.blue : (wsCell.occupied ? Theme.overlay2 : Theme.surface0)
 
                 Behavior on height {
                     NumberAnimation {
