@@ -80,7 +80,7 @@ PanelWindow {
         }
 
         // Tamaños por modo
-        width: mode === "expanded" ? 820 : mode === "notif" ? 430 : mode === "media" ? 370 : mode === "volume" ? 300 : 300
+        width: mode === "expanded" ? 820 : mode === "notif" ? 430 : mode === "media" ? 370 : mode === "volume" ? 300 : (idleRow.implicitWidth + 28)
         height: mode === "expanded" ? 190 : mode === "notif" ? 74 : mode === "media" ? 58 : mode === "volume" ? 42 : 30
 
         Behavior on width {
@@ -150,8 +150,6 @@ PanelWindow {
             // ---------- idle (compacto) ----------
             Item {
                 anchors.fill: parent
-                anchors.leftMargin: 12
-                anchors.rightMargin: 14
                 opacity: island.mode === "idle" ? 1 : 0
                 visible: opacity > 0
                 Behavior on opacity {
@@ -160,99 +158,96 @@ PanelWindow {
                     }
                 }
 
-                // Izquierda: workspaces + puntos de estado (pegados a la hora)
+                // Fila centrada: la píldora se ajusta a su ancho (ver island.width)
                 Row {
-                    anchors.right: clockText.left
-                    anchors.rightMargin: 16
-                    anchors.verticalCenter: parent.verticalCenter
-                    spacing: 4
-
-                    WsRow {
-                        barWidth: 7
-                        baseLen: 7
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-
-                    // Punto verde: reproduciendo
-                    Rectangle {
-                        width: 7
-                        height: 7
-                        radius: 4
-                        anchors.verticalCenter: parent.verticalCenter
-                        color: Theme.green
-                        visible: Media.isPlaying
-                    }
-                    // Punto rojo: micro silenciado
-                    Rectangle {
-                        width: 7
-                        height: 7
-                        radius: 4
-                        anchors.verticalCenter: parent.verticalCenter
-                        color: Theme.red
-                        visible: Audio.micMuted
-                    }
-                }
-
-                // Centro: hora
-                Text {
-                    id: clockText
+                    id: idleRow
                     anchors.centerIn: parent
-                    text: Qt.formatDateTime(clock.date, "HH:mm")
-                    color: "#ffffff"
-                    font.pixelSize: 14
-                    font.bold: true
-                }
+                    spacing: 14
 
-                // Derecha: wifi + batería (pegados a la hora)
-                Row {
-                    anchors.left: clockText.right
-                    anchors.leftMargin: 16
-                    anchors.verticalCenter: parent.verticalCenter
-                    spacing: 10
-
-                    // Señal de red (3 barras)
+                    // Izquierda: workspaces + estado
                     Row {
                         anchors.verticalCenter: parent.verticalCenter
-                        spacing: 2
-                        Rectangle {
-                            width: 3
-                            height: 5
-                            radius: 1
-                            anchors.bottom: parent.bottom
-                            color: Net.online ? Theme.green : Theme.surface1
+                        spacing: 4
+
+                        WsRow {
+                            barWidth: 7
+                            baseLen: 7
+                            anchors.verticalCenter: parent.verticalCenter
                         }
                         Rectangle {
-                            width: 3
-                            height: 8
-                            radius: 1
-                            anchors.bottom: parent.bottom
-                            color: Net.online ? Theme.green : Theme.surface1
+                            width: 7
+                            height: 7
+                            radius: 4
+                            anchors.verticalCenter: parent.verticalCenter
+                            color: Theme.green
+                            visible: Media.isPlaying
                         }
                         Rectangle {
-                            width: 3
-                            height: 11
-                            radius: 1
-                            anchors.bottom: parent.bottom
-                            color: Net.online ? Theme.green : Theme.surface1
+                            width: 7
+                            height: 7
+                            radius: 4
+                            anchors.verticalCenter: parent.verticalCenter
+                            color: Theme.red
+                            visible: Audio.micMuted
                         }
                     }
 
-                    // Batería (cápsula verde, sin %)
-                    Rectangle {
+                    // Hora
+                    Text {
                         anchors.verticalCenter: parent.verticalCenter
-                        visible: Battery.available
-                        width: 26
-                        height: 13
-                        radius: 6.5
-                        color: Theme.surface1
+                        text: Qt.formatDateTime(clock.date, "HH:mm")
+                        color: "#ffffff"
+                        font.pixelSize: 14
+                        font.bold: true
+                    }
+
+                    // Derecha: wifi + batería
+                    Row {
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 8
+
+                        Row {
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 2
+                            Rectangle {
+                                width: 3
+                                height: 5
+                                radius: 1
+                                anchors.bottom: parent.bottom
+                                color: Net.online ? Theme.green : Theme.surface1
+                            }
+                            Rectangle {
+                                width: 3
+                                height: 8
+                                radius: 1
+                                anchors.bottom: parent.bottom
+                                color: Net.online ? Theme.green : Theme.surface1
+                            }
+                            Rectangle {
+                                width: 3
+                                height: 11
+                                radius: 1
+                                anchors.bottom: parent.bottom
+                                color: Net.online ? Theme.green : Theme.surface1
+                            }
+                        }
 
                         Rectangle {
-                            anchors.left: parent.left
                             anchors.verticalCenter: parent.verticalCenter
-                            height: parent.height
-                            width: Math.max(parent.height, parent.width * Battery.percent / 100)
-                            radius: parent.radius
-                            color: Battery.percent <= 20 && !Battery.charging ? Theme.red : Theme.green
+                            visible: Battery.available
+                            width: 26
+                            height: 13
+                            radius: 6.5
+                            color: Theme.surface1
+
+                            Rectangle {
+                                anchors.left: parent.left
+                                anchors.verticalCenter: parent.verticalCenter
+                                height: parent.height
+                                width: Math.max(parent.height, parent.width * Battery.percent / 100)
+                                radius: parent.radius
+                                color: Battery.percent <= 20 && !Battery.charging ? Theme.red : Theme.green
+                            }
                         }
                     }
                 }
