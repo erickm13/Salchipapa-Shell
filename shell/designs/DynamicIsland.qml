@@ -80,7 +80,7 @@ PanelWindow {
         }
 
         // Tamaños por modo
-        width: mode === "expanded" ? 820 : mode === "notif" ? 430 : mode === "media" ? 370 : mode === "volume" ? 300 : 330
+        width: mode === "expanded" ? 820 : mode === "notif" ? 430 : mode === "media" ? 370 : mode === "volume" ? 300 : 300
         height: mode === "expanded" ? 190 : mode === "notif" ? 74 : mode === "media" ? 58 : mode === "volume" ? 42 : 30
 
         Behavior on width {
@@ -237,34 +237,22 @@ PanelWindow {
                         }
                     }
 
-                    // Batería (barra + %)
-                    Row {
+                    // Batería (cápsula verde, sin %)
+                    Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
-                        spacing: 4
                         visible: Battery.available
+                        width: 26
+                        height: 13
+                        radius: 6.5
+                        color: Theme.surface1
+
                         Rectangle {
-                            width: 20
-                            height: 11
-                            radius: 2
+                            anchors.left: parent.left
                             anchors.verticalCenter: parent.verticalCenter
-                            color: "transparent"
-                            border.color: Theme.overlay0
-                            border.width: 1
-                            Rectangle {
-                                anchors.left: parent.left
-                                anchors.leftMargin: 1
-                                anchors.verticalCenter: parent.verticalCenter
-                                height: 7
-                                width: Math.max(1, (parent.width - 3) * Battery.percent / 100)
-                                radius: 1
-                                color: Battery.charging ? Theme.green : (Battery.percent <= 20 ? Theme.red : Theme.text)
-                            }
-                        }
-                        Text {
-                            text: Battery.percent + "%"
-                            color: Theme.subtext
-                            font.pixelSize: 11
-                            anchors.verticalCenter: parent.verticalCenter
+                            height: parent.height
+                            width: Math.max(parent.height, parent.width * Battery.percent / 100)
+                            radius: parent.radius
+                            color: Battery.percent <= 20 && !Battery.charging ? Theme.red : Theme.green
                         }
                     }
                 }
@@ -827,7 +815,7 @@ PanelWindow {
                 width: barWidth
                 height: wsCell.focused ? baseLen * 2.0 : (wsCell.occupied ? baseLen * 1.7 : baseLen * 1.3)
                 radius: width / 2
-                color: wsCell.focused ? Theme.blue : (wsCell.occupied ? Theme.overlay2 : Theme.surface0)
+                color: wsCell.focused ? Theme.green : (wsCell.occupied ? Theme.overlay2 : Theme.surface0)
 
                 Behavior on height {
                     NumberAnimation {
