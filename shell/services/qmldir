@@ -1,0 +1,6 @@
+singleton Audio Audio.qml
+singleton Media Media.qml
+singleton Battery Battery.qml
+singleton Net Net.qml
+singleton Sys Sys.qml
+singleton Notifs Notifs.qml
