@@ -8,8 +8,6 @@ import Quickshell
 import QtQuick
 import "common"
 import "designs"
-import "launcher"
-import "theme"
 
 ShellRoot {
     // Barra (una por monitor, según el diseño activo)
@@ -38,9 +36,8 @@ ShellRoot {
         }
     }
 
-    // Lanzador de apps (Super+R)
-    Launcher {}
-
-    // Selector de temas (Super+T)
-    ThemeSelector {}
+    // El lanzador (Super+R) y el selector de temas (Super+T) ahora son MODOS de la
+    // Dynamic Island (ver common/Overlay.qml + designs/LauncherContent/ThemeContent).
+    // Forzamos la instancia del singleton Overlay para que registre sus GlobalShortcuts.
+    Component.onCompleted: Overlay.mode
 }
