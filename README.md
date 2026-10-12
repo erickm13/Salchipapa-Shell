@@ -60,16 +60,43 @@ Para volver atrás: borra el symlink y restaura `~/.config/hypr.bak`.
 | `Super + Shift + Print` | Captura del monitor activo |
 | `Super + Shift + Q` | Salir de Hyprland |
 
-## Barra — Dynamic Island (Quickshell)
+## Shell (Quickshell) — modular, con diseños intercambiables
 
-En `shell/shell.qml`, con **Quickshell** (QML/Qt6). Estilo *Dynamic Island* de iPhone:
-píldora flotante centrada arriba.
-- **Compacta** (por defecto): número del workspace activo + reloj.
-- **Expandida** (al pasar el ratón): workspaces clicables, reloj con fecha y título de la ventana
-  activa. Se expande con rebote (curva *expressive* de Material 3).
+La shell está en `shell/`, con **Quickshell** (QML/Qt6). Pensada para tener **varios diseños** de
+barra y elegir cuál usar; hoy hay uno: *Dynamic Island*.
+
+```
+shell/
+├── shell.qml              # entrada: monta 1 barra por monitor con el diseño de Config.design
+├── common/                # Config (diseño activo + ajustes) y Theme (paleta + curvas)
+├── services/              # singletons compartidos por CUALQUIER diseño:
+│   ├── Audio.qml          #   volumen/micro (PipeWire)
+│   ├── Media.qml          #   reproductor activo (MPRIS)
+│   ├── Battery.qml        #   batería (UPower)
+│   ├── Net.qml            #   red (nmcli)
+│   ├── Sys.qml            #   CPU/RAM (/proc)
+│   └── Notifs.qml         #   servidor de notificaciones
+└── designs/
+    └── DynamicIsland.qml  # diseño "island"
+```
+
+**Cambiar de diseño:** edita `design:` en `shell/common/Config.qml`.
+**Añadir un diseño nuevo:** crea `designs/MiBarra.qml` (un `PanelWindow`) y añádelo al `switch` de
+`shell.qml`. Reutiliza los servicios con `import "../services"`.
+
+### Diseño Dynamic Island
+Píldora flotante centrada arriba (estilo iPhone):
+- **Compacta:** workspace activo + reloj, con puntos de *reproduciendo* (verde) y *micro silenciado* (rojo).
+- **Al pasar el ratón → expande** (rebote Material 3): workspaces clicables, reloj con fecha, título
+  de ventana activa y fila de stats (batería, red, CPU, RAM, volumen).
+- **Peeks contextuales** (se asoma sola y vuelve): al cambiar de canción (con controles ◁ ❚❚ ▷|),
+  al subir/bajar volumen (barra de volumen) y al llegar una notificación.
 - Solo la píldora captura el ratón (`mask`); los clics fuera pasan a las ventanas.
-- Probar suelta: `qs -p ~/proyects/Salchipapa-Shell/shell/shell.qml` (se recarga sola al guardar).
-- En la sesión arranca sola desde `conf/autostart.conf`.
+
+> Notificaciones: la shell **es** el servidor de notificaciones, por eso `autostart.conf` **no**
+> lanza dunst (chocarían).
+
+Probar suelta: `qs -p ~/proyects/Salchipapa-Shell/shell/shell.qml` (se recarga sola al guardar).
 
 ## Pendiente
 
