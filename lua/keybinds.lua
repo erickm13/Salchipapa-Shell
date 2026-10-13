@@ -53,6 +53,7 @@ hl.bind("CTRL + SHIFT + Escape", hl.dsp.exec_cmd(v.scratch .. " sysmon btop 'kit
 hl.bind(mod .. " + C", hl.dsp.exec_cmd("code"))                  -- editor (VS Code)
 hl.bind(mod .. " + SHIFT + C", hl.dsp.exec_cmd("hyprpicker -a")) -- selector de color
 hl.bind(mod .. " + BackSpace", hl.dsp.exec_cmd("loginctl lock-session")) -- bloquear
+hl.bind(mod .. " + W", hl.dsp.exec_cmd(v.scripts .. "/wallpaper.sh")) -- fondo aleatorio (+ colores)
 
 -- Scroll sobre el escritorio
 hl.bind(mod .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }))
