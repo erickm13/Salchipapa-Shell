@@ -20,7 +20,7 @@ Item {
     function apply(): void {
         const s = results[sel];
         if (s) {
-            applyProc.command = ["sh", "-c", "caelestia scheme set -n \"$1\" && hyprctl reload", "sh", s.name];
+            applyProc.command = ["sh", "-c", "\"$HOME/proyects/Salchipapa-Shell/scripts/apply-colors.sh\" scheme \"$1\"", "sh", s.name];
             applyProc.running = true;
             Overlay.close();
         }
@@ -40,14 +40,15 @@ Item {
 
     Process {
         id: listProc
-        command: ["caelestia", "scheme", "list"]
+        // Temas GUARDADOS en el repo (ya no depende de caelestia)
+        command: ["sh", "-c", "cat \"$HOME/proyects/Salchipapa-Shell/shell/themes/schemes.json\""]
         stdout: StdioCollector {
             id: listOut
             onStreamFinished: {
                 try {
                     const data = JSON.parse(listOut.text);
                     const roles = ["primary", "secondary", "tertiary", "primaryContainer", "secondaryContainer", "tertiaryContainer", "error"];
-                    root.schemes = Object.keys(data).sort().map(name => {
+                    root.schemes = Object.keys(data).filter(n => n !== "dynamic").sort().map(name => {
                         const c = data[name][Object.keys(data[name])[0]];
                         return {
                             name: name,

@@ -5,7 +5,7 @@
 -- En Lua no hay sustitución hyprlang, así que lo leemos nosotros. Fallback si no existe.
 local function read_scheme()
     local colors = {}
-    local ok, f = pcall(io.open, (os.getenv("HOME") or "") .. "/.config/hypr/scheme/current.conf", "r")
+    local ok, f = pcall(io.open, (os.getenv("HOME") or "") .. "/.local/state/salchipapa-shell/colors.conf", "r")
     if ok and f then
         for line in f:lines() do
             local k, v = line:match("^%$([%w_]+)%s*=%s*(%x+)")

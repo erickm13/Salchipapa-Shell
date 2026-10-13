@@ -9,7 +9,7 @@ Singleton {
     property string current: ""
 
     FileView {
-        path: Quickshell.env("HOME") + "/.local/state/caelestia/wallpaper/path.txt"
+        path: Quickshell.env("HOME") + "/.local/state/salchipapa-shell/wallpaper"
         watchChanges: true
         printErrors: false
         onFileChanged: reload()
