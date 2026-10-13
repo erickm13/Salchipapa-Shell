@@ -5,12 +5,30 @@
 // Probar:  qs -p ~/proyects/Salchipapa-Shell/shell/shell.qml   (recarga sola al guardar)
 
 import Quickshell
+import Quickshell.Hyprland
 import QtQuick
 import "common"
 import "designs"
 import "picker"
 
 ShellRoot {
+    // Quickshell no refresca monitores/workspaces en todos los eventos; forzamos el
+    // refresco en los que importan (p.ej. activespecial) para que la isla reaccione.
+    Connections {
+        target: Hyprland
+        function onRawEvent(event: HyprlandEvent): void {
+            const n = event.name;
+            if (n.endsWith("v2"))
+                return;
+            if (["activespecial", "workspace", "moveworkspace", "focusedmon"].includes(n)) {
+                Hyprland.refreshMonitors();
+                Hyprland.refreshWorkspaces();
+            } else if (["openwindow", "closewindow", "movewindow"].includes(n)) {
+                Hyprland.refreshWorkspaces();
+            }
+        }
+    }
+
     // Barra (una por monitor, según el diseño activo)
     Variants {
         model: Quickshell.screens

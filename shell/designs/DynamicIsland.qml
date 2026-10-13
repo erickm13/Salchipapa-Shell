@@ -884,8 +884,9 @@ PanelWindow {
                 id: sp
                 required property var modelData
                 readonly property string sname: modelData.name.slice(8) // quita "special:"
-                // Resaltado si ESTÁS en ese scratchpad (focusedWorkspace es reactivo, como los ws normales)
-                readonly property bool shown: Hyprland.focusedWorkspace?.name === modelData.name
+                // Resaltado si ese scratchpad se está MOSTRANDO en el monitor (se refresca
+                // en shell.qml al recibir 'activespecial'; si no, lastIpcObject no es reactivo)
+                readonly property bool shown: Hyprland.focusedMonitor?.lastIpcObject?.specialWorkspace?.name === modelData.name
                 // Colores vivos por app (fijos, para que resalten con cualquier tema)
                 readonly property color accent: {
                     switch (sp.sname) {
