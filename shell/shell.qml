@@ -8,6 +8,7 @@ import Quickshell
 import QtQuick
 import "common"
 import "designs"
+import "picker"
 
 ShellRoot {
     // Barra (una por monitor, según el diseño activo)
@@ -40,4 +41,7 @@ ShellRoot {
     // Dynamic Island (ver common/Overlay.qml + designs/LauncherContent/ThemeContent).
     // Forzamos la instancia del singleton Overlay para que registre sus GlobalShortcuts.
     Component.onCompleted: Overlay.mode
+
+    // Captura de región con freeze (Super+Shift+S)
+    AreaPicker {}
 }
