@@ -175,6 +175,11 @@ PanelWindow {
                             baseLen: 7
                             anchors.verticalCenter: parent.verticalCenter
                         }
+                        // Scratchpads activos (música/comms/sysmon…)
+                        SpecialRow {
+                            cell: 16
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
                         Rectangle {
                             width: 7
                             height: 7
@@ -326,9 +331,14 @@ PanelWindow {
                                 MouseArea {
                                     anchors.fill: parent
                                     cursorShape: Qt.PointingHandCursor
-                                    onClicked: Hyprland.dispatch("workspace " + dw.wsId)
+                                    onClicked: Hyprland.dispatch("hl.dsp.focus({workspace=" + dw.wsId + "})")
                                 }
                             }
+                        }
+
+                        // Scratchpads activos (música/comms/sysmon…)
+                        SpecialRow {
+                            cell: 20
                         }
                     }
 
@@ -482,7 +492,7 @@ PanelWindow {
                                 on: island.nightLight
                                 onToggled: {
                                     island.nightLight = !island.nightLight;
-                                    Hyprland.dispatch("exec " + (island.nightLight ? "hyprsunset -t 4000" : "pkill hyprsunset"));
+                                    Hyprland.dispatch("hl.dsp.exec_cmd('" + (island.nightLight ? "hyprsunset -t 4000" : "pkill hyprsunset") + "')");
                                 }
                             }
                             PillButton {
@@ -856,7 +866,61 @@ PanelWindow {
                 MouseArea {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: Hyprland.dispatch("workspace " + wsCell.wsId)
+                    onClicked: Hyprland.dispatch("hl.dsp.focus({workspace=" + wsCell.wsId + "})")
+                }
+            }
+        }
+    }
+
+    // Scratchpads activos (workspaces especiales con ventanas): icono por cada uno,
+    // resaltado si está mostrándose; clic = mostrar/ocultar (como caelestia).
+    component SpecialRow: Row {
+        property int cell: 18
+        spacing: 4
+
+        Repeater {
+            model: Hyprland.workspaces.values.filter(w => w.name.startsWith("special:"))
+            delegate: Rectangle {
+                id: sp
+                required property var modelData
+                readonly property string sname: modelData.name.slice(8) // quita "special:"
+                readonly property bool shown: Hyprland.focusedMonitor?.lastIpcObject?.specialWorkspace?.name === modelData.name
+
+                width: cell + 6
+                height: cell
+                radius: height / 2
+                color: sp.shown ? Theme.green : Theme.surface0
+
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 150
+                    }
+                }
+
+                Text {
+                    anchors.centerIn: parent
+                    font.family: "Material Symbols Rounded"
+                    font.pixelSize: Math.round(cell * 0.72)
+                    color: sp.shown ? Theme.islandBg : Theme.subtext
+                    text: {
+                        switch (sp.sname) {
+                        case "music":
+                            return "music_note";
+                        case "comms":
+                            return "forum";
+                        case "sysmon":
+                            return "monitoring";
+                        case "magic":
+                            return "filter_drama";
+                        default:
+                            return "star";
+                        }
+                    }
+                }
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: Hyprland.dispatch("hl.dsp.workspace.toggle_special('" + sp.sname + "')")
                 }
             }
         }
