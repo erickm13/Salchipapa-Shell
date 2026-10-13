@@ -13,6 +13,7 @@ Item {
     property int sel: 0
     property string query: ""
     property var files: [] // rutas de los wallpapers
+    property bool applyColors: true // switch: generar colores del wallpaper (matugen)
 
     readonly property var results: {
         const q = query.trim().toLowerCase();
@@ -28,7 +29,8 @@ Item {
         if (f) {
             // Cambia el fondo, pone el esquema en 'dynamic' (sigue al wallpaper) y recarga
             // Hyprland (para que el glow de ventanas también tome los colores nuevos).
-            applyProc.command = ["sh", "-c", "caelestia wallpaper -f \"$1\" && caelestia scheme set -n dynamic && hyprctl reload", "sh", f];
+            // wallpaper.sh cambia el fondo y (si el switch está activo) genera los colores con matugen
+            applyProc.command = ["sh", "-c", "\"$HOME/proyects/Salchipapa-Shell/scripts/wallpaper.sh\" \"$1\" \"$2\"", "sh", f, root.applyColors ? "colors" : "nocolors"];
             applyProc.running = true;
             Overlay.close();
         }
@@ -80,7 +82,7 @@ Item {
             id: searchInput
             anchors.left: searchIcon.right
             anchors.leftMargin: 12
-            anchors.right: counter.left
+            anchors.right: colorToggle.left
             anchors.rightMargin: 12
             anchors.verticalCenter: parent.verticalCenter
             color: "#ffffff"
@@ -104,6 +106,50 @@ Item {
             Keys.onEnterPressed: root.apply()
             Keys.onEscapePressed: Overlay.close()
         }
+
+        // Switch: aplicar colores del wallpaper (matugen) sí/no
+        Rectangle {
+            id: colorToggle
+            anchors.right: counter.left
+            anchors.rightMargin: 12
+            anchors.verticalCenter: parent.verticalCenter
+            width: toggleRow.implicitWidth + 16
+            height: 24
+            radius: 12
+            color: root.applyColors ? Theme.green : Theme.surface0
+
+            Behavior on color {
+                ColorAnimation {
+                    duration: 150
+                }
+            }
+
+            Row {
+                id: toggleRow
+                anchors.centerIn: parent
+                spacing: 5
+                Text {
+                    text: "palette"
+                    font.family: "Material Symbols Rounded"
+                    font.pixelSize: 14
+                    color: root.applyColors ? Theme.islandBg : Theme.subtext
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+                Text {
+                    text: "Colores"
+                    color: root.applyColors ? Theme.islandBg : Theme.subtext
+                    font.pixelSize: 11
+                    font.bold: root.applyColors
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+            }
+            MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: root.applyColors = !root.applyColors
+            }
+        }
+
         Text {
             id: counter
             anchors.right: parent.right

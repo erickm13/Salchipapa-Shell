@@ -17,7 +17,7 @@ Singleton {
     }
 
     FileView {
-        path: Quickshell.env("HOME") + "/.local/state/caelestia/scheme.json"
+        path: Quickshell.env("HOME") + "/.local/state/salchipapa-shell/colors.json"
         watchChanges: true
         printErrors: false
         onFileChanged: reload()
