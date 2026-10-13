@@ -39,6 +39,7 @@ Scope {
                 right: true
             }
             WlrLayershell.layer: WlrLayer.Overlay
+            WlrLayershell.namespace: "salchipapa-picker" // para el layerrule de animación (popin)
             WlrLayershell.exclusionMode: ExclusionMode.Ignore
             WlrLayershell.keyboardFocus: root.active ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
