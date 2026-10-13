@@ -20,7 +20,7 @@ Item {
     function apply(): void {
         const s = results[sel];
         if (s) {
-            applyProc.command = ["caelestia", "scheme", "set", "-n", s.name];
+            applyProc.command = ["sh", "-c", "caelestia scheme set -n \"$1\" && hyprctl reload", "sh", s.name];
             applyProc.running = true;
             Overlay.close();
         }

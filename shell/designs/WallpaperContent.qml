@@ -26,7 +26,9 @@ Item {
     function apply(): void {
         const f = results[sel];
         if (f) {
-            applyProc.command = ["caelestia", "wallpaper", "-f", f];
+            // Cambia el fondo, pone el esquema en 'dynamic' (sigue al wallpaper) y recarga
+            // Hyprland (para que el glow de ventanas también tome los colores nuevos).
+            applyProc.command = ["sh", "-c", "caelestia wallpaper -f \"$1\" && caelestia scheme set -n dynamic && hyprctl reload", "sh", f];
             applyProc.running = true;
             Overlay.close();
         }
