@@ -10,8 +10,12 @@ Esta config es solo archivos; **no sustituye** tu sesión actual hasta que tú q
 Para probarla en una sesión Hyprland aparte, desde una TTY libre (`Ctrl+Alt+F3`):
 
 ```sh
-Hyprland -c ~/proyects/Salchipapa-Shell/hyprland.conf
+Hyprland -c ~/proyects/Salchipapa-Shell/hyprland.lua
 ```
+
+> La config está en **Lua** (`hyprland.lua`), el formato nuevo de Hyprland (el `.conf` se
+> elimina en 0.57). Los `hyprland.conf` + `conf/*.conf` se mantienen como respaldo; Hyprland
+> usa el `.lua` si existe.
 
 `Super + Shift + Q` sale de esa sesión de prueba.
 
