@@ -68,11 +68,12 @@ Scope {
                 }
                 const geom = Math.round(rw) + "x" + Math.round(rh) + "+" + Math.round(rx) + "+" + Math.round(ry);
                 freezeLoader.item.grabToImage(function (result) {
-                    const tmp = "/tmp/salchipapa-freeze.png";
+                    // BMP: codificar/leer es mucho más rápido que PNG para la pantalla completa
+                    const tmp = "/tmp/salchipapa-freeze.bmp";
                     result.saveToFile(tmp);
+                    root.active = false; // cierra el freeze YA; el recorte+swappy van en segundo plano
                     const out = Quickshell.env("HOME") + "/Pictures/Screenshots/" + Qt.formatDateTime(new Date(), "yyyy-MM-dd_HH-mm-ss") + ".png";
                     Quickshell.execDetached(["sh", "-c", "mkdir -p ~/Pictures/Screenshots; magick " + tmp + " -crop " + geom + " +repage \"" + out + "\"; wl-copy -t image/png < \"" + out + "\"; swappy -f \"" + out + "\""]);
-                    root.active = false;
                 });
             }
 
