@@ -885,11 +885,25 @@ PanelWindow {
                 required property var modelData
                 readonly property string sname: modelData.name.slice(8) // quita "special:"
                 readonly property bool shown: Hyprland.focusedMonitor?.lastIpcObject?.specialWorkspace?.name === modelData.name
+                readonly property color accent: {
+                    switch (sp.sname) {
+                    case "music":
+                        return Theme.green;
+                    case "comms":
+                        return Theme.blue;
+                    case "sysmon":
+                        return Theme.peach;
+                    case "magic":
+                        return Theme.yellow;
+                    default:
+                        return Theme.mauve;
+                    }
+                }
 
                 width: cell + 6
                 height: cell
                 radius: height / 2
-                color: sp.shown ? Theme.green : Theme.surface0
+                color: sp.shown ? sp.accent : Qt.alpha(sp.accent, 0.18)
 
                 Behavior on color {
                     ColorAnimation {
@@ -901,7 +915,7 @@ PanelWindow {
                     anchors.centerIn: parent
                     font.family: "Material Symbols Rounded"
                     font.pixelSize: Math.round(cell * 0.72)
-                    color: sp.shown ? Theme.islandBg : Theme.subtext
+                    color: sp.shown ? Theme.islandBg : sp.accent
                     text: {
                         switch (sp.sname) {
                         case "music":
