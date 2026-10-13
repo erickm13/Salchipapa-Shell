@@ -84,8 +84,8 @@ PanelWindow {
         }
 
         // Tamaños por modo
-        width: mode === "launcher" ? 560 : mode === "themes" ? 720 : mode === "expanded" ? 820 : mode === "notif" ? 430 : mode === "media" ? 370 : mode === "volume" ? 300 : (idleRow.implicitWidth + 28)
-        height: mode === "launcher" ? 440 : mode === "themes" ? 210 : mode === "expanded" ? 190 : mode === "notif" ? 74 : mode === "media" ? 58 : mode === "volume" ? 42 : 30
+        width: mode === "launcher" ? 560 : mode === "themes" ? 720 : mode === "wallpaper" ? 760 : mode === "expanded" ? 820 : mode === "notif" ? 430 : mode === "media" ? 370 : mode === "volume" ? 300 : (idleRow.implicitWidth + 28)
+        height: mode === "launcher" ? 440 : mode === "themes" ? 210 : mode === "wallpaper" ? 230 : mode === "expanded" ? 190 : mode === "notif" ? 74 : mode === "media" ? 58 : mode === "volume" ? 42 : 30
 
         Behavior on width {
             NumberAnimation {
@@ -139,7 +139,7 @@ PanelWindow {
         Rectangle {
             id: pill
             anchors.fill: parent
-            radius: (island.mode === "expanded" || island.mode === "launcher" || island.mode === "themes") ? 26 : height / 2
+            radius: (island.mode === "expanded" || island.mode === "launcher" || island.mode === "themes" || island.mode === "wallpaper") ? 26 : height / 2
             color: Theme.islandBg
             border.color: Theme.islandBorder
             border.width: 1
@@ -812,6 +812,19 @@ PanelWindow {
                 anchors.fill: parent
                 anchors.margins: 8
                 opacity: island.mode === "themes" ? 1 : 0
+                visible: opacity > 0
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 160
+                    }
+                }
+            }
+
+            // ---------- wallpaper (selector de fondos dentro de la isla) ----------
+            WallpaperContent {
+                anchors.fill: parent
+                anchors.margins: 8
+                opacity: island.mode === "wallpaper" ? 1 : 0
                 visible: opacity > 0
                 Behavior on opacity {
                     NumberAnimation {
