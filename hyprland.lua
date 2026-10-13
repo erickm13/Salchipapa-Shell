@@ -160,6 +160,12 @@ hl.window_rule({ match = { fullscreen = true }, no_shadow = true })
 -- El areapicker (freeze) aparece desde el CENTRO con escala (popin), no deslizando
 hl.layer_rule({ match = { namespace = "salchipapa-picker" }, animation = "popin 80%" })
 
+-- Apps en workspaces especiales (scratchpads, como caelestia)
+hl.window_rule({ match = { class = "Spotify|spotify" }, workspace = "special:music" })
+hl.window_rule({ match = { initial_title = "Spotify( Free)?" }, workspace = "special:music" }) -- Spotify Wayland no tiene class
+hl.window_rule({ match = { class = "vesktop|discord|legcord|equibop|WebCord" }, workspace = "special:comms" })
+hl.window_rule({ match = { class = "btop" }, workspace = "special:sysmon" })
+
 ----------------------------------------------------------------------
 -- Keybinds
 ----------------------------------------------------------------------
@@ -204,6 +210,17 @@ end
 -- Scratchpad
 hl.bind(mod .. " + S", hl.dsp.workspace.toggle_special("magic"))
 hl.bind(mod .. " + ALT + S", hl.dsp.window.move({ workspace = "special:magic" }))
+
+-- Apps en scratchpad (como caelestia): lanzan la app si no está, o alternan su special
+local scratch = scripts .. "/scratch.sh"
+hl.bind(mod .. " + M", hl.dsp.exec_cmd(scratch .. " music 'Spotify|spotify' spotify"))          -- música (Spotify)
+hl.bind(mod .. " + D", hl.dsp.exec_cmd(scratch .. " comms 'vesktop|discord' vesktop"))          -- comunicación (Vencord/vesktop)
+hl.bind("CTRL + SHIFT + Escape", hl.dsp.exec_cmd(scratch .. " sysmon btop 'kitty --class btop -e btop'")) -- monitor (btop)
+
+-- Apps y utilidades
+hl.bind(mod .. " + C", hl.dsp.exec_cmd("code"))                 -- editor (VS Code)
+hl.bind(mod .. " + SHIFT + C", hl.dsp.exec_cmd("hyprpicker -a")) -- selector de color
+hl.bind(mod .. " + BackSpace", hl.dsp.exec_cmd("loginctl lock-session")) -- bloquear
 
 -- Scroll sobre el escritorio
 hl.bind(mod .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }))
