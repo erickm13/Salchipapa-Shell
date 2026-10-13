@@ -13,9 +13,8 @@ Para probarla en una sesión Hyprland aparte, desde una TTY libre (`Ctrl+Alt+F3`
 Hyprland -c ~/proyects/Salchipapa-Shell/hyprland.lua
 ```
 
-> La config está en **Lua** (`hyprland.lua`), el formato nuevo de Hyprland (el `.conf` se
-> elimina en 0.57). Los `hyprland.conf` + `conf/*.conf` se mantienen como respaldo; Hyprland
-> usa el `.lua` si existe.
+> La config está en **Lua** (`hyprland.lua` + módulos en `lua/`), el formato nuevo de Hyprland
+> (el `.conf` se elimina en 0.57).
 
 `Super + Shift + Q` sale de esa sesión de prueba.
 
@@ -34,17 +33,19 @@ Para volver atrás: borra el symlink y restaura `~/.config/hypr.bak`.
 
 | Archivo | Qué contiene |
 |---|---|
-| `hyprland.conf` | Entrada: variables (`$mod`, `$terminal`…) y `source` del resto |
-| `conf/monitors.conf` | Monitores |
-| `conf/env.conf` | Variables de entorno (Wayland, Qt, cursor) |
-| `conf/general.conf` | Gaps, borde, layout (dwindle) |
-| `conf/decoration.conf` | Redondeo, blur, sombra |
-| `conf/animations.conf` | Curvas bezier Material 3 y animaciones |
-| `conf/input.conf` | Teclado, touchpad, gestos |
-| `conf/windowrules.conf` | Reglas de ventana |
-| `conf/keybinds.conf` | Atajos |
-| `conf/autostart.conf` | Arranque (polkit, dunst, barra…) |
-| `shell/shell.qml` | Barra (Quickshell): workspaces, ventana activa, reloj |
+| `hyprland.lua` | Entrada: solo hace `require()` de los módulos de `lua/` |
+| `lua/vars.lua` | Variables y colores del tema compartidos |
+| `lua/monitors.lua` | Monitores |
+| `lua/env.lua` | Variables de entorno (Wayland, Qt, cursor) |
+| `lua/general.lua` | Gaps, borde (acento del tema), layout (dwindle) |
+| `lua/decoration.lua` | Redondeo, blur, sombra/glow del tema |
+| `lua/animations.lua` | Curvas bezier Material 3 y animaciones |
+| `lua/input.lua` | Teclado, touchpad, gestos |
+| `lua/windowrules.lua` | Reglas de ventana y de capas (incl. scratchpads) |
+| `lua/keybinds.lua` | Atajos |
+| `lua/autostart.lua` | Arranque (polkit, barra Quickshell) |
+| `scripts/` | Scripts (capturas, areapicker helper, scratchpads) |
+| `shell/` | La shell de Quickshell (isla, launcher, temas, picker) |
 
 ## Atajos principales
 
