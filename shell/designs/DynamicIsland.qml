@@ -885,25 +885,26 @@ PanelWindow {
                 required property var modelData
                 readonly property string sname: modelData.name.slice(8) // quita "special:"
                 readonly property bool shown: Hyprland.focusedMonitor?.lastIpcObject?.specialWorkspace?.name === modelData.name
+                // Colores vivos por app (fijos, para que resalten con cualquier tema)
                 readonly property color accent: {
                     switch (sp.sname) {
                     case "music":
-                        return Theme.green;
+                        return "#1ed760"; // verde Spotify
                     case "comms":
-                        return Theme.blue;
+                        return "#5865f2"; // azul Discord
                     case "sysmon":
-                        return Theme.peach;
+                        return "#fab387"; // melocotón
                     case "magic":
-                        return Theme.yellow;
+                        return "#cba6f7"; // malva
                     default:
-                        return Theme.mauve;
+                        return "#89b4fa";
                     }
                 }
 
                 width: cell + 6
                 height: cell
                 radius: height / 2
-                color: sp.shown ? sp.accent : Qt.alpha(sp.accent, 0.18)
+                color: sp.shown ? sp.accent : Qt.rgba(sp.accent.r, sp.accent.g, sp.accent.b, 0.22)
 
                 Behavior on color {
                     ColorAnimation {
