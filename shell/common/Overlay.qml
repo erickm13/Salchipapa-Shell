@@ -7,7 +7,7 @@ import Quickshell.Hyprland
 Singleton {
     id: root
 
-    // "" = nada; "launcher" o "themes" = la isla muestra ese modo
+    // "" = nada; "launcher" | "themes" | "wallpaper" = la isla muestra ese modo
     property string mode: ""
 
     function close(): void {
@@ -25,5 +25,11 @@ Singleton {
         name: "themes"
         description: "Abrir/cerrar el selector de temas (dentro de la isla)"
         onPressed: root.mode = root.mode === "themes" ? "" : "themes"
+    }
+    GlobalShortcut {
+        appid: "salchipapa"
+        name: "wallpaper"
+        description: "Abrir/cerrar el selector de fondos (dentro de la isla)"
+        onPressed: root.mode = root.mode === "wallpaper" ? "" : "wallpaper"
     }
 }
