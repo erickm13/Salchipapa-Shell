@@ -44,6 +44,9 @@ PanelWindow {
         // Modo efectivo: overlay (launcher/themes) manda; luego hover; luego peek; luego idle
         readonly property string mode: Overlay.mode !== "" ? Overlay.mode : (hovered ? "expanded" : (peek !== "" ? peek : "idle"))
 
+        // ¿Hay un scratchpad (workspace especial) mostrándose ahora?
+        readonly property bool inSpecial: (Hyprland.focusedMonitor?.lastIpcObject?.specialWorkspace?.name ?? "") !== ""
+
         // Datos del peek de notificación
         property string notifApp: ""
         property string notifText: ""
@@ -174,6 +177,7 @@ PanelWindow {
                             barWidth: 7
                             baseLen: 7
                             anchors.verticalCenter: parent.verticalCenter
+                            visible: !island.inSpecial // ocultar ws normales si estás en un scratchpad
                         }
                         // Scratchpads activos (música/comms/sysmon…)
                         SpecialRow {
@@ -303,7 +307,9 @@ PanelWindow {
                                 readonly property bool occupied: Hyprland.workspaces.values.some(w => w.id === wsId)
 
                                 width: leftCol.width
-                                height: 17
+                                height: island.inSpecial ? 0 : 17
+                                visible: !island.inSpecial // ocultar ws normales si estás en un scratchpad
+                                clip: true
 
                                 Rectangle {
                                     id: dwBar
