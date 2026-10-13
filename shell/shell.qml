@@ -10,8 +10,12 @@ import QtQuick
 import "common"
 import "designs"
 import "picker"
+import "background"
 
 ShellRoot {
+    // Fondo de pantalla (capa Background, por monitor)
+    Background {}
+
     // Quickshell no refresca monitores/workspaces en todos los eventos; forzamos el
     // refresco en los que importan (p.ej. activespecial) para que la isla reaccione.
     Connections {
