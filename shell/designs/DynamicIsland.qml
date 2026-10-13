@@ -89,14 +89,14 @@ PanelWindow {
 
         Behavior on width {
             NumberAnimation {
-                duration: 480
+                duration: 680
                 easing.type: Easing.BezierSpline
                 easing.bezierCurve: Theme.spring
             }
         }
         Behavior on height {
             NumberAnimation {
-                duration: 480
+                duration: 680
                 easing.type: Easing.BezierSpline
                 easing.bezierCurve: Theme.spring
             }
@@ -146,7 +146,7 @@ PanelWindow {
 
             Behavior on radius {
                 NumberAnimation {
-                    duration: 300
+                    duration: 450
                     easing.type: Easing.OutCubic
                 }
             }
