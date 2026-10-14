@@ -20,7 +20,7 @@ PanelWindow {
     }
     implicitHeight: 470
     WlrLayershell.layer: WlrLayer.Top
-    WlrLayershell.keyboardFocus: Overlay.mode !== "" ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+    WlrLayershell.keyboardFocus: Overlay.mode !== "" ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
     exclusiveZone: 34 + Config.topMargin
 
     // Solo la píldora captura el ratón; el resto deja pasar los clics
