@@ -289,5 +289,42 @@ if command -v gsettings >/dev/null; then
         gsettings set org.gnome.desktop.interface gtk-theme "$gt" 2>/dev/null || true
     fi
 fi
-# kitty: recargar config en vivo
-pkill -USR1 -x kitty 2>/dev/null || true
+# KDE (Dolphin, Kate, Gwenview…): notificar cambio de paleta -> recargan en vivo
+if command -v dbus-send >/dev/null; then
+    dbus-send --session --type=signal /KGlobalSettings org.kde.KGlobalSettings.notifyChange int32:0 int32:0 2>/dev/null || true
+fi
+
+# Terminales (kitty, foot, cualquier terminal): colores en vivo por secuencias OSC
+# (fg=OSC10, bg=OSC11, cursor=OSC12, paleta 0-15=OSC4). Se guardan para las nuevas terminales.
+term_sequences() {
+    local esc st
+    esc=$'\033'
+    st=$'\033\\'
+    printf '%s]10;#%s%s' "$esc" "$(c onBackground)" "$st"
+    printf '%s]11;#%s%s' "$esc" "$(c background)" "$st"
+    printf '%s]12;#%s%s' "$esc" "$(c primary)" "$st"
+    local roles=(surfaceContainerLowest error tertiary secondary primary tertiary secondary onSurfaceVariant outline error tertiary secondary primary tertiary secondary onBackground)
+    local i
+    for i in $(seq 0 15); do
+        printf '%s]4;%d;#%s%s' "$esc" "$i" "$(c "${roles[$i]}")" "$st"
+    done
+}
+seqs=$(term_sequences)
+printf '%s' "$seqs" >"$state/sequences.txt"
+# Aplicar a las terminales abiertas (pts que podemos escribir)
+for pts in /dev/pts/*; do
+    [ -w "$pts" ] && printf '%s' "$seqs" >"$pts" 2>/dev/null || true
+done
+
+# conf.d de fish para que las terminales NUEVAS apliquen los colores al abrir
+fconf="$HOME/.config/fish/conf.d/salchipapa-sequences.fish"
+if [ -d "$HOME/.config/fish" ] && [ ! -f "$fconf" ]; then
+    mkdir -p "$HOME/.config/fish/conf.d"
+    cat >"$fconf" <<'FISH'
+# Colores de terminal (OSC) de Salchipapa-Shell — aplicados al abrir una shell interactiva
+if status is-interactive
+    and test -f "$HOME/.local/state/salchipapa-shell/sequences.txt"
+    cat "$HOME/.local/state/salchipapa-shell/sequences.txt"
+end
+FISH
+fi
