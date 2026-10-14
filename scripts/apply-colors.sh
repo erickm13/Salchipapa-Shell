@@ -82,6 +82,29 @@ gtk_css() {
 @define-color sidebar_fg_color #$(c onSurface);
 @define-color sidebar_backdrop_color #$(c surface);
 @define-color sidebar_border_color #$(c outlineVariant);
+
+/* Nombres clásicos GTK3 (Adwaita) — los usan Thunar, Nemo y demás apps GTK3 */
+@define-color theme_bg_color #$(c background);
+@define-color theme_fg_color #$(c onBackground);
+@define-color theme_base_color #$(c surfaceContainerLowest);
+@define-color theme_text_color #$(c onSurface);
+@define-color theme_selected_bg_color #$(c primary);
+@define-color theme_selected_fg_color #$(c onPrimary);
+@define-color theme_unfocused_bg_color #$(c background);
+@define-color theme_unfocused_fg_color #$(c onBackground);
+@define-color theme_unfocused_base_color #$(c surfaceContainerLowest);
+@define-color theme_unfocused_text_color #$(c onSurface);
+@define-color theme_unfocused_selected_bg_color #$(c primary);
+@define-color theme_unfocused_selected_fg_color #$(c onPrimary);
+@define-color insensitive_bg_color #$(c surface);
+@define-color insensitive_fg_color #$(c onSurfaceVariant);
+@define-color insensitive_base_color #$(c surface);
+@define-color theme_tooltip_bg_color #$(c surfaceContainer);
+@define-color theme_tooltip_fg_color #$(c onSurface);
+@define-color borders #$(c outlineVariant);
+@define-color unfocused_borders #$(c outlineVariant);
+@define-color wm_bg #$(c surfaceContainerLow);
+@define-color wm_title #$(c onSurface);
 EOF
 }
 
@@ -298,12 +321,17 @@ fi
 # GTK: toggle del tema para que las apps relean gtk.css (GTK3 en vivo; GTK4/libadwaita
 # a veces necesita reabrir la ventana).
 if command -v gsettings >/dev/null; then
-    gt=$(gsettings get org.gnome.desktop.interface gtk-theme 2>/dev/null | tr -d "'")
-    if [ -n "$gt" ]; then
-        gsettings set org.gnome.desktop.interface gtk-theme "Adwaita" 2>/dev/null || true
+    # Toggle del gtk-theme en los schemas disponibles (GNOME y Cinnamon/Nemo).
+    toggle_theme() { # $1=schema
+        local cur
+        cur=$(gsettings get "$1" gtk-theme 2>/dev/null | tr -d "'")
+        [ -z "$cur" ] && return
+        gsettings set "$1" gtk-theme "Adwaita" 2>/dev/null || true
         sleep 0.4 # dar tiempo a que las apps GTK registren el cambio y relean gtk.css
-        gsettings set org.gnome.desktop.interface gtk-theme "$gt" 2>/dev/null || true
-    fi
+        gsettings set "$1" gtk-theme "$cur" 2>/dev/null || true
+    }
+    toggle_theme org.gnome.desktop.interface
+    gsettings list-schemas 2>/dev/null | grep -qx org.cinnamon.desktop.interface && toggle_theme org.cinnamon.desktop.interface
 fi
 # KDE (Dolphin, Kate, Gwenview…): notificar cambio de paleta -> recargan en vivo
 if command -v dbus-send >/dev/null; then
