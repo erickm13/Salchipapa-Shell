@@ -4,7 +4,7 @@ local mod = v.mod
 
 -- Apps y shell
 hl.bind(mod .. " + Return", hl.dsp.exec_cmd(v.terminal))
-hl.bind(mod .. " + R", hl.dsp.global("salchipapa:launcher"))
+hl.bind(mod .. " + Space", hl.dsp.global("salchipapa:launcher"))
 hl.bind(mod .. " + T", hl.dsp.global("salchipapa:themes"))
 hl.bind(mod .. " + B", hl.dsp.exec_cmd(v.browser))
 hl.bind(mod .. " + E", hl.dsp.exec_cmd(v.fileManager))
