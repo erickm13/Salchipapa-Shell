@@ -48,8 +48,12 @@ echo "{\"colours\": $pal}" | jq '.' >"$state/colors.json"
 # Estado para Hyprland/Lua ($clave = hex)
 echo "$pal" | jq -r 'to_entries[] | "$\(.key) = \(.value)"' >"$state/colors.conf"
 
+# Cargar TODA la paleta en memoria de una sola vez (1 jq, no ~190). Antes `c()` lanzaba
+# un jq por cada rol -> era el grueso del tiempo. Ahora lee de un array asociativo.
+declare -A COL
+while IFS=$'\t' read -r _k _v; do COL[$_k]=$_v; done < <(echo "$pal" | jq -r 'to_entries[] | "\(.key)\t\(.value)"')
 # Helper: valor de un rol (hex sin #), con fallback gris
-c() { echo "$pal" | jq -r --arg k "$1" '.[$k] // "808080"'; }
+c() { printf '%s' "${COL[$1]:-808080}"; }
 
 # ------------------------------------------------------------------ GTK 3 / 4
 gtk_css() {
@@ -363,17 +367,23 @@ fi
 # GTK: toggle del tema para que las apps relean gtk.css (GTK3 en vivo; GTK4/libadwaita
 # a veces necesita reabrir la ventana).
 if command -v gsettings >/dev/null; then
-    # Toggle del gtk-theme en los schemas disponibles (GNOME y Cinnamon/Nemo).
-    toggle_theme() { # $1=schema
-        local cur
-        cur=$(gsettings get "$1" gtk-theme 2>/dev/null | tr -d "'")
-        [ -z "$cur" ] && return
-        gsettings set "$1" gtk-theme "Adwaita" 2>/dev/null || true
-        sleep 0.4 # dar tiempo a que las apps GTK registren el cambio y relean gtk.css
-        gsettings set "$1" gtk-theme "$cur" 2>/dev/null || true
-    }
-    toggle_theme org.gnome.desktop.interface
-    gsettings list-schemas 2>/dev/null | grep -qx org.cinnamon.desktop.interface && toggle_theme org.cinnamon.desktop.interface
+    # Toggle de gtk-theme (GNOME + Cinnamon/Nemo) para que relean gtk.css. UNA sola
+    # pausa para todos los schemas (antes era una por schema -> el doble de lento).
+    schemas="org.gnome.desktop.interface"
+    gsettings list-schemas 2>/dev/null | grep -qx org.cinnamon.desktop.interface &&
+        schemas="$schemas org.cinnamon.desktop.interface"
+    saved=""
+    for s in $schemas; do
+        cur=$(gsettings get "$s" gtk-theme 2>/dev/null | tr -d "'")
+        [ -n "$cur" ] || continue
+        saved="$saved$s=$cur
+"
+        gsettings set "$s" gtk-theme "Adwaita" 2>/dev/null || true
+    done
+    sleep 0.4 # que las apps GTK registren el cambio y relean gtk.css
+    printf '%s' "$saved" | while IFS='=' read -r s v; do
+        [ -n "$s" ] && gsettings set "$s" gtk-theme "$v" 2>/dev/null || true
+    done
 fi
 # (El refresco del tema de ICONOS por el nuevo color de carpeta va en el bloque de
 #  segundo plano del final, tras papirus-folders.)
