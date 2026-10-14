@@ -285,6 +285,7 @@ if command -v gsettings >/dev/null; then
     gt=$(gsettings get org.gnome.desktop.interface gtk-theme 2>/dev/null | tr -d "'")
     if [ -n "$gt" ]; then
         gsettings set org.gnome.desktop.interface gtk-theme "Adwaita" 2>/dev/null || true
+        sleep 0.4 # dar tiempo a que las apps GTK registren el cambio y relean gtk.css
         gsettings set org.gnome.desktop.interface gtk-theme "$gt" 2>/dev/null || true
     fi
 fi
