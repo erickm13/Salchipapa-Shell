@@ -350,9 +350,8 @@ for name, hx in cols.items():
 print(best)
 PY
 )
-    if [ -n "$folder_color" ]; then
-        sudo -n papirus-folders -C "$folder_color" -t Papirus-Dark -u >/dev/null 2>&1 || true
-    fi
+    # El cambio real (papirus-folders -u, ~4s) se hace AL FINAL en segundo plano,
+    # para no retrasar el recoloreado de las apps (Thunar/terminal/shell).
 fi
 
 # Recargar Hyprland para el glow (si hay sesión)
@@ -375,23 +374,9 @@ if command -v gsettings >/dev/null; then
     }
     toggle_theme org.gnome.desktop.interface
     gsettings list-schemas 2>/dev/null | grep -qx org.cinnamon.desktop.interface && toggle_theme org.cinnamon.desktop.interface
-    # Refrescar el tema de ICONOS (para el nuevo color de carpeta) con el mismo truco.
-    toggle_icons() { # $1=schema
-        local cur
-        cur=$(gsettings get "$1" icon-theme 2>/dev/null | tr -d "'")
-        [ -z "$cur" ] && return
-        gsettings set "$1" icon-theme "Adwaita" 2>/dev/null || true
-        sleep 0.3
-        gsettings set "$1" icon-theme "$cur" 2>/dev/null || true
-    }
-    toggle_icons org.gnome.desktop.interface
-    gsettings list-schemas 2>/dev/null | grep -qx org.cinnamon.desktop.interface && toggle_icons org.cinnamon.desktop.interface
 fi
-# KDE (Dolphin, Kate, Gwenview…): notificar cambio de paleta -> recargan en vivo
-if command -v dbus-send >/dev/null; then
-    dbus-send --session --type=signal /KGlobalSettings org.kde.KGlobalSettings.notifyChange int32:0 int32:0 2>/dev/null || true # 0 = paleta
-    dbus-send --session --type=signal /KGlobalSettings org.kde.KGlobalSettings.notifyChange int32:4 int32:0 2>/dev/null || true # 4 = iconos
-fi
+# (El refresco del tema de ICONOS por el nuevo color de carpeta va en el bloque de
+#  segundo plano del final, tras papirus-folders.)
 
 # Terminales (kitty, foot, cualquier terminal): colores en vivo por secuencias OSC
 # (fg=OSC10, bg=OSC11, cursor=OSC12, paleta 0-15=OSC4). Se guardan para las nuevas terminales.
@@ -426,4 +411,24 @@ if status is-interactive
     cat "$HOME/.local/state/salchipapa-shell/sequences.txt"
 end
 FISH
+fi
+
+# -------------------------------- Color de carpeta Papirus (en SEGUNDO PLANO) --------------------------------
+# papirus-folders -u tarda ~4s (reconstruye la caché de iconos). Lo dejamos para el final
+# y desacoplado con setsid, para que el recoloreado de Thunar/terminal/shell sea instantáneo.
+# Cuando termina, refresca el tema de iconos de las apps GTK (toggle de icon-theme) para que
+# Thunar/Nemo repinten las carpetas con el color nuevo.
+if [ -n "${folder_color:-}" ]; then
+    bg_folders() {
+        sudo -n papirus-folders -C "$folder_color" -t Papirus-Dark -u >/dev/null 2>&1 || return
+        command -v gsettings >/dev/null || return
+        for sch in org.gnome.desktop.interface org.cinnamon.desktop.interface; do
+            cur=$(gsettings get "$sch" icon-theme 2>/dev/null | tr -d "'") || continue
+            [ -z "$cur" ] && continue
+            gsettings set "$sch" icon-theme Adwaita 2>/dev/null || true
+            sleep 0.3
+            gsettings set "$sch" icon-theme "$cur" 2>/dev/null || true
+        done
+    }
+    setsid -f sh -c "$(declare -f bg_folders); folder_color='$folder_color' bg_folders" >/dev/null 2>&1
 fi
