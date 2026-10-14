@@ -426,7 +426,9 @@ bg_nudges() {
         dbus-send --session --type=signal /KGlobalSettings org.kde.KGlobalSettings.notifyChange int32:0 int32:0 2>/dev/null || true
 
     # Color de carpeta Papirus (si hay regla sudoers) + refresco del tema de iconos.
-    if [ -n "$folder_color" ] && sudo -n papirus-folders -C "$folder_color" -t Papirus-Dark >/dev/null 2>&1; then
+    # -u reconstruye icon-theme.cache: sin ella las apps GTK siguen mostrando el
+    # icono de carpeta viejo cacheado. Va en 2º plano, así su coste (~2s) no molesta.
+    if [ -n "$folder_color" ] && sudo -n papirus-folders -C "$folder_color" -t Papirus-Dark -u >/dev/null 2>&1; then
         if command -v gsettings >/dev/null; then
             toggle_key org.gnome.desktop.interface icon-theme Adwaita
             gsettings list-schemas 2>/dev/null | grep -qx org.cinnamon.desktop.interface &&
@@ -436,4 +438,4 @@ bg_nudges() {
             dbus-send --session --type=signal /KGlobalSettings org.kde.KGlobalSettings.notifyChange int32:4 int32:0 2>/dev/null || true
     fi
 }
-setsid -f sh -c "$(declare -f bg_nudges); folder_color='${folder_color:-}' bg_nudges" >/dev/null 2>&1 &
+setsid -f sh -c "$(declare -f bg_nudges); folder_color='${folder_color:-}' bg_nudges" >/dev/null 2>&1
