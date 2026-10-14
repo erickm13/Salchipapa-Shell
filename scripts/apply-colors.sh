@@ -312,6 +312,49 @@ progress_error = { fg = "red", bg = "black" }
 EOF
 fi
 
+# ------------------------------------------------- Iconos de carpeta (Papirus)
+# Papirus está en /usr/share (de root). Para teñir las carpetas con el tema hace
+# falta una regla sudoers acotada (ver README / instalar-papirus-sudo):
+#   <usuario> ALL=(root) NOPASSWD: /usr/bin/papirus-folders
+# Si esa regla existe, elegimos el color Papirus más cercano al 'primary' y lo
+# aplicamos sin contraseña. Si no, se omite en silencio (no rompe nada).
+if command -v papirus-folders >/dev/null && [ -d /usr/share/icons/Papirus-Dark ] &&
+    sudo -n papirus-folders -V >/dev/null 2>&1; then
+    folder_color=$(python3 - "$(c primary)" 2>/dev/null <<'PY'
+import sys, colorsys
+hexv = sys.argv[1].lstrip('#')
+r, g, b = (int(hexv[i:i + 2], 16) / 255 for i in (0, 2, 4))
+_, L, S = colorsys.rgb_to_hls(r, g, b)
+H = colorsys.rgb_to_hls(r, g, b)[0] * 360
+cols = {
+    'adwaita': '#3367d6', 'black': '#4d4d4d', 'blue': '#5294e2', 'bluegrey': '#607d8b',
+    'breeze': '#3daee9', 'brown': '#ae8e6c', 'carmine': '#b0282d', 'cyan': '#00bcd4',
+    'darkcyan': '#00838f', 'deeporange': '#ff7043', 'green': '#87b158', 'grey': '#8a8a8a',
+    'indigo': '#5c6bc0', 'magenta': '#d81b60', 'nordic': '#81a1c1', 'orange': '#ff9800',
+    'palebrown': '#c5a880', 'paleorange': '#ffb067', 'pink': '#f06292', 'red': '#e25252',
+    'teal': '#16a085', 'violet': '#8c6dd0', 'white': '#d3d3d3', 'yaru': '#e95420', 'yellow': '#e4b400',
+}
+def hls(hx):
+    hx = hx.lstrip('#'); rr, gg, bb = (int(hx[i:i + 2], 16) / 255 for i in (0, 2, 4))
+    return colorsys.rgb_to_hls(rr, gg, bb)
+best, bd = 'blue', 1e9
+for name, hx in cols.items():
+    hh, ll, ss = hls(hx); HH = hh * 360
+    dh = abs(H - HH); dh = min(dh, 360 - dh)
+    if S < 0.12:  # tema casi gris -> favorece tonos neutros
+        score = abs(L - ll) * 120 + ss * 220
+    else:  # manda el MATIZ (tono); la saturación/luminosidad solo desempatan
+        score = dh * 1.0 + abs(S - ss) * 25 + abs(L - ll) * 15
+    if score < bd:
+        bd = score; best = name
+print(best)
+PY
+)
+    if [ -n "$folder_color" ]; then
+        sudo -n papirus-folders -C "$folder_color" -t Papirus-Dark -u >/dev/null 2>&1 || true
+    fi
+fi
+
 # Recargar Hyprland para el glow (si hay sesión)
 if command -v hyprctl >/dev/null && [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
     hyprctl reload >/dev/null 2>&1 || true
@@ -332,10 +375,22 @@ if command -v gsettings >/dev/null; then
     }
     toggle_theme org.gnome.desktop.interface
     gsettings list-schemas 2>/dev/null | grep -qx org.cinnamon.desktop.interface && toggle_theme org.cinnamon.desktop.interface
+    # Refrescar el tema de ICONOS (para el nuevo color de carpeta) con el mismo truco.
+    toggle_icons() { # $1=schema
+        local cur
+        cur=$(gsettings get "$1" icon-theme 2>/dev/null | tr -d "'")
+        [ -z "$cur" ] && return
+        gsettings set "$1" icon-theme "Adwaita" 2>/dev/null || true
+        sleep 0.3
+        gsettings set "$1" icon-theme "$cur" 2>/dev/null || true
+    }
+    toggle_icons org.gnome.desktop.interface
+    gsettings list-schemas 2>/dev/null | grep -qx org.cinnamon.desktop.interface && toggle_icons org.cinnamon.desktop.interface
 fi
 # KDE (Dolphin, Kate, Gwenview…): notificar cambio de paleta -> recargan en vivo
 if command -v dbus-send >/dev/null; then
-    dbus-send --session --type=signal /KGlobalSettings org.kde.KGlobalSettings.notifyChange int32:0 int32:0 2>/dev/null || true
+    dbus-send --session --type=signal /KGlobalSettings org.kde.KGlobalSettings.notifyChange int32:0 int32:0 2>/dev/null || true # 0 = paleta
+    dbus-send --session --type=signal /KGlobalSettings org.kde.KGlobalSettings.notifyChange int32:4 int32:0 2>/dev/null || true # 4 = iconos
 fi
 
 # Terminales (kitty, foot, cualquier terminal): colores en vivo por secuencias OSC
