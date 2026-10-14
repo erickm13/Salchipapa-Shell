@@ -124,13 +124,10 @@ EOF
     fi
 fi
 
-# ------------------------------------------------------------------ Qt (qtengine)
-qdir="$HOME/.config/qtengine"
-if [ -d "$qdir" ]; then
-    cat >"$qdir/salchipapa.colors" <<EOF
-[General]
-Name=Salchipapa
-
+# --------------------------------------------- Qt (qtengine) + KDE (kdeglobals)
+# Formato KDE colorscheme, reutilizado por qtengine (apps Qt no-KDE) y kdeglobals (apps KDE: Dolphin…)
+kde_colors() {
+    cat <<EOF
 [Colors:Window]
 BackgroundNormal=#$(c background)
 BackgroundAlternate=#$(c surfaceContainerLow)
@@ -187,12 +184,33 @@ activeForeground=#$(c onSurface)
 inactiveBackground=#$(c surface)
 inactiveForeground=#$(c onSurfaceVariant)
 EOF
-    # Apuntar qtengine a mi colorscheme (preservando iconTheme/estilo/fuentes)
+}
+
+# qtengine (apps Qt que no son KDE)
+qdir="$HOME/.config/qtengine"
+if [ -d "$qdir" ]; then
+    {
+        echo "[General]"
+        echo "Name=Salchipapa"
+        echo
+        kde_colors
+    } >"$qdir/salchipapa.colors"
     if command -v jq >/dev/null && [ -f "$qdir/config.json" ]; then
         tmp=$(mktemp)
         jq '.theme.colorScheme = "~/.config/qtengine/salchipapa.colors"' "$qdir/config.json" >"$tmp" && mv "$tmp" "$qdir/config.json"
     fi
 fi
+
+# kdeglobals (apps KDE: Dolphin, Kate, Gwenview…)
+{
+    echo "[General]"
+    echo "ColorScheme=Salchipapa"
+    echo
+    echo "[Icons]"
+    echo "Theme=Papirus-Dark"
+    echo
+    kde_colors
+} >"$HOME/.config/kdeglobals"
 
 # ------------------------------------------------------------------ foot
 fdir="$HOME/.config/foot"
@@ -258,3 +276,16 @@ fi
 if command -v hyprctl >/dev/null && [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
     hyprctl reload >/dev/null 2>&1 || true
 fi
+
+# ------------------------------------------------------------------ Live-reload
+# GTK: toggle del tema para que las apps relean gtk.css (GTK3 en vivo; GTK4/libadwaita
+# a veces necesita reabrir la ventana).
+if command -v gsettings >/dev/null; then
+    gt=$(gsettings get org.gnome.desktop.interface gtk-theme 2>/dev/null | tr -d "'")
+    if [ -n "$gt" ]; then
+        gsettings set org.gnome.desktop.interface gtk-theme "Adwaita" 2>/dev/null || true
+        gsettings set org.gnome.desktop.interface gtk-theme "$gt" 2>/dev/null || true
+    fi
+fi
+# kitty: recargar config en vivo
+pkill -USR1 -x kitty 2>/dev/null || true
