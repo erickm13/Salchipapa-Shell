@@ -249,39 +249,43 @@ ydir="$HOME/.config/yazi"
 if [ -d "$ydir" ]; then
     cat >"$ydir/theme.toml" <<EOF
 # Generado por Salchipapa-Shell (apply-colors.sh). No editar a mano.
+# Usa nombres ANSI (no hex) para que yazi siga la paleta del terminal y los
+# colores se actualicen EN VIVO (vía OSC) sin tener que reiniciar yazi.
+# Mapa: blue=primary, yellow=secondary, green=tertiary, red=error,
+#       darkgray=outline, gray=onSurfaceVariant, black=fondo.
 [mgr]
-cwd = { fg = "#$(c primary)" }
+cwd = { fg = "blue" }
 hovered = { reversed = true }
-find_keyword = { fg = "#$(c tertiary)", bold = true }
-marker_copied = { fg = "#$(c tertiary)", bg = "#$(c tertiary)" }
-marker_cut = { fg = "#$(c error)", bg = "#$(c error)" }
-marker_selected = { fg = "#$(c primary)", bg = "#$(c primary)" }
+find_keyword = { fg = "yellow", bold = true }
+marker_copied = { fg = "green", bg = "green" }
+marker_cut = { fg = "red", bg = "red" }
+marker_selected = { fg = "blue", bg = "blue" }
 border_symbol = "│"
-border_style = { fg = "#$(c outline)" }
+border_style = { fg = "darkgray" }
 
 [tabs]
-active = { fg = "#$(c onPrimary)", bg = "#$(c primary)", bold = true }
-inactive = { fg = "#$(c onSurfaceVariant)", bg = "#$(c surfaceContainer)" }
+active = { fg = "black", bg = "blue", bold = true }
+inactive = { fg = "gray", bg = "black" }
 
 [mode]
-normal_main = { fg = "#$(c onPrimary)", bg = "#$(c primary)", bold = true }
-normal_alt = { fg = "#$(c primary)", bg = "#$(c surfaceContainer)" }
-select_main = { fg = "#$(c onTertiary)", bg = "#$(c tertiary)", bold = true }
-select_alt = { fg = "#$(c tertiary)", bg = "#$(c surfaceContainer)" }
-unset_main = { fg = "#$(c onError)", bg = "#$(c error)", bold = true }
-unset_alt = { fg = "#$(c error)", bg = "#$(c surfaceContainer)" }
+normal_main = { fg = "black", bg = "blue", bold = true }
+normal_alt = { fg = "blue", bg = "black" }
+select_main = { fg = "black", bg = "green", bold = true }
+select_alt = { fg = "green", bg = "black" }
+unset_main = { fg = "black", bg = "red", bold = true }
+unset_alt = { fg = "red", bg = "black" }
 
 [status]
 # Barra inferior: ruta/cwd, permisos y progreso.
-cwd = { fg = "#$(c primary)" }
-perm_type = { fg = "#$(c secondary)" }
-perm_read = { fg = "#$(c tertiary)" }
-perm_write = { fg = "#$(c error)" }
-perm_exec = { fg = "#$(c primary)" }
-perm_sep = { fg = "#$(c outline)" }
-progress_label = { fg = "#$(c onSurface)", bold = true }
-progress_normal = { fg = "#$(c primary)", bg = "#$(c surfaceContainer)" }
-progress_error = { fg = "#$(c error)", bg = "#$(c surfaceContainer)" }
+cwd = { fg = "blue" }
+perm_type = { fg = "blue" }
+perm_read = { fg = "green" }
+perm_write = { fg = "yellow" }
+perm_exec = { fg = "red" }
+perm_sep = { fg = "darkgray" }
+progress_label = { fg = "white", bold = true }
+progress_normal = { fg = "blue", bg = "black" }
+progress_error = { fg = "red", bg = "black" }
 EOF
 fi
 
