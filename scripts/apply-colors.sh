@@ -255,12 +255,13 @@ hovered = { reversed = true }
 find_keyword = { fg = "#$(c tertiary)", bold = true }
 marker_copied = { fg = "#$(c tertiary)", bg = "#$(c tertiary)" }
 marker_cut = { fg = "#$(c error)", bg = "#$(c error)" }
-marker_marked = { fg = "#$(c primary)", bg = "#$(c primary)" }
 marker_selected = { fg = "#$(c primary)", bg = "#$(c primary)" }
-tab_active = { fg = "#$(c onPrimary)", bg = "#$(c primary)" }
-tab_inactive = { fg = "#$(c onSurfaceVariant)", bg = "#$(c surfaceContainer)" }
 border_symbol = "│"
 border_style = { fg = "#$(c outline)" }
+
+[tabs]
+active = { fg = "#$(c onPrimary)", bg = "#$(c primary)", bold = true }
+inactive = { fg = "#$(c onSurfaceVariant)", bg = "#$(c surfaceContainer)" }
 
 [mode]
 normal_main = { fg = "#$(c onPrimary)", bg = "#$(c primary)", bold = true }
