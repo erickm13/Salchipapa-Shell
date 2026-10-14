@@ -194,6 +194,66 @@ EOF
     fi
 fi
 
+# ------------------------------------------------------------------ foot
+fdir="$HOME/.config/foot"
+if [ -d "$fdir" ]; then
+    cat >"$fdir/salchipapa-colors.ini" <<EOF
+[colors]
+foreground=$(c onBackground)
+background=$(c background)
+regular0=$(c surfaceContainerLowest)
+regular1=$(c error)
+regular2=$(c tertiary)
+regular3=$(c secondary)
+regular4=$(c primary)
+regular5=$(c tertiary)
+regular6=$(c secondary)
+regular7=$(c onSurfaceVariant)
+bright0=$(c outline)
+bright1=$(c error)
+bright2=$(c tertiary)
+bright3=$(c secondary)
+bright4=$(c primary)
+bright5=$(c tertiary)
+bright6=$(c secondary)
+bright7=$(c onBackground)
+selection-foreground=$(c onPrimary)
+selection-background=$(c primary)
+EOF
+    # Incluir al principio de foot.ini (preamble) si no está
+    if [ -f "$fdir/foot.ini" ] && ! grep -qF "salchipapa-colors.ini" "$fdir/foot.ini"; then
+        sed -i "1i include=$fdir/salchipapa-colors.ini" "$fdir/foot.ini"
+    fi
+fi
+
+# ------------------------------------------------------------------ yazi
+ydir="$HOME/.config/yazi"
+if [ -d "$ydir" ]; then
+    cat >"$ydir/theme.toml" <<EOF
+# Generado por Salchipapa-Shell (apply-colors.sh). No editar a mano.
+[mgr]
+cwd = { fg = "#$(c primary)" }
+hovered = { reversed = true }
+find_keyword = { fg = "#$(c tertiary)", bold = true }
+marker_copied = { fg = "#$(c tertiary)", bg = "#$(c tertiary)" }
+marker_cut = { fg = "#$(c error)", bg = "#$(c error)" }
+marker_marked = { fg = "#$(c primary)", bg = "#$(c primary)" }
+marker_selected = { fg = "#$(c primary)", bg = "#$(c primary)" }
+tab_active = { fg = "#$(c onPrimary)", bg = "#$(c primary)" }
+tab_inactive = { fg = "#$(c onSurfaceVariant)", bg = "#$(c surfaceContainer)" }
+border_symbol = "│"
+border_style = { fg = "#$(c outline)" }
+
+[mode]
+normal_main = { fg = "#$(c onPrimary)", bg = "#$(c primary)", bold = true }
+normal_alt = { fg = "#$(c primary)", bg = "#$(c surfaceContainer)" }
+select_main = { fg = "#$(c onTertiary)", bg = "#$(c tertiary)", bold = true }
+select_alt = { fg = "#$(c tertiary)", bg = "#$(c surfaceContainer)" }
+unset_main = { fg = "#$(c onError)", bg = "#$(c error)", bold = true }
+unset_alt = { fg = "#$(c error)", bg = "#$(c surfaceContainer)" }
+EOF
+fi
+
 # Recargar Hyprland para el glow (si hay sesión)
 if command -v hyprctl >/dev/null && [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
     hyprctl reload >/dev/null 2>&1 || true
