@@ -33,6 +33,7 @@ Item {
                 root.query = "";
                 root.sel = 0;
                 searchInput.text = "";
+                searchInput.forceActiveFocus();
                 listProc.running = true;
             }
         }
