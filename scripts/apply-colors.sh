@@ -350,8 +350,9 @@ for name, hx in cols.items():
 print(best)
 PY
 )
-    # El cambio real (papirus-folders) + el refresco de iconos se hacen AL FINAL
-    # en segundo plano: papirus-folders tarda ~3s y si no, bloquearía todo lo demás.
+    if [ -n "$folder_color" ]; then
+        sudo -n papirus-folders -C "$folder_color" -t Papirus-Dark -u >/dev/null 2>&1 || true
+    fi
 fi
 
 # Recargar Hyprland para el glow (si hay sesión)
@@ -360,9 +361,37 @@ if command -v hyprctl >/dev/null && [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; t
 fi
 
 # ------------------------------------------------------------------ Live-reload
-# NOTA: los "avisos" para apps GTK (toggle gtk-theme, con sleeps) y KDE (señal D-Bus),
-# y el color de carpeta de Papirus, se hacen AL FINAL en segundo plano (ver más abajo),
-# para que esto no bloquee. Aquí solo lo instantáneo: terminales por OSC.
+# GTK: toggle del tema para que las apps relean gtk.css (GTK3 en vivo; GTK4/libadwaita
+# a veces necesita reabrir la ventana).
+if command -v gsettings >/dev/null; then
+    # Toggle del gtk-theme en los schemas disponibles (GNOME y Cinnamon/Nemo).
+    toggle_theme() { # $1=schema
+        local cur
+        cur=$(gsettings get "$1" gtk-theme 2>/dev/null | tr -d "'")
+        [ -z "$cur" ] && return
+        gsettings set "$1" gtk-theme "Adwaita" 2>/dev/null || true
+        sleep 0.4 # dar tiempo a que las apps GTK registren el cambio y relean gtk.css
+        gsettings set "$1" gtk-theme "$cur" 2>/dev/null || true
+    }
+    toggle_theme org.gnome.desktop.interface
+    gsettings list-schemas 2>/dev/null | grep -qx org.cinnamon.desktop.interface && toggle_theme org.cinnamon.desktop.interface
+    # Refrescar el tema de ICONOS (para el nuevo color de carpeta) con el mismo truco.
+    toggle_icons() { # $1=schema
+        local cur
+        cur=$(gsettings get "$1" icon-theme 2>/dev/null | tr -d "'")
+        [ -z "$cur" ] && return
+        gsettings set "$1" icon-theme "Adwaita" 2>/dev/null || true
+        sleep 0.3
+        gsettings set "$1" icon-theme "$cur" 2>/dev/null || true
+    }
+    toggle_icons org.gnome.desktop.interface
+    gsettings list-schemas 2>/dev/null | grep -qx org.cinnamon.desktop.interface && toggle_icons org.cinnamon.desktop.interface
+fi
+# KDE (Dolphin, Kate, Gwenview…): notificar cambio de paleta -> recargan en vivo
+if command -v dbus-send >/dev/null; then
+    dbus-send --session --type=signal /KGlobalSettings org.kde.KGlobalSettings.notifyChange int32:0 int32:0 2>/dev/null || true # 0 = paleta
+    dbus-send --session --type=signal /KGlobalSettings org.kde.KGlobalSettings.notifyChange int32:4 int32:0 2>/dev/null || true # 4 = iconos
+fi
 
 # Terminales (kitty, foot, cualquier terminal): colores en vivo por secuencias OSC
 # (fg=OSC10, bg=OSC11, cursor=OSC12, paleta 0-15=OSC4). Se guardan para las nuevas terminales.
@@ -398,44 +427,3 @@ if status is-interactive
 end
 FISH
 fi
-
-# ------------------------------------------------- Carpetas Papirus (en segundo plano)
-# papirus-folders tarda ~3s; lo dejamos para el final y DESACOPLADO (&) para que todo
-# lo anterior (colores, terminal, GTK, KDE) se aplique al instante. Cuando termina,
-# refresca el tema de iconos de las apps GTK y avisa a KDE para el nuevo color.
-# --------------------------------------------- Avisos a otras apps (en segundo plano)
-# Todo esto solo hace que las apps YA ABIERTAS relean el tema; tiene sleeps y/o es lento
-# (papirus-folders ~3s), así que va desacoplado con setsid para no retrasar nada.
-bg_nudges() {
-    # GTK (Thunar, Nemo, GTK3 en general): toggle de gtk-theme -> relee gtk.css.
-    toggle_key() { # $1=schema $2=key $3=valor nuevo temporal
-        local cur
-        cur=$(gsettings get "$1" "$2" 2>/dev/null | tr -d "'") || return
-        [ -z "$cur" ] && return
-        gsettings set "$1" "$2" "$3" 2>/dev/null || true
-        sleep 0.3
-        gsettings set "$1" "$2" "$cur" 2>/dev/null || true
-    }
-    if command -v gsettings >/dev/null; then
-        toggle_key org.gnome.desktop.interface gtk-theme Adwaita
-        gsettings list-schemas 2>/dev/null | grep -qx org.cinnamon.desktop.interface &&
-            toggle_key org.cinnamon.desktop.interface gtk-theme Adwaita
-    fi
-    # KDE (Dolphin, Kate…): paleta recargada en vivo.
-    command -v dbus-send >/dev/null &&
-        dbus-send --session --type=signal /KGlobalSettings org.kde.KGlobalSettings.notifyChange int32:0 int32:0 2>/dev/null || true
-
-    # Color de carpeta Papirus (si hay regla sudoers) + refresco del tema de iconos.
-    # -u reconstruye icon-theme.cache: sin ella las apps GTK siguen mostrando el
-    # icono de carpeta viejo cacheado. Va en 2º plano, así su coste (~2s) no molesta.
-    if [ -n "$folder_color" ] && sudo -n papirus-folders -C "$folder_color" -t Papirus-Dark -u >/dev/null 2>&1; then
-        if command -v gsettings >/dev/null; then
-            toggle_key org.gnome.desktop.interface icon-theme Adwaita
-            gsettings list-schemas 2>/dev/null | grep -qx org.cinnamon.desktop.interface &&
-                toggle_key org.cinnamon.desktop.interface icon-theme Adwaita
-        fi
-        command -v dbus-send >/dev/null &&
-            dbus-send --session --type=signal /KGlobalSettings org.kde.KGlobalSettings.notifyChange int32:4 int32:0 2>/dev/null || true
-    fi
-}
-setsid -f sh -c "$(declare -f bg_nudges); folder_color='${folder_color:-}' bg_nudges" >/dev/null 2>&1
