@@ -235,6 +235,18 @@ fi
     kde_colors
 } >"$HOME/.config/kdeglobals"
 
+# Esquema de color instalado (.colors) para las apps KF6 con plasma-integration.
+# Lo lee plasma-apply-colorscheme y aparece como esquema "Salchipapa" en Dolphin.
+cschemes="$HOME/.local/share/color-schemes"
+mkdir -p "$cschemes"
+{
+    echo "[General]"
+    echo "Name=Salchipapa"
+    echo "ColorScheme=Salchipapa"
+    echo
+    kde_colors
+} >"$cschemes/Salchipapa.colors"
+
 # ------------------------------------------------------------------ foot
 fdir="$HOME/.config/foot"
 if [ -d "$fdir" ]; then
@@ -387,11 +399,20 @@ if command -v gsettings >/dev/null; then
     toggle_icons org.gnome.desktop.interface
     gsettings list-schemas 2>/dev/null | grep -qx org.cinnamon.desktop.interface && toggle_icons org.cinnamon.desktop.interface
 fi
-# KDE (Dolphin, Kate, Gwenview…): notificar cambio de paleta -> recargan en vivo
-if command -v dbus-send >/dev/null; then
-    dbus-send --session --type=signal /KGlobalSettings org.kde.KGlobalSettings.notifyChange int32:0 int32:0 2>/dev/null || true # 0 = paleta
-    dbus-send --session --type=signal /KGlobalSettings org.kde.KGlobalSettings.notifyChange int32:4 int32:0 2>/dev/null || true # 4 = iconos
+# KDE / Qt (Dolphin, Kate…): recarga EN VIVO con las herramientas nativas de Plasma
+# (requieren plasma-integration + QT_QPA_PLATFORMTHEME=kde; ver lua/env.lua).
+# - Colores: plasma-apply-colorscheme. Como el nombre no cambia ("Salchipapa"), toca
+#   otro esquema un instante para forzar que las apps relean (si no, dice "ya está puesto").
+# - Iconos (color de carpeta): plasma-changeicons avisa a las apps KF6; Dolphin repinta
+#   las carpetas al interactuar/F5. Es lo único que refresca iconos en Dolphin.
+if command -v plasma-apply-colorscheme >/dev/null; then
+    plasma-apply-colorscheme BreezeDark >/dev/null 2>&1 || true
+    plasma-apply-colorscheme Salchipapa >/dev/null 2>&1 || true
+elif command -v dbus-send >/dev/null; then
+    # Fallback sin Plasma: señal legacy (puede no refrescar apps KF6 con qtengine).
+    dbus-send --session --type=signal /KGlobalSettings org.kde.KGlobalSettings.notifyChange int32:0 int32:0 2>/dev/null || true
 fi
+[ -x /usr/lib/plasma-changeicons ] && /usr/lib/plasma-changeicons Papirus-Dark >/dev/null 2>&1 || true
 
 # Terminales (kitty, foot, cualquier terminal): colores en vivo por secuencias OSC
 # (fg=OSC10, bg=OSC11, cursor=OSC12, paleta 0-15=OSC4). Se guardan para las nuevas terminales.
