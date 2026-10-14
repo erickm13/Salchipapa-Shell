@@ -270,6 +270,18 @@ select_main = { fg = "#$(c onTertiary)", bg = "#$(c tertiary)", bold = true }
 select_alt = { fg = "#$(c tertiary)", bg = "#$(c surfaceContainer)" }
 unset_main = { fg = "#$(c onError)", bg = "#$(c error)", bold = true }
 unset_alt = { fg = "#$(c error)", bg = "#$(c surfaceContainer)" }
+
+[status]
+# Barra inferior: ruta/cwd, permisos y progreso.
+cwd = { fg = "#$(c primary)" }
+perm_type = { fg = "#$(c secondary)" }
+perm_read = { fg = "#$(c tertiary)" }
+perm_write = { fg = "#$(c error)" }
+perm_exec = { fg = "#$(c primary)" }
+perm_sep = { fg = "#$(c outline)" }
+progress_label = { fg = "#$(c onSurface)", bold = true }
+progress_normal = { fg = "#$(c primary)", bg = "#$(c surfaceContainer)" }
+progress_error = { fg = "#$(c error)", bg = "#$(c surfaceContainer)" }
 EOF
 fi
 
