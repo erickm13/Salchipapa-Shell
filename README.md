@@ -34,16 +34,18 @@ Para volver atrás: borra el symlink y restaura `~/.config/hypr.bak`.
 | Archivo | Qué contiene |
 |---|---|
 | `hyprland.lua` | Entrada: solo hace `require()` de los módulos de `lua/` |
-| `lua/vars.lua` | Variables y colores del tema compartidos |
+| `lua/vars.lua` | Variables de programas y colores del tema compartidos |
 | `lua/monitors.lua` | Monitores |
 | `lua/env.lua` | Variables de entorno (Wayland, Qt, cursor) |
 | `lua/general.lua` | Gaps, borde (acento del tema), layout (dwindle) |
+| `lua/misc.lua` | VRR, foco, DPMS y otros ajustes de Hyprland |
 | `lua/decoration.lua` | Redondeo, blur, sombra/glow del tema |
+| `lua/group.lua` | Grupos de ventanas y groupbar |
 | `lua/animations.lua` | Curvas bezier Material 3 y animaciones |
 | `lua/input.lua` | Teclado, touchpad, gestos |
 | `lua/windowrules.lua` | Reglas de ventana y de capas (incl. scratchpads) |
 | `lua/keybinds.lua` | Atajos |
-| `lua/autostart.lua` | Arranque (polkit, barra Quickshell) |
+| `lua/autostart.lua` | Arranque (polkit, llavero, cursor, cliphist, MPRIS, limpieza de papelera, Quickshell) |
 | `scripts/` | Scripts (capturas, areapicker helper, scratchpads) |
 | `shell/` | La shell de Quickshell (isla, launcher, temas, picker) |
 
@@ -51,7 +53,7 @@ Para volver atrás: borra el symlink y restaura `~/.config/hypr.bak`.
 
 | Atajo | Acción |
 |---|---|
-| `Super + Return` | Terminal (kitty) |
+| `Super + Return` | Terminal (foot) |
 | `Super + R` | Lanzador (fuzzel) |
 | `Super + B` | Navegador |
 | `Super + E` | Archivos (yazi) |
@@ -59,8 +61,14 @@ Para volver atrás: borra el symlink y restaura `~/.config/hypr.bak`.
 | `Super + V` / `F` | Flotar / pantalla completa |
 | `Super + [1-0]` | Workspace |
 | `Super + Shift + [1-0]` | Mover ventana a workspace |
+| `Super + Alt + [1-0]` | Mover ventana al índice indicado del grupo actual de diez |
+| `Ctrl + Super + [1-0]` | Cambiar al grupo de diez, conservando el índice actual |
+| `Ctrl + Super + Alt + [1-0]` | Mover ventana al grupo de diez indicado, conservando el índice |
+| `Super + Alt + Page Up/Down` | Mover ventana al workspace anterior/siguiente |
+| `Ctrl + Super + ←/→` | Workspace anterior/siguiente |
 | `Super + S` | Scratchpad |
-| `Super + Shift + S` | Captura de región (también `Super + Shift + Alt + S`) |
+| `Super + Shift + S` | Captura congelada: previsualizar ventana al pasar el cursor, clic para capturar o arrastrar región |
+| `Super + Shift + Alt + S` | Captura de región |
 | `Print` | Captura de pantalla completa |
 | `Super + Shift + Print` | Captura del monitor activo |
 | `Super + Shift + Q` | Salir de Hyprland |
@@ -98,7 +106,7 @@ Píldora flotante centrada arriba (estilo iPhone):
   al subir/bajar volumen (barra de volumen) y al llegar una notificación.
 - Solo la píldora captura el ratón (`mask`); los clics fuera pasan a las ventanas.
 
-> Notificaciones: la shell **es** el servidor de notificaciones, por eso `autostart.conf` **no**
+> Notificaciones: la shell **es** el servidor de notificaciones, por eso `lua/autostart.lua` **no**
 > lanza dunst (chocarían).
 
 Probar suelta: `qs -p ~/proyects/Salchipapa-Shell/shell/shell.qml` (se recarga sola al guardar).

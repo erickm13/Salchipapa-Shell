@@ -7,12 +7,68 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
+import Quickshell.Io
 import "../common"
 
 Scope {
     id: root
 
     property bool active: false
+    property var clients: []
+    property var hoveredWindow: null
+
+    onActiveChanged: {
+        hoveredWindow = null;
+        clients = [];
+        if (active)
+            clientsProc.running = true;
+    }
+
+    function windowAt(x, y): var {
+        const matches = clients.filter(client =>
+            client.mapped !== false && client.hidden !== true && client.at && client.size &&
+            x >= client.at[0] && y >= client.at[1] &&
+            x < client.at[0] + client.size[0] && y < client.at[1] + client.size[1]
+        );
+        if (matches.length === 0)
+            return null;
+
+        const client = matches[matches.length - 1];
+        const left = Math.floor(client.at[0]);
+        const top = Math.floor(client.at[1]);
+        return {
+            x: left,
+            y: top,
+            width: Math.ceil(client.at[0] + client.size[0]) - left,
+            height: Math.ceil(client.at[1] + client.size[1]) - top
+        };
+    }
+
+    Process {
+        id: clientsProc
+        command: ["hyprctl", "-j", "clients"]
+        stdout: StdioCollector {
+            id: clientsOut
+            onStreamFinished: {
+                try {
+                    root.clients = JSON.parse(clientsOut.text);
+                } catch (error) {
+                    root.clients = [];
+                }
+            }
+        }
+    }
+
+    function captureWindow(window): void {
+        if (!window)
+            return;
+        root.active = false;
+        Quickshell.execDetached([
+            "bash",
+            Quickshell.shellDir + "/../scripts/screenshot.sh",
+            "window", String(window.x), String(window.y), String(window.width), String(window.height)
+        ]);
+    }
 
     GlobalShortcut {
         appid: "salchipapa"
@@ -39,9 +95,17 @@ Scope {
                 right: true
             }
             WlrLayershell.layer: WlrLayer.Overlay
-            WlrLayershell.namespace: "salchipapa-picker" // para el layerrule de animación (popin)
+            WlrLayershell.namespace: "salchipapa-picker" // sin animación para capturas limpias
             WlrLayershell.exclusionMode: ExclusionMode.Ignore
             WlrLayershell.keyboardFocus: root.active ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+
+            Connections {
+                target: root
+                function onClientsChanged(): void {
+                    if (pointerArea.containsMouse)
+                        root.hoveredWindow = root.windowAt(pointerArea.mouseX + win.screen.x, pointerArea.mouseY + win.screen.y);
+                }
+            }
 
             // Estado de la selección
             property bool selecting: false
@@ -49,10 +113,15 @@ Scope {
             property real sy: 0
             property real ex: 0
             property real ey: 0
+            property var pressedWindow: null
             readonly property real rx: Math.min(sx, ex)
             readonly property real ry: Math.min(sy, ey)
             readonly property real rw: Math.abs(ex - sx)
             readonly property real rh: Math.abs(ey - sy)
+            readonly property real areaX: selecting ? rx : (root.hoveredWindow ? Math.max(0, root.hoveredWindow.x - screen.x) : 0)
+            readonly property real areaY: selecting ? ry : (root.hoveredWindow ? Math.max(0, root.hoveredWindow.y - screen.y) : 0)
+            readonly property real areaW: selecting ? rw : (root.hoveredWindow ? Math.max(0, Math.min(screen.x + width, root.hoveredWindow.x + root.hoveredWindow.width) - Math.max(screen.x, root.hoveredWindow.x)) : 0)
+            readonly property real areaH: selecting ? rh : (root.hoveredWindow ? Math.max(0, Math.min(screen.y + height, root.hoveredWindow.y + root.hoveredWindow.height) - Math.max(screen.y, root.hoveredWindow.y)) : 0)
 
             onVisibleChanged: {
                 if (visible) {
@@ -62,8 +131,12 @@ Scope {
             }
 
             function finish(): void {
-                if (rw < 3 || rh < 3 || !freezeLoader.item) {
+                if (!freezeLoader.item) {
                     root.active = false;
+                    return;
+                }
+                // Un clic se atiende en onClicked; aquí solo procesamos regiones arrastradas.
+                if (rw < 3 || rh < 3) {
                     return;
                 }
                 const geom = Math.round(rw) + "x" + Math.round(rh) + "+" + Math.round(rx) + "+" + Math.round(ry);
@@ -94,72 +167,77 @@ Scope {
                 x: 0
                 y: 0
                 width: parent.width
-                height: win.ry
+                height: win.areaY
             }
             Rectangle {
                 color: "#80000000"
                 x: 0
-                y: win.ry + win.rh
+                y: win.areaY + win.areaH
                 width: parent.width
-                height: parent.height - (win.ry + win.rh)
+                height: parent.height - (win.areaY + win.areaH)
             }
             Rectangle {
                 color: "#80000000"
                 x: 0
-                y: win.ry
-                width: win.rx
-                height: win.rh
+                y: win.areaY
+                width: win.areaX
+                height: win.areaH
             }
             Rectangle {
                 color: "#80000000"
-                x: win.rx + win.rw
-                y: win.ry
-                width: parent.width - (win.rx + win.rw)
-                height: win.rh
+                x: win.areaX + win.areaW
+                y: win.areaY
+                width: parent.width - (win.areaX + win.areaW)
+                height: win.areaH
             }
 
             // Borde de la selección
             Rectangle {
-                x: win.rx
-                y: win.ry
-                width: win.rw
-                height: win.rh
+                x: win.areaX
+                y: win.areaY
+                width: win.areaW
+                height: win.areaH
                 color: "transparent"
                 border.color: Theme.green
-                border.width: 2
-                visible: win.rw > 1 && win.rh > 1
-            }
-
-            // Ayuda
-            Text {
-                anchors.centerIn: parent
-                text: "Arrastra para seleccionar · Esc para cancelar"
-                color: "#ffffff"
-                font.pixelSize: 15
-                visible: !win.selecting && win.rw < 3
+                border.width: 3
+                visible: win.areaW > 1 && win.areaH > 1
             }
 
             MouseArea {
+                id: pointerArea
                 anchors.fill: parent
-                cursorShape: Qt.CrossCursor
+                hoverEnabled: true
+                cursorShape: root.hoveredWindow && !win.selecting ? Qt.PointingHandCursor : Qt.CrossCursor
                 focus: true
 
+                onEntered: {
+                    root.hoveredWindow = root.windowAt(mouseX + win.screen.x, mouseY + win.screen.y);
+                }
                 onPressed: event => {
                     win.sx = event.x;
                     win.sy = event.y;
                     win.ex = event.x;
                     win.ey = event.y;
+                    win.pressedWindow = root.windowAt(event.x + win.screen.x, event.y + win.screen.y);
                     win.selecting = true;
                 }
                 onPositionChanged: event => {
                     if (win.selecting) {
                         win.ex = event.x;
                         win.ey = event.y;
+                    } else {
+                        root.hoveredWindow = root.windowAt(event.x + win.screen.x, event.y + win.screen.y);
                     }
                 }
                 onReleased: {
                     win.selecting = false;
-                    win.finish();
+                    if (win.rw >= 3 && win.rh >= 3)
+                        win.finish();
+                }
+                onClicked: {
+                    if (win.rw < 3 || win.rh < 3)
+                        root.captureWindow(win.pressedWindow);
+                    win.pressedWindow = null;
                 }
                 Keys.onEscapePressed: root.active = false
             }

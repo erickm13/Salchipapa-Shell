@@ -8,8 +8,8 @@ hl.window_rule({ match = { title = "Save As" }, float = true })
 hl.window_rule({ match = { float = true, xwayland = false }, center = true })
 hl.window_rule({ match = { fullscreen = true }, no_shadow = true })
 
--- El areapicker (freeze) aparece desde el CENTRO con escala (popin), no deslizando
-hl.layer_rule({ match = { namespace = "salchipapa-picker" }, animation = "popin 80%" })
+-- El picker no anima al cerrarse: grim debe capturar la ventana sin el freeze superpuesto.
+hl.layer_rule({ match = { namespace = "salchipapa-picker" }, no_anim = true })
 
 -- Apps en workspaces especiales (scratchpads, como caelestia)
 hl.window_rule({ match = { class = "Spotify|spotify" }, workspace = "special:music" })
