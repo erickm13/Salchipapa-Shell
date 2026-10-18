@@ -2,8 +2,7 @@
 -- Notificaciones: las gestiona la barra (Quickshell es el servidor). NO lanzar dunst.
 -- Fondo de pantalla: lo renderiza la shell (Background.qml) desde el estado; sin hyprpaper.
 hl.on("hyprland.start", function()
-    -- Autenticación (polkit) y llavero de secretos
-    hl.exec_cmd("/usr/lib/polkit-kde-authentication-agent-1 &")
+    -- Llavero de secretos; PolicyKit lo gestiona la propia Salchipapa Shell.
     hl.exec_cmd("gnome-keyring-daemon --start --components=secrets")
     -- Cursor
     hl.exec_cmd("hyprctl setcursor Bibata-Modern-Classic 24")

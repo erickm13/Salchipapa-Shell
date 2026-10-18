@@ -28,7 +28,7 @@ PanelWindow {
     }
     implicitHeight: 620
     WlrLayershell.layer: WlrLayer.Top
-    WlrLayershell.keyboardFocus: Overlay.mode !== "" ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    WlrLayershell.keyboardFocus: (Overlay.mode !== "" || island.showPolkit) ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
     exclusiveZone: 34 + Config.topMargin
 
     // Solo la píldora captura el ratón; el resto deja pasar los clics
@@ -48,7 +48,7 @@ PanelWindow {
         y: Config.notchMode ? -2 : Config.topMargin
         Behavior on y {
             NumberAnimation {
-                duration: 300
+                duration: Theme.movementDuration
                 easing.type: Easing.OutCubic
             }
         }
@@ -56,15 +56,17 @@ PanelWindow {
         property bool ready: false
         property bool hovered: false
         property string peek: "" // "", "media", "volume", "notif"
+        readonly property bool showPolkit: PolicyAuth.active && (Hyprland.focusedMonitor?.name ? Hyprland.focusedMonitor.name === win.screen?.name : Quickshell.screens[0] === win.screen)
 
-        // Modo efectivo: overlay (launcher/themes) manda; luego hover; luego peek; luego idle
-        readonly property string mode: Overlay.mode !== "" ? Overlay.mode : (hovered ? "expanded" : (peek !== "" ? peek : "idle"))
+        // Una notificación nueva también debe verse si el dashboard está abierto.
+        // El resto de overlays conserva prioridad sobre los peeks normales.
+        readonly property string mode: showPolkit ? "polkit" : (peek === "notif" ? "notif" : (Overlay.mode !== "" ? Overlay.mode : (hovered ? "expanded" : (peek !== "" ? peek : "idle"))))
         readonly property string batteryGlyph: Battery.charging ? (Battery.percent >= 95 ? "battery_charging_full_2" : Battery.percent >= 65 ? "battery_charging_80_2" : Battery.percent >= 35 ? "battery_charging_50_2" : "battery_charging_20_2") : Battery.percent >= 95 ? "battery_android_full" : Battery.percent >= 80 ? "battery_android_6" : Battery.percent >= 65 ? "battery_android_5" : Battery.percent >= 50 ? "battery_android_4" : Battery.percent >= 35 ? "battery_android_3" : Battery.percent >= 20 ? "battery_android_2" : Battery.percent >= 5 ? "battery_android_1" : "battery_android_0"
         readonly property string networkGlyph: Net.type === "ethernet" ? "lan" : Net.type === "wifi" ? (Net.wifiSignal >= 80 ? "signal_wifi_4_bar" : Net.wifiSignal >= 60 ? "network_wifi_3_bar" : Net.wifiSignal >= 35 ? "network_wifi_2_bar" : Net.wifiSignal >= 10 ? "network_wifi_1_bar" : "signal_wifi_0_bar") : "wifi_off"
 
         // Notch: fondo negro + alas laterales. Solo en reposo/peeks (no expandido/overlay).
         readonly property color notchBg: Theme.panelBg
-        readonly property bool notchResting: Config.notchMode && (mode === "idle" || mode === "media" || mode === "volume" || mode === "notif")
+        readonly property bool notchResting: Config.notchMode && (mode === "idle" || mode === "media" || mode === "volume" || mode === "brightness" || mode === "notif")
 
         // ¿Hay un scratchpad (workspace especial) mostrándose ahora?
         readonly property bool inSpecial: (Hyprland.focusedMonitor?.lastIpcObject?.specialWorkspace?.name ?? "") !== ""
@@ -72,6 +74,7 @@ PanelWindow {
         // Datos del peek de notificación
         property string notifApp: ""
         property string notifText: ""
+        property bool notifUrgent: false
 
         // Estado del dashboard (expandido). Night light / Game mode viven en Quick (compartidos
         // con el centro de control).
@@ -100,7 +103,7 @@ PanelWindow {
 
         function showPeek(name: string): void {
             peek = name;
-            peekTimer.interval = name === "notif" ? 4500 : (name === "media" ? 3000 : 1400);
+            peekTimer.interval = name === "notif" ? (notifUrgent ? Config.notificationUrgentTimeout : Config.notificationPopupTimeout) : (name === "volume" || name === "brightness") ? Config.osdOnScreenTime : (name === "media" ? 3000 : 1400);
             peekTimer.restart();
         }
 
@@ -110,19 +113,19 @@ PanelWindow {
         }
 
         // Tamaños por modo
-        width: mode === "control" ? 440 : mode === "display" ? 460 : mode === "sound" ? 420 : mode === "launcher" ? 560 : mode === "themes" ? 720 : mode === "wallpaper" ? 760 : mode === "calendar" ? 300 : mode === "expanded" ? 500 : mode === "notif" ? 430 : mode === "media" ? 370 : mode === "volume" ? 300 : Math.max(Config.collapsedWidth, idleRow.implicitWidth + Config.innerPadding * 2)
-        height: mode === "control" ? 470 : mode === "display" ? (74 + (Hyprland.monitors?.values?.length ?? 1) * 186 + 56) : mode === "sound" ? (170 + (Audio.sinks?.length ?? 1) * 58) : mode === "launcher" ? 440 : mode === "themes" ? 210 : mode === "wallpaper" ? 250 : mode === "calendar" ? 250 : mode === "expanded" ? 116 : mode === "notif" ? 74 : mode === "media" ? 58 : mode === "volume" ? 42 : Config.barHeight
+        width: mode === "polkit" ? 370 : mode === "control" ? 440 : mode === "display" ? 460 : mode === "sound" ? 420 : mode === "launcher" ? Config.launcherWidth : mode === "themes" ? 720 : mode === "wallpaper" ? 760 : mode === "calendar" ? 300 : mode === "expanded" ? 500 : mode === "notif" ? Config.notificationWidth : mode === "media" ? 370 : mode === "volume" || mode === "brightness" ? 300 : Math.max(Config.collapsedWidth, idleRow.implicitWidth + Config.innerPadding * 2)
+        height: mode === "polkit" ? 250 : mode === "control" ? Math.max(470, 350 + Config.notificationHistoryHeight) : mode === "display" ? (142 + (Hyprland.monitors?.values?.length ?? 1) * 206) : mode === "sound" ? (213 + Math.min(Audio.sinks?.length ?? 1, 5) * 42 + Math.min(Audio.sources?.length ?? 1, 4) * 42 + Math.max(1, Math.min(Audio.apps?.length ?? 0, 4)) * 62) : mode === "launcher" ? (85 + Config.launcherRowsBeforeScrolling * Config.launcherRowHeight + (Config.launcherRowsBeforeScrolling - 1) * 2) : mode === "themes" ? 210 : mode === "wallpaper" ? 250 : mode === "calendar" ? 250 : mode === "expanded" ? 116 : mode === "notif" ? 74 : mode === "media" ? 58 : mode === "volume" || mode === "brightness" ? 42 : Config.barHeight
 
         Behavior on width {
             NumberAnimation {
-                duration: 680
+                duration: Theme.movementDuration
                 easing.type: Easing.BezierSpline
                 easing.bezierCurve: Theme.spring
             }
         }
         Behavior on height {
             NumberAnimation {
-                duration: 680
+                duration: Theme.movementDuration
                 easing.type: Easing.BezierSpline
                 easing.bezierCurve: Theme.spring
             }
@@ -153,12 +156,20 @@ PanelWindow {
             }
         }
         Connections {
+            target: Brightness
+            function onValueChanged(): void {
+                if (island.ready && Brightness.available)
+                    island.showPeek("brightness");
+            }
+        }
+        Connections {
             target: Notifs
-            function onReceived(appName: string, summary: string, body: string): void {
+            function onReceived(appName: string, summary: string, body: string, urgent: bool): void {
                 if (Quick.silenced) // Focus / Game mode: no molestar
                     return;
                 island.notifApp = appName;
-                island.notifText = summary || body;
+                island.notifText = Config.notificationShowBody && body.length > 0 ? (summary.length > 0 ? summary + "\n" + body : body) : summary;
+                island.notifUrgent = urgent;
                 island.showPeek("notif");
             }
         }
@@ -172,9 +183,9 @@ PanelWindow {
             y: -pad
             width: island.width + pad * 2
             height: island.height + pad * 2
-            layer.enabled: true
+            layer.enabled: !Config.gameMode && WindowShadowSync.quickshellBlurRadius > 0 && WindowShadowSync.quickshellOpacity > 0
             layer.effect: MultiEffect {
-                shadowEnabled: WindowShadowSync.quickshellBlurRadius > 0 && WindowShadowSync.quickshellOpacity > 0
+                shadowEnabled: !Config.gameMode && WindowShadowSync.quickshellBlurRadius > 0 && WindowShadowSync.quickshellOpacity > 0
                 shadowColor: Theme.shadow
                 shadowOpacity: WindowShadowSync.quickshellOpacity
                 // blurMax is the radius; use the already-combined range once.
@@ -190,7 +201,7 @@ PanelWindow {
                 y: pillShadow.pad
                 width: pillShadow.width - pillShadow.pad * 2
                 height: pillShadow.height - pillShadow.pad * 2
-                readonly property real uni: (island.mode === "expanded" || island.mode === "calendar" || island.mode === "launcher" || island.mode === "themes" || island.mode === "wallpaper" || island.mode === "control" || island.mode === "display" || island.mode === "sound") ? Theme.radiusLarge : (Config.notchMode ? Theme.radiusMedium : height / 2)
+                readonly property real uni: (island.mode === "polkit" || island.mode === "expanded" || island.mode === "calendar" || island.mode === "launcher" || island.mode === "themes" || island.mode === "wallpaper" || island.mode === "control" || island.mode === "display" || island.mode === "sound") ? Theme.radiusLarge : (Config.notchMode ? Theme.radiusMedium : height / 2)
                 topLeftRadius: Config.notchMode ? 0 : uni
                 topRightRadius: Config.notchMode ? 0 : uni
                 bottomLeftRadius: uni
@@ -219,7 +230,7 @@ PanelWindow {
             id: pill
             anchors.fill: parent
             // Radio base (uniforme). En notch, las esquinas superiores van rectas (pegadas al borde).
-            readonly property real uni: (island.mode === "expanded" || island.mode === "calendar" || island.mode === "launcher" || island.mode === "themes" || island.mode === "wallpaper" || island.mode === "control" || island.mode === "display" || island.mode === "sound") ? Theme.radiusLarge : (Config.notchMode ? Theme.radiusMedium : height / 2)
+            readonly property real uni: (island.mode === "polkit" || island.mode === "expanded" || island.mode === "calendar" || island.mode === "launcher" || island.mode === "themes" || island.mode === "wallpaper" || island.mode === "control" || island.mode === "display" || island.mode === "sound") ? Theme.radiusLarge : (Config.notchMode ? Theme.radiusMedium : height / 2)
             topLeftRadius: Config.notchMode ? 0 : uni
             topRightRadius: Config.notchMode ? 0 : uni
             bottomLeftRadius: uni
@@ -230,25 +241,25 @@ PanelWindow {
 
             Behavior on topLeftRadius {
                 NumberAnimation {
-                    duration: 300
+                    duration: Theme.movementDuration
                     easing.type: Easing.OutCubic
                 }
             }
             Behavior on topRightRadius {
                 NumberAnimation {
-                    duration: 300
+                    duration: Theme.movementDuration
                     easing.type: Easing.OutCubic
                 }
             }
             Behavior on bottomLeftRadius {
                 NumberAnimation {
-                    duration: 450
+                    duration: Theme.movementDuration
                     easing.type: Easing.OutCubic
                 }
             }
             Behavior on bottomRightRadius {
                 NumberAnimation {
-                    duration: 450
+                    duration: Theme.movementDuration
                     easing.type: Easing.OutCubic
                 }
             }
@@ -278,7 +289,7 @@ PanelWindow {
                 visible: opacity > 0
                 Behavior on opacity {
                     NumberAnimation {
-                        duration: 110
+                        duration: Theme.fadeDuration
                     }
                 }
 
@@ -292,11 +303,12 @@ PanelWindow {
                     Row {
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 4
+                        visible: !Quick.gameMode
 
                         // Glow en el color principal sobre los indicadores (solo en notch)
-                        layer.enabled: Config.notchMode
+                        layer.enabled: Config.notchMode && !Config.gameMode
                         layer.effect: MultiEffect {
-                            shadowEnabled: true
+                            shadowEnabled: !Config.gameMode
                             shadowColor: Theme.green
                             shadowBlur: 1.0
                             blurMax: 18
@@ -341,18 +353,42 @@ PanelWindow {
                         color: "#ffffff"
                         font.pixelSize: Theme.fontPx(16)
                         font.bold: true
+                        visible: !Quick.gameMode
+                    }
+
+                    // Indicador persistente para que Game Mode siga visible
+                    // cuando la isla vuelve a su estado compacto.
+                    Row {
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 4
+                        visible: Quick.gameMode
+
+                        Icon {
+                            text: "sports_esports"
+                            px: 18
+                            color: Theme.yellow
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                        Text {
+                            text: "GAME MODE"
+                            color: Theme.yellow
+                            font.family: Theme.bodyFontFamily
+                            font.pixelSize: Theme.fontPx(10)
+                            font.bold: true
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
                     }
 
                     // Derecha: wifi + batería
                     Row {
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 8
-                        visible: Config.clockShowBatteryWifi
+                        visible: Config.clockShowBatteryWifi && !Quick.gameMode
 
                         // Glow en el color principal sobre wifi/batería (solo en notch)
-                        layer.enabled: Config.notchMode
+                        layer.enabled: Config.notchMode && !Config.gameMode
                         layer.effect: MultiEffect {
-                            shadowEnabled: true
+                            shadowEnabled: !Config.gameMode
                             shadowColor: Theme.green
                             shadowBlur: 1.0
                             blurMax: 18
@@ -402,7 +438,7 @@ PanelWindow {
                 opacity: island.mode === "expanded" ? 1 : 0
                 visible: opacity > 0
                 Behavior on opacity {
-                    NumberAnimation { duration: 180 }
+                    NumberAnimation { duration: Theme.fadeDuration }
                 }
 
                 // Marca y escritorios a la izquierda.
@@ -628,7 +664,7 @@ PanelWindow {
                 focus: island.mode === "calendar"
                 Keys.onEscapePressed: Overlay.close()
                 Behavior on opacity {
-                    NumberAnimation { duration: 160 }
+                    NumberAnimation { duration: Theme.fadeDuration }
                 }
 
                 Column {
@@ -731,7 +767,7 @@ PanelWindow {
                 visible: opacity > 0
                 Behavior on opacity {
                     NumberAnimation {
-                        duration: 160
+                        duration: Theme.fadeDuration
                     }
                 }
 
@@ -812,7 +848,7 @@ PanelWindow {
                 visible: opacity > 0
                 Behavior on opacity {
                     NumberAnimation {
-                        duration: 120
+                        duration: Theme.fadeDuration
                     }
                 }
 
@@ -830,15 +866,15 @@ PanelWindow {
                     anchors.leftMargin: 10
                     anchors.rightMargin: 10
                     anchors.verticalCenter: parent.verticalCenter
-                    height: 6
-                    radius: 3
+                    height: Config.osdLevelBarThickness
+                    radius: height / 2
                     color: Theme.surface0
                     Rectangle {
                         anchors.left: parent.left
                         anchors.verticalCenter: parent.verticalCenter
                         height: parent.height
                         width: parent.width * Math.min(1, Audio.volume)
-                        radius: 3
+                        radius: height / 2
                         color: Audio.muted ? Theme.tertiaryText : Theme.sapphire
                     }
                 }
@@ -854,6 +890,55 @@ PanelWindow {
                 }
             }
 
+            // ---------- brightness (peek) ----------
+            Item {
+                anchors.fill: parent
+                anchors.leftMargin: 16
+                anchors.rightMargin: 16
+                opacity: island.mode === "brightness" ? 1 : 0
+                visible: opacity > 0
+                Behavior on opacity {
+                    NumberAnimation { duration: Theme.fadeDuration }
+                }
+                Text {
+                    id: brightnessIcon
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "brightness_6"
+                    font.family: "Material Symbols Rounded"
+                    font.pixelSize: Theme.fontPx(16)
+                    color: Theme.peach
+                }
+                Rectangle {
+                    anchors.left: brightnessIcon.right
+                    anchors.right: brightnessPct.left
+                    anchors.leftMargin: 10
+                    anchors.rightMargin: 10
+                    anchors.verticalCenter: parent.verticalCenter
+                    height: Config.osdLevelBarThickness
+                    radius: height / 2
+                    color: Theme.surface0
+                    Rectangle {
+                        anchors.left: parent.left
+                        anchors.verticalCenter: parent.verticalCenter
+                        height: parent.height
+                        width: parent.width * Math.min(1, Brightness.value)
+                        radius: height / 2
+                        color: Theme.peach
+                    }
+                }
+                Text {
+                    font.family: Theme.bodyFontFamily
+                    id: brightnessPct
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: Math.round(Brightness.value * 100) + "%"
+                    color: "#ffffff"
+                    font.pixelSize: Theme.fontPx(12)
+                    font.bold: true
+                }
+            }
+
             // ---------- notif (peek) ----------
             Item {
                 anchors.fill: parent
@@ -863,7 +948,7 @@ PanelWindow {
                 visible: opacity > 0
                 Behavior on opacity {
                     NumberAnimation {
-                        duration: 160
+                        duration: Theme.fadeDuration
                     }
                 }
 
@@ -887,7 +972,7 @@ PanelWindow {
                         width: parent.width
                         text: island.notifApp || "Notificación"
                         color: Theme.mauve
-                        font.pixelSize: Theme.fontPx(10)
+                        font.pixelSize: Theme.fontPx(16)
                         font.bold: true
                         elide: Text.ElideRight
                     }
@@ -896,7 +981,7 @@ PanelWindow {
                         width: parent.width
                         text: island.notifText
                         color: "#ffffff"
-                        font.pixelSize: Theme.fontPx(12)
+                        font.pixelSize: Theme.fontPx(18)
                         elide: Text.ElideRight
                         maximumLineCount: 2
                         wrapMode: Text.Wrap
@@ -912,7 +997,7 @@ PanelWindow {
                 visible: opacity > 0
                 Behavior on opacity {
                     NumberAnimation {
-                        duration: 160
+                        duration: Theme.fadeDuration
                     }
                 }
             }
@@ -925,7 +1010,7 @@ PanelWindow {
                 visible: opacity > 0
                 Behavior on opacity {
                     NumberAnimation {
-                        duration: 160
+                        duration: Theme.fadeDuration
                     }
                 }
             }
@@ -938,7 +1023,7 @@ PanelWindow {
                 visible: opacity > 0
                 Behavior on opacity {
                     NumberAnimation {
-                        duration: 160
+                        duration: Theme.fadeDuration
                     }
                 }
             }
@@ -951,7 +1036,7 @@ PanelWindow {
                 visible: opacity > 0
                 Behavior on opacity {
                     NumberAnimation {
-                        duration: 160
+                        duration: Theme.fadeDuration
                     }
                 }
             }
@@ -964,7 +1049,7 @@ PanelWindow {
                 visible: opacity > 0
                 Behavior on opacity {
                     NumberAnimation {
-                        duration: 160
+                        duration: Theme.fadeDuration
                     }
                 }
             }
@@ -977,8 +1062,19 @@ PanelWindow {
                 visible: opacity > 0
                 Behavior on opacity {
                     NumberAnimation {
-                        duration: 160
+                        duration: Theme.fadeDuration
                     }
+                }
+            }
+
+            // ---------- solicitud de permisos de administrador (PolicyKit) ----------
+            PolkitPrompt {
+                anchors.fill: parent
+                active: island.showPolkit
+                opacity: island.mode === "polkit" ? 1 : 0
+                visible: opacity > 0
+                Behavior on opacity {
+                    NumberAnimation { duration: Theme.fadeDuration }
                 }
             }
 
@@ -1021,13 +1117,13 @@ PanelWindow {
 
                 Behavior on height {
                     NumberAnimation {
-                        duration: 250
+                        duration: Theme.movementDuration
                         easing.type: Easing.OutCubic
                     }
                 }
                 Behavior on color {
                     ColorAnimation {
-                        duration: 150
+                        duration: Theme.fadeDuration
                     }
                 }
 
@@ -1078,7 +1174,7 @@ PanelWindow {
 
                 Behavior on color {
                     ColorAnimation {
-                        duration: 150
+                        duration: Theme.fadeDuration
                     }
                 }
 

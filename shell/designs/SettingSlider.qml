@@ -24,7 +24,7 @@ Item {
         opacity: sr.enabled ? 1 : 0.5
         Behavior on color {
             ColorAnimation {
-                duration: 120
+                duration: Theme.hoverDuration
             }
         }
 
@@ -38,7 +38,7 @@ Item {
             color: sr.accent
             Behavior on width {
                 NumberAnimation {
-                    duration: 90
+                    duration: Theme.reduceMotion ? 0 : 90
                 }
             }
         }
@@ -49,7 +49,7 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             text: sr.glyph
             font.family: "Material Symbols Rounded"
-            font.pixelSize: Theme.iconPx(17)
+            font.pixelSize: Theme.iconPx(20)
             font.weight: Theme.iconWeight
             color: Theme.islandBg
             MouseArea {
@@ -67,7 +67,7 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             text: Math.round(sr.value * 100) + "%"
             color: fill.width > parent.width - 44 ? Theme.islandBg : Theme.secondaryText
-            font.pixelSize: Theme.fontPx(10)
+            font.pixelSize: Theme.fontPx(12)
             font.bold: true
         }
 

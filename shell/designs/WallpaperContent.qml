@@ -130,7 +130,7 @@ Item {
 
             Behavior on color {
                 ColorAnimation {
-                    duration: 150
+                    duration: Theme.hoverDuration
                 }
             }
 
@@ -225,18 +225,18 @@ Item {
                 z: cell.active ? 1 : 0
                 Behavior on scale {
                     NumberAnimation {
-                        duration: 200
+                        duration: Theme.movementDuration
                         easing.type: Easing.OutCubic
                     }
                 }
                 Behavior on opacity {
                     NumberAnimation {
-                        duration: 200
+                        duration: Theme.fadeDuration
                     }
                 }
                 Behavior on color {
                     ColorAnimation {
-                        duration: 150
+                        duration: Theme.hoverDuration
                     }
                 }
 

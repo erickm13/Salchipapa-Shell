@@ -8,13 +8,13 @@ Singleton {
 
     // Hyprland's range is a pixel radius. Keep the same effective radius for
     // Quickshell's MultiEffect shadow so both surfaces use the same controls.
-    readonly property int range: Math.min(100, Math.round(Config.appearanceShadowSpread * 0.22
+    readonly property int range: Config.gameMode ? 0 : Math.min(100, Math.round(Config.appearanceShadowSpread * 0.22
         * Config.appearanceShadowBlur / 100))
     // Island shadow values can be scaled independently from Hyprland's values.
     readonly property int quickshellRange: Math.min(100, range * 2)
     readonly property real quickshellBlur: Math.min(1, Config.appearanceShadowBlur / 100 * 2)
     readonly property int quickshellBlurRadius: Math.round(quickshellRange * quickshellBlur)
-    readonly property real quickshellOpacity: Math.min(1, Config.appearanceShadowOpacity / 100 * 2)
+    readonly property real quickshellOpacity: Config.gameMode ? 0 : Math.min(1, Config.appearanceShadowOpacity / 100 * 2)
 
     function sync(): void {
         const c = Theme.shadow;
@@ -25,7 +25,8 @@ Singleton {
             Quickshell.shellDir + "/../scripts/sync-window-shadow.sh",
             rgba,
             String(root.range),
-            String(Config.appearanceShadowOffset)
+            String(Config.appearanceShadowOffset),
+            Config.gameMode ? "false" : "true"
         ]);
     }
 
@@ -46,6 +47,7 @@ Singleton {
         function onAppearanceShadowBlurChanged(): void { root.scheduleSync(); }
         function onAppearanceShadowOffsetChanged(): void { root.scheduleSync(); }
         function onAppearanceShadowSpreadChanged(): void { root.scheduleSync(); }
+        function onGameModeChanged(): void { root.scheduleSync(); }
     }
 
     Connections {

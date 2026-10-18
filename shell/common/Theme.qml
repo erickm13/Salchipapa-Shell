@@ -10,6 +10,8 @@ Singleton {
 
     // Mapa de roles Material 3 -> hex (sin #) del esquema activo
     property var c: ({})
+    property string schemeName: "Salchipapa"
+    property string schemeFlavour: "base"
 
     function col(role: string, fallback: string): string {
         const v = c[role];
@@ -47,9 +49,14 @@ Singleton {
         onFileChanged: reload()
         onLoaded: {
             try {
-                root.c = JSON.parse(text()).colours ?? ({});
+                const scheme = JSON.parse(text());
+                root.c = scheme.colours ?? ({});
+                root.schemeName = scheme.name ?? "Custom";
+                root.schemeFlavour = scheme.flavour ?? scheme.variant ?? "default";
             } catch (e) {
                 root.c = ({});
+                root.schemeName = "Salchipapa";
+                root.schemeFlavour = "base";
             }
         }
     }
@@ -102,6 +109,10 @@ Singleton {
     readonly property int iconWeight: Math.max(100, Math.min(700, 100 + Config.appearanceIconStroke * 30))
 
     // --- Curvas de animación (Material 3) ---
-    readonly property var spring: [0.38, 1.21, 0.22, 1, 1, 1]   // expressive, con overshoot (rebote)
+    readonly property bool reduceMotion: Config.motionReduce || Config.gameMode
+    readonly property var spring: reduceMotion ? [0.2, 0, 0, 1, 1, 1] : [0.38, 1 + (Config.motionBounce / 100 * 0.525), 0.22, 1, 1, 1]
     readonly property var standard: [0.2, 0, 0, 1, 1, 1]
+    readonly property int movementDuration: reduceMotion ? 0 : Config.motionMovementDuration
+    readonly property int fadeDuration: reduceMotion ? 0 : Config.motionFadeDuration
+    readonly property int hoverDuration: reduceMotion ? 0 : Config.motionHoverDuration
 }

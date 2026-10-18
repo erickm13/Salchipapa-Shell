@@ -7,3 +7,6 @@ singleton Notifs Notifs.qml
 singleton Bluetooth Bluetooth.qml
 singleton Quick Quick.qml
 singleton Brightness Brightness.qml
+singleton LockScreen LockScreen.qml
+singleton PolicyAuth PolicyAuth.qml
+singleton WindowBlur WindowBlur.qml

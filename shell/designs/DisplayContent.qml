@@ -104,7 +104,7 @@ Item {
                 readonly property var modes: mon.modelData.lastIpcObject?.availableModes ?? []
 
                 width: parent.width
-                height: 176
+                height: 196
                 radius: 16
                 color: Qt.rgba(1, 1, 1, 0.04)
 
@@ -128,14 +128,14 @@ Item {
                         font.family: Theme.bodyFontFamily
                         text: mon.modelData.name
                         color: "#ffffff"
-                        font.pixelSize: Theme.fontPx(13)
+                        font.pixelSize: Theme.fontPx(15)
                         font.bold: true
                     }
                     Text {
                         font.family: Theme.bodyFontFamily
                         text: mon.modelData.width + "×" + mon.modelData.height + " · " + Math.round(mon.rr) + " Hz · " + mon.modelData.scale + "×"
                         color: Theme.secondaryText
-                        font.pixelSize: Theme.fontPx(10)
+                        font.pixelSize: Theme.fontPx(12)
                     }
                 }
                 Text {
@@ -146,7 +146,7 @@ Item {
                     anchors.rightMargin: 14
                     text: "focused"
                     color: Theme.green
-                    font.pixelSize: Theme.fontPx(10)
+                    font.pixelSize: Theme.fontPx(12)
                     font.bold: true
                     visible: mon.modelData.focused
                 }
@@ -160,7 +160,7 @@ Item {
                     anchors.right: parent.right
                     anchors.leftMargin: 14
                     anchors.rightMargin: 14
-                    height: 28
+                    height: 36
                     glyph: "brightness_6"
                     accent: Theme.peach
                     value: Brightness.value
@@ -184,12 +184,12 @@ Item {
                             required property var modelData
                             readonly property bool active: Math.abs(mon.modelData.scale - sc.modelData) < 0.01
                             width: scLabel.width + 18
-                            height: 26
-                            radius: 13
+                            height: 32
+                            radius: 16
                             color: sc.active ? Theme.green : (scMouse.containsMouse ? Theme.panelCardHi : Theme.panelCard)
                             Behavior on color {
                                 ColorAnimation {
-                                    duration: 120
+                                    duration: Theme.hoverDuration
                                 }
                             }
                             Text {
@@ -198,7 +198,7 @@ Item {
                                 anchors.centerIn: parent
                                 text: sc.modelData + "×"
                                 color: sc.active ? Theme.islandBg : Theme.text
-                                font.pixelSize: Theme.fontPx(11)
+                                font.pixelSize: Theme.fontPx(13)
                                 font.bold: sc.active
                             }
                             MouseArea {
@@ -220,7 +220,7 @@ Item {
                     anchors.right: parent.right
                     anchors.leftMargin: 10
                     anchors.rightMargin: 10
-                    height: 28
+                    height: 36
                     radius: 10
                     color: resMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.05) : "transparent"
 
@@ -231,7 +231,7 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                         text: "Resolution"
                         color: Theme.secondaryText
-                        font.pixelSize: Theme.fontPx(11)
+                        font.pixelSize: Theme.fontPx(13)
                     }
                     Text {
                         font.family: Theme.bodyFontFamily
@@ -240,7 +240,7 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                         text: mon.modelData.width + "×" + mon.modelData.height + " @ " + Math.round(mon.rr) + " Hz"
                         color: "#ffffff"
-                        font.pixelSize: Theme.fontPx(11)
+                        font.pixelSize: Theme.fontPx(13)
                         font.bold: true
                     }
                     Icon {
@@ -249,7 +249,7 @@ Item {
                         anchors.rightMargin: 4
                         anchors.verticalCenter: parent.verticalCenter
                         text: "chevron_right"
-                        px: 16
+                        px: 19
                         color: Theme.tertiaryText
                     }
                     MouseArea {
@@ -275,7 +275,7 @@ Item {
         // --- Night Light ---
         Rectangle {
             width: parent.width
-            height: 56
+            height: 68
             radius: 16
             color: Qt.rgba(1, 1, 1, 0.04)
 
@@ -284,14 +284,14 @@ Item {
                 anchors.left: parent.left
                 anchors.leftMargin: 10
                 anchors.verticalCenter: parent.verticalCenter
-                width: 36
-                height: 36
-                radius: 18
+                width: 42
+                height: 42
+                radius: 21
                 color: Quick.nightLight ? Theme.mauve : Theme.panelCardHi
                 Icon {
                     anchors.centerIn: parent
                     text: "dark_mode"
-                    px: 18
+                    px: 20
                     color: Quick.nightLight ? Theme.islandBg : Theme.secondaryText
                 }
             }
@@ -304,14 +304,14 @@ Item {
                     font.family: Theme.bodyFontFamily
                     text: "Night Light"
                     color: "#ffffff"
-                    font.pixelSize: Theme.fontPx(13)
+                    font.pixelSize: Theme.fontPx(15)
                     font.bold: true
                 }
                 Text {
                     font.family: Theme.bodyFontFamily
                     text: Quick.nightLight ? "On" : "Off"
                     color: Theme.secondaryText
-                    font.pixelSize: Theme.fontPx(10)
+                    font.pixelSize: Theme.fontPx(12)
                 }
             }
 
@@ -320,25 +320,25 @@ Item {
                 anchors.right: parent.right
                 anchors.rightMargin: 14
                 anchors.verticalCenter: parent.verticalCenter
-                width: 44
-                height: 24
-                radius: 12
+                width: 50
+                height: 28
+                radius: 14
                 color: Quick.nightLight ? Theme.mauve : Theme.panelCardHi
                 Behavior on color {
                     ColorAnimation {
-                        duration: 150
+                    duration: Theme.hoverDuration
                     }
                 }
                 Rectangle {
-                    width: 18
-                    height: 18
-                    radius: 9
+                    width: 20
+                    height: 20
+                    radius: 10
                     anchors.verticalCenter: parent.verticalCenter
                     x: Quick.nightLight ? parent.width - width - 3 : 3
                     color: "#ffffff"
                     Behavior on x {
                         NumberAnimation {
-                            duration: 150
+                            duration: Theme.movementDuration
                             easing.type: Easing.OutCubic
                         }
                     }

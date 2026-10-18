@@ -63,12 +63,12 @@ FloatingWindow {
         {
             name: "Lock Screen",
             icon: "lock",
-            desc: "Pantalla de bloqueo."
+            desc: "Reloj, fondo y contenido de la pantalla de bloqueo."
         },
         {
             name: "System",
             icon: "settings",
-            desc: "Ajustes del sistema."
+            desc: "Espacios de trabajo e información de la shell."
         }
     ]
 
@@ -520,6 +520,81 @@ FloatingWindow {
                         label: "Show neighbouring months"
                         checked: Config.clockShowNeighbouringMonths
                         onToggled: Config.opt.clockShowNeighbouringMonths = !Config.clockShowNeighbouringMonths
+                    }
+
+                    // ---- Motion ----
+                    ToggleRow {
+                        visible: win.category === 4
+                        width: parent.width
+                        label: "Reduce motion"
+                        checked: Config.opt.motionReduce
+                        onToggled: Config.opt.motionReduce = !Config.opt.motionReduce
+                    }
+                    PxSlider {
+                        visible: win.category === 4
+                        width: parent.width
+                        label: "Movement (size / position)"
+                        from: 0
+                        to: 1000
+                        value: Config.opt.motionMovementDuration
+                        unit: "ms"
+                        onMoved: v => Config.opt.motionMovementDuration = v
+                    }
+                    PxSlider {
+                        visible: win.category === 4
+                        width: parent.width
+                        label: "Fades & colour"
+                        from: 0
+                        to: 1000
+                        value: Config.opt.motionFadeDuration
+                        unit: "ms"
+                        onMoved: v => Config.opt.motionFadeDuration = v
+                    }
+                    PxSlider {
+                        visible: win.category === 4
+                        width: parent.width
+                        label: "Hover response"
+                        from: 0
+                        to: 1000
+                        value: Config.opt.motionHoverDuration
+                        unit: "ms"
+                        onMoved: v => Config.opt.motionHoverDuration = v
+                    }
+                    PxSlider {
+                        visible: win.category === 4
+                        width: parent.width
+                        label: "Bounce"
+                        from: 0
+                        to: 100
+                        value: Config.opt.motionBounce
+                        unit: "%"
+                        onMoved: v => Config.opt.motionBounce = v
+                    }
+
+                    LauncherSettings {
+                        visible: win.category === 5
+                        width: parent.width
+                        height: visible ? implicitHeight : 0
+                    }
+                    NotificationsSettings {
+                        visible: win.category === 6
+                        width: parent.width
+                        height: visible ? implicitHeight : 0
+                    }
+                    ControlCenterSettings {
+                        visible: win.category === 7
+                        width: parent.width
+                        height: visible ? implicitHeight : 0
+                    }
+                    LockScreenSettings {
+                        visible: win.category === 8
+                        width: parent.width
+                        height: visible ? implicitHeight : 0
+                    }
+                    SystemSettings {
+                        visible: win.category === 9
+                        width: parent.width
+                        height: visible ? implicitHeight : 0
                     }
 
                     // ---- Appearance ----
@@ -1003,7 +1078,7 @@ FloatingWindow {
 
                     // ---- Otras categorías (placeholder) ----
                     Item {
-                        visible: win.category !== 0 && win.category !== 1 && win.category !== 2 && win.category !== 3
+                        visible: false
                         width: parent.width
                         height: 90
                         Text {
@@ -1033,7 +1108,7 @@ FloatingWindow {
         color: active ? Theme.panelCard : (navMouse.containsMouse ? Qt.tint(Theme.panelCard, Theme.hoverFill) : "transparent")
         Behavior on color {
             ColorAnimation {
-                duration: 120
+                duration: Theme.hoverDuration
             }
         }
 
@@ -1128,7 +1203,7 @@ FloatingWindow {
             color: tr.checked ? Theme.green : Theme.panelCardHi
             Behavior on color {
                 ColorAnimation {
-                    duration: 150
+                    duration: Theme.hoverDuration
                 }
             }
             Rectangle {
@@ -1140,7 +1215,7 @@ FloatingWindow {
                 color: "#ffffff"
                 Behavior on x {
                     NumberAnimation {
-                        duration: 150
+                        duration: Theme.movementDuration
                         easing.type: Easing.OutCubic
                     }
                 }

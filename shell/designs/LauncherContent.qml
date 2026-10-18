@@ -120,7 +120,7 @@ Item {
             required property var modelData
 
             width: ListView.view.width
-            height: 48
+            height: Config.launcherRowHeight
             radius: 12
             color: index === root.sel ? Theme.surface0 : "transparent"
 

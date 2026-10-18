@@ -46,7 +46,8 @@ Para volver atrás: borra el symlink y restaura `~/.config/hypr.bak`.
 | `lua/windowrules.lua` | Reglas de ventana y de capas (incl. scratchpads) |
 | `lua/keybinds.lua` | Atajos |
 | `lua/autostart.lua` | Arranque (polkit, llavero, cursor, cliphist, MPRIS, limpieza de papelera, Quickshell) |
-| `scripts/` | Scripts (capturas, areapicker helper, scratchpads) |
+| `scripts/` | Scripts (capturas, areapicker helper, scratchpads y bloqueo de pantalla) |
+| `shell/services/LockScreen.qml` | Pantalla de bloqueo segura vía sesión Wayland y autenticación PAM |
 | `shell/` | La shell de Quickshell (isla, launcher, temas, picker) |
 
 ## Atajos principales
@@ -58,6 +59,7 @@ Para volver atrás: borra el symlink y restaura `~/.config/hypr.bak`.
 | `Super + B` | Navegador |
 | `Super + E` | Archivos (yazi) |
 | `Super + Q` | Cerrar ventana |
+| `Super + Backspace` | Bloquear pantalla (Quickshell + PAM) |
 | `Super + V` / `F` | Flotar / pantalla completa |
 | `Super + [1-0]` | Workspace |
 | `Super + Shift + [1-0]` | Mover ventana a workspace |
@@ -116,4 +118,3 @@ Probar suelta: `qs -p ~/proyects/Salchipapa-Shell/shell/shell.qml` (se recarga s
 - [ ] Ampliar la barra: bandeja, volumen, batería, red, CPU/RAM
 - [ ] Esquema de color propio (bordes, blur, barra)
 - [ ] Herramienta de fondo de pantalla (hyprpaper o swww)
-- [ ] Bloqueo de pantalla (hyprlock + hypridle)

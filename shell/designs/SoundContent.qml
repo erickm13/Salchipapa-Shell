@@ -1,9 +1,7 @@
 pragma ComponentBehavior: Bound
-// Subpágina "Sound" del centro de control: volumen maestro, micrófono y
-// selección de dispositivo de salida (PipeWire).
+// Mezclador de sonido: dispositivos de salida/entrada y volumen por aplicación.
 import QtQuick
 import Quickshell
-import Quickshell.Services.Pipewire
 import "../common"
 import "../services"
 
@@ -13,7 +11,6 @@ Item {
     focus: Overlay.mode === "sound"
     Keys.onEscapePressed: Overlay.mode = "control"
 
-    // ===== Cabecera =====
     Item {
         id: header
         anchors.top: parent.top
@@ -21,182 +18,244 @@ Item {
         anchors.right: parent.right
         height: 32
 
-        Row {
+        Rectangle {
+            width: 30
+            height: 30
+            radius: 15
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
-            spacing: 8
-            Rectangle {
-                width: 30
-                height: 30
-                radius: 15
-                anchors.verticalCenter: parent.verticalCenter
-                color: backMouse.containsMouse ? Theme.panelCard : "transparent"
-                Icon {
-                    anchors.centerIn: parent
-                    text: "chevron_left"
-                    px: 22
-                    color: Theme.text
-                }
-                MouseArea {
-                    id: backMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: Overlay.mode = "control"
-                }
+            color: backMouse.containsMouse ? Theme.panelCard : "transparent"
+            Icon {
+                anchors.centerIn: parent
+                text: "chevron_left"
+                px: 22
+                color: Theme.text
             }
-            Text {
-                font.family: Theme.bodyFontFamily
-                anchors.verticalCenter: parent.verticalCenter
-                text: "Sound"
-                color: "#ffffff"
-                font.pixelSize: Theme.fontPx(16)
-                font.bold: true
+            MouseArea {
+                id: backMouse
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: Overlay.mode = "control"
             }
+        }
+        Text {
+            anchors.left: parent.left
+            anchors.leftMargin: 40
+            anchors.verticalCenter: parent.verticalCenter
+            text: "Sound"
+            color: "#ffffff"
+            font.family: Theme.bodyFontFamily
+            font.pixelSize: Theme.fontPx(18)
+            font.bold: true
         }
     }
 
     Column {
+        id: sections
         anchors.top: header.bottom
-        anchors.topMargin: 10
+        anchors.topMargin: 8
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        spacing: 10
+        spacing: 6
 
-        // --- Volumen maestro ---
-        LabeledSlider {
-            width: parent.width
-            label: "Volume"
+        Text {
+            text: "Output"
+            color: Theme.secondaryText
+            font.family: Theme.bodyFontFamily
+            font.pixelSize: Theme.fontPx(12)
+            font.bold: true
+            leftPadding: 4
+            height: 15
+        }
+
+        Repeater {
+            model: Audio.sinks.slice(0, 5)
+            delegate: Rectangle {
+                id: outputRow
+                required property var modelData
+                width: sections.width
+                height: 36
+                radius: 14
+                readonly property bool isDefault: Audio.sink === modelData
+                color: isDefault ? Qt.rgba(Theme.green.r, Theme.green.g, Theme.green.b, 0.14) : (outputMouse.containsMouse ? Theme.panelCardHi : Theme.panelCard)
+                Icon {
+                    id: outputIcon
+                    anchors.left: parent.left
+                    anchors.leftMargin: 11
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: outputRow.modelData.name.toLowerCase().includes("headphone") ? "headphones" : (outputRow.modelData.name.toLowerCase().includes("hdmi") || outputRow.modelData.name.toLowerCase().includes("displayport") ? "desktop_windows" : "speaker")
+                    px: 18
+                    color: outputRow.isDefault ? Theme.green : Theme.secondaryText
+                }
+                Text {
+                    anchors.left: outputIcon.right
+                    anchors.right: outputCheck.left
+                    anchors.leftMargin: 8
+                    anchors.rightMargin: 6
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: outputRow.modelData.description || outputRow.modelData.nickname || outputRow.modelData.name || "Output"
+                    color: "#ffffff"
+                    font.family: Theme.bodyFontFamily
+                    font.pixelSize: Theme.fontPx(12)
+                    font.bold: outputRow.isDefault
+                    elide: Text.ElideRight
+                }
+                Icon {
+                    id: outputCheck
+                    anchors.right: parent.right
+                    anchors.rightMargin: 11
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "check"
+                    px: 18
+                    color: Theme.green
+                    visible: outputRow.isDefault
+                }
+                MouseArea {
+                    id: outputMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: Audio.setDefaultSink(outputRow.modelData)
+                }
+            }
+        }
+
+        SettingSlider {
+            width: sections.width
+            height: 36
             glyph: Audio.muted ? "volume_off" : "volume_up"
             value: Math.min(1, Audio.volume)
             onMoved: v => Audio.setVolume(v)
             onIconTapped: Audio.toggleMute()
         }
 
-        // --- Micrófono ---
-        LabeledSlider {
-            width: parent.width
-            label: "Microphone"
-            accent: Theme.blue
-            glyph: Audio.micMuted ? "mic_off" : "mic"
-            value: Math.min(1, Audio.micVolume)
-            onIconTapped: Audio.toggleMic()
-        }
-
         Text {
-            font.family: Theme.bodyFontFamily
-            text: "Output"
+            text: "Input"
             color: Theme.secondaryText
-            font.pixelSize: Theme.fontPx(11)
+            font.family: Theme.bodyFontFamily
+            font.pixelSize: Theme.fontPx(12)
             font.bold: true
             leftPadding: 4
-            topPadding: 2
+            height: 15
         }
 
-        // --- Dispositivos de salida ---
         Repeater {
-            model: Audio.sinks
-
+            model: Audio.sources.slice(0, 4)
             delegate: Rectangle {
-                id: dev
+                id: inputRow
                 required property var modelData
-                readonly property bool isDefault: Audio.sink === dev.modelData
-                width: parent.width
-                height: 48
+                width: sections.width
+                height: 36
                 radius: 14
-                color: isDefault ? Qt.rgba(Theme.green.r, Theme.green.g, Theme.green.b, 0.14) : (devMouse.containsMouse ? Theme.panelCardHi : Theme.panelCard)
-                Behavior on color {
-                    ColorAnimation {
-                        duration: 120
-                    }
-                }
-
+                readonly property bool isDefault: Audio.source === modelData
+                color: isDefault ? Qt.rgba(Theme.green.r, Theme.green.g, Theme.green.b, 0.14) : (inputMouse.containsMouse ? Theme.panelCardHi : Theme.panelCard)
                 Icon {
-                    id: devIcon
+                    id: inputIcon
                     anchors.left: parent.left
-                    anchors.leftMargin: 14
+                    anchors.leftMargin: 11
                     anchors.verticalCenter: parent.verticalCenter
-                    text: dev.isDefault ? "volume_up" : "speaker"
+                    text: "mic"
                     px: 18
-                    color: dev.isDefault ? Theme.green : Theme.secondaryText
+                    color: inputRow.isDefault ? Theme.green : Theme.secondaryText
                 }
                 Text {
-                    font.family: Theme.bodyFontFamily
-                    anchors.left: devIcon.right
-                    anchors.right: devCheck.left
-                    anchors.leftMargin: 12
-                    anchors.rightMargin: 8
+                    anchors.left: inputIcon.right
+                    anchors.right: inputCheck.left
+                    anchors.leftMargin: 8
+                    anchors.rightMargin: 6
                     anchors.verticalCenter: parent.verticalCenter
-                    text: dev.modelData.description || dev.modelData.nickname || dev.modelData.name || "Salida"
+                    text: inputRow.modelData.description || inputRow.modelData.nickname || inputRow.modelData.name || "Input"
                     color: "#ffffff"
+                    font.family: Theme.bodyFontFamily
                     font.pixelSize: Theme.fontPx(12)
-                    font.bold: dev.isDefault
+                    font.bold: inputRow.isDefault
                     elide: Text.ElideRight
                 }
                 Icon {
-                    id: devCheck
+                    id: inputCheck
                     anchors.right: parent.right
-                    anchors.rightMargin: 14
+                    anchors.rightMargin: 11
                     anchors.verticalCenter: parent.verticalCenter
                     text: "check"
                     px: 18
                     color: Theme.green
-                    visible: dev.isDefault
+                    visible: inputRow.isDefault
                 }
                 MouseArea {
-                    id: devMouse
+                    id: inputMouse
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: Audio.setDefaultSink(dev.modelData)
+                    onClicked: Audio.setDefaultSource(inputRow.modelData)
                 }
             }
         }
-    }
 
-    // Slider con etiqueta encima (para las páginas de ajustes)
-    component LabeledSlider: Item {
-        id: ls
-        property string label: ""
-        property string glyph: ""
-        property real value: 0
-        property color accent: Theme.green
-        signal moved(real v)
-        signal iconTapped
-
-        implicitHeight: lbl.height + 4 + 30
-        height: implicitHeight
+        SettingSlider {
+            width: sections.width
+            height: 36
+            glyph: Audio.micMuted ? "mic_off" : "mic"
+            value: Math.min(1, Audio.micVolume)
+            onMoved: v => Audio.setNodeVolume(Audio.source, v)
+            onIconTapped: Audio.toggleMic()
+        }
 
         Text {
-            font.family: Theme.bodyFontFamily
-            id: lbl
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.leftMargin: 4
-            text: ls.label
+            text: "Apps"
             color: Theme.secondaryText
-            font.pixelSize: Theme.fontPx(11)
+            font.family: Theme.bodyFontFamily
+            font.pixelSize: Theme.fontPx(12)
             font.bold: true
+            leftPadding: 4
+            height: 15
         }
-        SettingSlider {
-            anchors.top: lbl.bottom
-            anchors.topMargin: 4
-            anchors.left: parent.left
-            anchors.right: parent.right
-            height: 30
-            glyph: ls.glyph
-            value: ls.value
-            accent: ls.accent
-            onMoved: v => ls.moved(v)
-            onIconTapped: ls.iconTapped()
+
+        Repeater {
+            model: Audio.apps.slice(0, 4)
+            delegate: Rectangle {
+                id: appEntry
+                required property var modelData
+                width: sections.width
+                height: 56
+                radius: 14
+                color: Theme.panelCard
+
+                Text {
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    anchors.leftMargin: 10
+                    anchors.topMargin: 5
+                    width: parent.width - 16
+                    text: appEntry.modelData.name
+                    color: Theme.text
+                    font.family: Theme.bodyFontFamily
+                    font.pixelSize: Theme.fontPx(11)
+                    elide: Text.ElideRight
+                }
+                SettingSlider {
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    anchors.leftMargin: 6
+                    anchors.rightMargin: 6
+                    anchors.bottomMargin: 5
+                    height: 30
+                    glyph: Audio.appMuted(appEntry.modelData.nodes) ? "volume_off" : "volume_up"
+                    value: Math.min(1, Audio.appVolume(appEntry.modelData.nodes))
+                    onMoved: v => Audio.setAppVolume(appEntry.modelData.nodes, v)
+                    onIconTapped: Audio.toggleAppMute(appEntry.modelData.nodes)
+                }
+            }
         }
     }
 
     component Icon: Text {
         property real px: 18
         font.family: "Material Symbols Rounded"
-        font.pixelSize: px
+        font.pixelSize: Theme.iconPx(px)
+        font.weight: Theme.iconWeight
         verticalAlignment: Text.AlignVCenter
     }
 }

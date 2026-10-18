@@ -141,7 +141,7 @@ hl.bind("CTRL + SHIFT + Escape", hl.dsp.exec_cmd(v.scratch .. " sysmon btop 'foo
 -- Apps y utilidades
 hl.bind(mod .. " + C", hl.dsp.exec_cmd("code")) -- editor (VS Code)
 hl.bind(mod .. " + SHIFT + C", hl.dsp.exec_cmd("hyprpicker -a")) -- selector de color
-hl.bind(mod .. " + BackSpace", hl.dsp.exec_cmd("loginctl lock-session")) -- bloquear
+hl.bind(mod .. " + BackSpace", hl.dsp.exec_cmd(v.scripts .. "/lock-screen.sh")) -- bloquear
 hl.bind(mod .. " + W", hl.dsp.global("salchipapa:wallpaper")) -- selector de fondos (en la isla)
 
 -- Scroll sobre el escritorio

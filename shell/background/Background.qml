@@ -54,7 +54,7 @@ Variants {
                 target: top
                 property: "opacity"
                 to: 1
-                duration: Config.appearanceWallpaperCrossfade
+                duration: Theme.reduceMotion ? 0 : Config.appearanceWallpaperCrossfade
                 easing.type: Easing.InOutQuad
                 onFinished: {
                     base.source = top.source;

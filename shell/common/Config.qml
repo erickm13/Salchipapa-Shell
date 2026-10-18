@@ -10,6 +10,8 @@ Singleton {
 
     // Diseño de barra activo (no persistido por ahora)
     property string design: "island"
+    // Estado temporal del modo de juego; nunca se guarda en config.json.
+    property bool gameMode: false
 
     // Objeto de ajustes para EDITAR desde el panel (p.ej. Config.opt.barHeight = 40)
     property alias opt: settings
@@ -69,6 +71,38 @@ Singleton {
     readonly property int appearanceShadowOffset: settings.appearanceShadowOffset
     readonly property int appearanceShadowSpread: settings.appearanceShadowSpread
     readonly property int appearanceWallpaperCrossfade: settings.appearanceWallpaperCrossfade
+    // Motion
+    readonly property bool motionReduce: settings.motionReduce
+    readonly property int motionMovementDuration: motionReduce ? 0 : settings.motionMovementDuration
+    readonly property int motionFadeDuration: motionReduce ? 0 : settings.motionFadeDuration
+    readonly property int motionHoverDuration: motionReduce ? 0 : settings.motionHoverDuration
+    readonly property int motionBounce: motionReduce ? 0 : settings.motionBounce
+    // Launcher
+    readonly property int launcherWidth: settings.launcherWidth
+    readonly property int launcherRowHeight: settings.launcherRowHeight
+    readonly property int launcherRowsBeforeScrolling: settings.launcherRowsBeforeScrolling
+    // Notifications / OSD
+    readonly property int notificationPopupTimeout: settings.notificationPopupTimeout
+    readonly property int notificationUrgentTimeout: settings.notificationUrgentTimeout
+    readonly property int notificationWidth: settings.notificationWidth
+    readonly property bool notificationShowBody: settings.notificationShowBody
+    readonly property int notificationHistoryHeight: settings.notificationHistoryHeight
+    readonly property int osdOnScreenTime: settings.osdOnScreenTime
+    readonly property int osdLevelBarThickness: settings.osdLevelBarThickness
+    // Control Center
+    readonly property int controlCenterSlots: settings.controlCenterSlots
+    readonly property string controlCenterLayout: settings.controlCenterLayout
+    // Lock Screen
+    readonly property bool lockShowDate: settings.lockShowDate
+    readonly property bool lockShowClock: settings.lockShowClock
+    readonly property bool lockClock24Hour: settings.lockClock24Hour
+    readonly property bool lockShowMusic: settings.lockShowMusic
+    readonly property int lockBackgroundBlur: settings.lockBackgroundBlur
+    readonly property int lockBackgroundDim: settings.lockBackgroundDim
+    // Hyprland window blur
+    readonly property bool windowBlurEnabled: settings.windowBlurEnabled
+    readonly property int windowBlurSize: settings.windowBlurSize
+    readonly property int windowBlurPasses: settings.windowBlurPasses
 
     FileView {
         path: Quickshell.env("HOME") + "/.config/salchipapa-shell/config.json"
@@ -143,6 +177,44 @@ Singleton {
             property int appearanceShadowOffset: 8
             property int appearanceShadowSpread: 74
             property int appearanceWallpaperCrossfade: 450
+
+            // Motion
+            property bool motionReduce: false
+            property int motionMovementDuration: 420
+            property int motionFadeDuration: 180
+            property int motionHoverDuration: 150
+            property int motionBounce: 40
+
+            // Launcher
+            property int launcherWidth: 550
+            property int launcherRowHeight: 50
+            property int launcherRowsBeforeScrolling: 6
+
+            // Notifications / OSD
+            property int notificationPopupTimeout: 2000
+            property int notificationUrgentTimeout: 6000
+            property int notificationWidth: 480
+            property bool notificationShowBody: true
+            property int notificationHistoryHeight: 200
+            property int osdOnScreenTime: 1500
+            property int osdLevelBarThickness: 6
+
+            // Control Center
+            property int controlCenterSlots: 7
+            property string controlCenterLayout: ""
+
+            // Lock Screen
+            property bool lockShowDate: true
+            property bool lockShowClock: true
+            property bool lockClock24Hour: false
+            property bool lockShowMusic: true
+            property int lockBackgroundBlur: 100
+            property int lockBackgroundDim: 40
+
+            // Hyprland window blur
+            property bool windowBlurEnabled: true
+            property int windowBlurSize: 5
+            property int windowBlurPasses: 2
         }
     }
 }

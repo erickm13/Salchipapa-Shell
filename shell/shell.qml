@@ -11,6 +11,7 @@ import "common"
 import "designs"
 import "picker"
 import "background"
+import "services"
 
 ShellRoot {
     // Sincroniza la sombra nativa de Hyprland con los controles de Appearance.
@@ -67,6 +68,9 @@ ShellRoot {
     // Forzamos la instancia del singleton Overlay para que registre sus GlobalShortcuts.
     Component.onCompleted: {
         Overlay.mode;
+        LockScreen.locked;
+        LockScreen.mediaService = Media;
+        WindowBlur.apply();
         WindowShadowSync.sync();
     }
 

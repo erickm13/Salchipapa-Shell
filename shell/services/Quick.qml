@@ -3,12 +3,13 @@ pragma Singleton
 // Lo comparten el dashboard expandido y el centro de control (ControlContent).
 import Quickshell
 import Quickshell.Hyprland
+import "../common"
 
 Singleton {
     id: root
 
     property bool nightLight: false
-    property bool gameMode: false
+    readonly property bool gameMode: Config.gameMode
     property bool dnd: false // Focus / No molestar
 
     // ¿Se deben silenciar los peeks de notificación? (Focus o Game mode)
@@ -20,7 +21,7 @@ Singleton {
         Hyprland.dispatch("hl.dsp.exec_cmd('" + (nightLight ? "hyprsunset -t 4000" : "pkill hyprsunset") + "')");
     }
     function toggleGameMode(): void {
-        gameMode = !gameMode;
+        Config.gameMode = !Config.gameMode;
     }
     function toggleDnd(): void {
         dnd = !dnd;

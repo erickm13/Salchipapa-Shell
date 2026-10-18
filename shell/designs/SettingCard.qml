@@ -12,16 +12,17 @@ Rectangle {
     property real sliderValue: 0
     property color sliderAccent: Theme.green
     property bool sliderEnabled: true
+    property int rowSize: 2
     signal opened
     signal sliderMoved(real v)
     signal sliderIconTapped
 
-    height: 82
+    height: rowSize >= 2 ? 82 : 60
     radius: Theme.radiusLarge
     color: cardMouse.containsMouse ? Qt.tint(Theme.panelCardHi, Theme.hoverFill) : Theme.panelCard
     Behavior on color {
         ColorAnimation {
-            duration: 120
+            duration: Theme.hoverDuration
         }
     }
 
