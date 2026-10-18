@@ -303,7 +303,7 @@ PanelWindow {
                     Row {
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 4
-                        visible: !Quick.gameMode && PowerProfiles.mode === "balanced"
+                        visible: false
 
                         // Glow en el color principal sobre los indicadores (solo en notch)
                         layer.enabled: Config.notchMode && !Config.gameMode
@@ -353,7 +353,7 @@ PanelWindow {
                         color: "#ffffff"
                         font.pixelSize: Theme.fontPx(16)
                         font.bold: true
-                        visible: !Quick.gameMode && PowerProfiles.mode === "balanced"
+                        visible: false
                     }
 
                     // Indicador persistente para que Game Mode siga visible
@@ -361,7 +361,7 @@ PanelWindow {
                     Row {
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 4
-                        visible: Quick.gameMode || PowerProfiles.mode !== "balanced"
+                        visible: true
 
                         Icon {
                             text: Quick.gameMode ? "sports_esports" : PowerProfiles.mode === "turbo" ? "rocket_launch" : PowerProfiles.mode === "silent" ? "volume_off" : "speed"
@@ -383,7 +383,7 @@ PanelWindow {
                     Row {
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 8
-                        visible: Config.clockShowBatteryWifi && !Quick.gameMode && PowerProfiles.mode === "balanced"
+                        visible: false
 
                         // Glow en el color principal sobre wifi/batería (solo en notch)
                         layer.enabled: Config.notchMode && !Config.gameMode
