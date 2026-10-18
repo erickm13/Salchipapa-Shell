@@ -10,9 +10,15 @@ Singleton {
     property string type: "none"   // "wifi" | "ethernet" | "none"
     property string name: ""       // SSID o nombre de conexión
     readonly property bool online: type !== "none"
+    property bool wifiEnabled: true // estado de la radio wifi (nmcli radio wifi)
 
     function refresh(): void {
         proc.running = true;
+        radioProc.running = true;
+    }
+    function toggleWifi(): void {
+        wifiProc.command = ["nmcli", "radio", "wifi", wifiEnabled ? "off" : "on"];
+        wifiProc.running = true;
     }
 
     Process {
@@ -34,6 +40,23 @@ Singleton {
                 }
             }
         }
+    }
+
+    // Estado de la radio wifi (encendida/apagada), independiente de si hay conexión
+    Process {
+        id: radioProc
+        running: true
+        command: ["nmcli", "-t", "radio", "wifi"]
+        stdout: StdioCollector {
+            id: radioOut
+            onStreamFinished: root.wifiEnabled = radioOut.text.trim() === "enabled"
+        }
+    }
+
+    // Enciende/apaga la radio wifi; luego refresca el estado
+    Process {
+        id: wifiProc
+        onExited: root.refresh()
     }
 
     Timer {

@@ -11,19 +11,41 @@ Item {
     property int sel: 0
     property string query: ""
     property var schemes: []
+    property string currentScheme: "" // esquema activo (nombre o "dynamic")
+
+    // Card "Dynamic": los colores los controla matugen según el wallpaper actual.
+    readonly property var dynamicCard: ({
+            name: "Dynamic",
+            dynamic: true,
+            swatches: [Theme.green, Theme.blue, Theme.peach, Theme.mauve, Theme.yellow, Theme.sapphire, Theme.red]
+        })
+    readonly property var allSchemes: [dynamicCard].concat(schemes)
 
     readonly property var results: {
         const q = query.trim().toLowerCase();
-        return q === "" ? schemes : schemes.filter(s => s.name.toLowerCase().includes(q));
+        return q === "" ? allSchemes : allSchemes.filter(s => s.name.toLowerCase().includes(q));
+    }
+
+    // Selecciona (y centra) la card del esquema activo
+    function selectCurrent(): void {
+        const cur = currentScheme.toLowerCase();
+        let i = results.findIndex(s => s.dynamic ? (cur === "dynamic" || cur === "") : s.name.toLowerCase() === cur);
+        if (i < 0)
+            i = 0;
+        sel = i;
     }
 
     function apply(): void {
         const s = results[sel];
-        if (s) {
+        if (!s)
+            return;
+        if (s.dynamic)
+            // Dynamic: regenera los colores del wallpaper actual con matugen (-> scheme=dynamic)
+            applyProc.command = ["sh", "-c", "\"$HOME/proyects/Salchipapa-Shell/scripts/wallpaper.sh\" \"$1\" colors", "sh", Wallpaper.current];
+        else
             applyProc.command = ["sh", "-c", "\"$HOME/proyects/Salchipapa-Shell/scripts/apply-colors.sh\" scheme \"$1\"", "sh", s.name];
-            applyProc.running = true;
-            Overlay.close();
-        }
+        applyProc.running = true;
+        Overlay.close();
     }
 
     Connections {
@@ -31,10 +53,10 @@ Item {
         function onModeChanged(): void {
             if (Overlay.mode === "themes") {
                 root.query = "";
-                root.sel = 0;
                 searchInput.text = "";
                 searchInput.forceActiveFocus();
                 listProc.running = true;
+                curProc.running = true;
             }
         }
     }
@@ -59,6 +81,19 @@ Item {
                 } catch (e) {
                     root.schemes = [];
                 }
+                root.selectCurrent();
+            }
+        }
+    }
+    // Esquema activo (nombre o "dynamic") para preseleccionar su card
+    Process {
+        id: curProc
+        command: ["sh", "-c", "cat \"$HOME/.local/state/salchipapa-shell/scheme\" 2>/dev/null"]
+        stdout: StdioCollector {
+            id: curOut
+            onStreamFinished: {
+                root.currentScheme = curOut.text.trim();
+                root.selectCurrent();
             }
         }
     }
@@ -146,15 +181,14 @@ Item {
         height: 110
         orientation: ListView.Horizontal
         spacing: 12
-        leftMargin: 16
-        rightMargin: 16
         clip: true
         model: root.results
         currentIndex: root.sel
-        highlightMoveDuration: 180
-        highlightRangeMode: ListView.ApplyRange
-        preferredHighlightBegin: 0
-        preferredHighlightEnd: width - 140
+        highlightMoveDuration: 200
+        highlightRangeMode: ListView.StrictlyEnforceRange
+        preferredHighlightBegin: (width - 140) / 2
+        preferredHighlightEnd: (width - 140) / 2
+        snapMode: ListView.SnapToItem
         boundsBehavior: Flickable.StopAtBounds
 
         delegate: Rectangle {
@@ -173,6 +207,18 @@ Item {
                 ColorAnimation {
                     duration: 150
                 }
+            }
+
+            // Marca de la card Dynamic (colores de matugen)
+            Text {
+                visible: card.modelData.dynamic === true
+                anchors.top: parent.top
+                anchors.right: parent.right
+                anchors.margins: 8
+                text: "auto_awesome"
+                font.family: "Material Symbols Rounded"
+                font.pixelSize: 13
+                color: Theme.green
             }
 
             Column {

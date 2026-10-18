@@ -48,6 +48,14 @@ echo "{\"colours\": $pal}" | jq '.' >"$state/colors.json"
 # Estado para Hyprland/Lua ($clave = hex)
 echo "$pal" | jq -r 'to_entries[] | "$\(.key) = \(.value)"' >"$state/colors.conf"
 
+# Esquema activo: el nombre (modo scheme) o 'dynamic' (modo file: matugen/wallpaper).
+# Lo lee la shell para preseleccionar la card correcta en el selector de temas.
+if [ "$mode" = "scheme" ]; then
+    printf '%s' "$arg" >"$state/scheme"
+else
+    printf 'dynamic' >"$state/scheme"
+fi
+
 # Cargar TODA la paleta en memoria de una sola vez (1 jq, no ~190). Antes `c()` lanzaba
 # un jq por cada rol -> era el grueso del tiempo. Ahora lee de un array asociativo.
 declare -A COL

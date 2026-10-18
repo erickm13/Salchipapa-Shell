@@ -33,6 +33,8 @@ end
 hl.bind(mod .. " + Return", hl.dsp.exec_cmd(v.terminal))
 hl.bind(mod .. " + Space", hl.dsp.global("salchipapa:launcher"))
 hl.bind(mod .. " + T", hl.dsp.global("salchipapa:themes"))
+hl.bind(mod .. " + N", hl.dsp.global("salchipapa:control")) -- centro de control (en la isla)
+hl.bind(mod .. " + I", hl.dsp.global("salchipapa:settings")) -- panel de ajustes
 hl.bind(mod .. " + B", hl.dsp.exec_cmd(v.browser))
 hl.bind(mod .. " + E", hl.dsp.exec_cmd(v.fileManager))
 hl.bind(mod .. " + Q", hl.dsp.window.close())

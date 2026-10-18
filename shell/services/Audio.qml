@@ -14,6 +14,14 @@ Singleton {
     readonly property bool micMuted: !!source?.audio?.muted
     readonly property real micVolume: source?.audio?.volume ?? 0
 
+    // Dispositivos de salida (para la página de Sound)
+    readonly property var sinks: Pipewire.nodes.values.filter(n => n.isSink && !n.isStream)
+
+    function setDefaultSink(node): void {
+        if (node)
+            Pipewire.preferredDefaultAudioSink = node;
+    }
+
     function setVolume(v: real): void {
         if (sink?.ready && sink?.audio) {
             sink.audio.muted = false;
@@ -34,6 +42,6 @@ Singleton {
 
     // Mantiene vivos los nodos para que emitan cambios de volumen/mute
     PwObjectTracker {
-        objects: [root.sink, root.source].filter(n => n)
+        objects: [root.sink, root.source].concat(root.sinks).filter(n => n)
     }
 }

@@ -66,4 +66,7 @@ ShellRoot {
 
     // Captura de región con freeze (Super+Shift+S)
     AreaPicker {}
+
+    // Panel de ajustes (Super+I)
+    Settings {}
 }

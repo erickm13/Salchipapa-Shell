@@ -24,6 +24,12 @@ Item {
         return (path.split("/").pop() || "").replace(/\.[^.]+$/, "");
     }
 
+    // Selecciona el wallpaper actual (la lista lo centra sola por StrictlyEnforceRange)
+    function selectCurrent(): void {
+        const i = results.findIndex(f => f === Wallpaper.current);
+        sel = i >= 0 ? i : 0;
+    }
+
     function apply(): void {
         const f = results[sel];
         if (f) {
@@ -41,7 +47,6 @@ Item {
         function onModeChanged(): void {
             if (Overlay.mode === "wallpaper") {
                 root.query = "";
-                root.sel = 0;
                 searchInput.text = "";
                 searchInput.forceActiveFocus();
                 listProc.running = true;
@@ -54,7 +59,10 @@ Item {
         command: ["sh", "-c", "find \"$HOME/Pictures/Wallpapers\" -maxdepth 1 -type f \\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \\) | sort"]
         stdout: StdioCollector {
             id: listOut
-            onStreamFinished: root.files = listOut.text.trim().split("\n").filter(s => s.length > 0)
+            onStreamFinished: {
+                root.files = listOut.text.trim().split("\n").filter(s => s.length > 0);
+                root.selectCurrent();
+            }
         }
     }
     Process {
@@ -173,75 +181,95 @@ Item {
         color: Theme.surface0
     }
 
-    // --- Carrusel de miniaturas ---
+    // --- Carrusel de miniaturas (cover-flow: el seleccionado va centrado y más grande) ---
     ListView {
         id: cards
         anchors.top: divider.bottom
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.topMargin: 12
-        height: 120
+        height: 134
         orientation: ListView.Horizontal
-        spacing: 12
-        leftMargin: 16
-        rightMargin: 16
+        spacing: 14
         clip: true
         model: root.results
         currentIndex: root.sel
-        highlightMoveDuration: 180
-        highlightRangeMode: ListView.ApplyRange
-        preferredHighlightBegin: 0
-        preferredHighlightEnd: width - 180
+        highlightMoveDuration: 220
+        highlightRangeMode: ListView.StrictlyEnforceRange
+        preferredHighlightBegin: (width - 180) / 2
+        preferredHighlightEnd: (width - 180) / 2
+        snapMode: ListView.SnapToItem
         boundsBehavior: Flickable.StopAtBounds
 
-        delegate: Rectangle {
-            id: card
+        delegate: Item {
+            id: cell
             required property int index
             required property var modelData
+            readonly property bool active: index === root.sel
 
             width: 180
-            height: 112
-            radius: 15
-            color: index === root.sel ? Theme.green : "transparent"
+            height: cards.height
 
-            Behavior on color {
-                ColorAnimation {
-                    duration: 150
-                }
-            }
-
-            ClippingRectangle {
+            Rectangle {
+                id: ring
                 anchors.centerIn: parent
-                width: parent.width - (index === root.sel ? 6 : 0)
-                height: parent.height - (index === root.sel ? 6 : 0)
-                radius: 12
-                color: Theme.surface0
-
-                Image {
-                    anchors.fill: parent
-                    source: "file://" + card.modelData
-                    sourceSize: Qt.size(360, 220)
-                    fillMode: Image.PreserveAspectCrop
-                    asynchronous: true
-                    cache: false
+                width: 172
+                height: 104
+                radius: 15
+                color: cell.active ? Theme.green : "transparent"
+                scale: cell.active ? 1.14 : 0.86
+                opacity: cell.active ? 1 : 0.6
+                z: cell.active ? 1 : 0
+                Behavior on scale {
+                    NumberAnimation {
+                        duration: 200
+                        easing.type: Easing.OutCubic
+                    }
+                }
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 200
+                    }
+                }
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 150
+                    }
                 }
 
-                // Nombre (franja inferior)
-                Rectangle {
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.bottom: parent.bottom
-                    height: 22
-                    color: "#b3000000"
-                    Text {
+                ClippingRectangle {
+                    anchors.centerIn: parent
+                    width: parent.width - (cell.active ? 6 : 0)
+                    height: parent.height - (cell.active ? 6 : 0)
+                    radius: 12
+                    color: Theme.surface0
+
+                    Image {
                         anchors.fill: parent
-                        anchors.leftMargin: 8
-                        anchors.rightMargin: 8
-                        verticalAlignment: Text.AlignVCenter
-                        text: root.nameOf(card.modelData)
-                        color: "#ffffff"
-                        font.pixelSize: 10
-                        elide: Text.ElideRight
+                        source: "file://" + cell.modelData
+                        sourceSize: Qt.size(360, 220)
+                        fillMode: Image.PreserveAspectCrop
+                        asynchronous: true
+                        cache: false
+                    }
+
+                    // Nombre (franja inferior)
+                    Rectangle {
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.bottom: parent.bottom
+                        height: 22
+                        color: "#b3000000"
+                        Text {
+                            anchors.fill: parent
+                            anchors.leftMargin: 8
+                            anchors.rightMargin: 8
+                            verticalAlignment: Text.AlignVCenter
+                            text: root.nameOf(cell.modelData)
+                            color: "#ffffff"
+                            font.pixelSize: 10
+                            elide: Text.ElideRight
+                        }
                     }
                 }
             }
@@ -250,9 +278,9 @@ Item {
                 anchors.fill: parent
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-                onEntered: root.sel = card.index
+                onEntered: root.sel = cell.index
                 onClicked: {
-                    root.sel = card.index;
+                    root.sel = cell.index;
                     root.apply();
                 }
             }

@@ -55,6 +55,11 @@ Singleton {
     readonly property color islandBg: col("surfaceContainerLowest", "#0b0b0f")
     readonly property color islandBorder: "#1affffff"
 
+    // --- Paneles (look neutro: fondo negro + cards gris, estilo referencia) ---
+    readonly property color panelBg: "#0c0c0e"
+    readonly property color panelCard: "#1d1d20"
+    readonly property color panelCardHi: "#2b2b2f"
+
     // --- Curvas de animación (Material 3) ---
     readonly property var spring: [0.38, 1.21, 0.22, 1, 1, 1]   // expressive, con overshoot (rebote)
     readonly property var standard: [0.2, 0, 0, 1, 1, 1]

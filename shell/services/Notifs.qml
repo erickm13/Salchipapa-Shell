@@ -13,6 +13,16 @@ Singleton {
     // Contador "reciente" para el panel Status (vuelve a 0 tras un rato de calma)
     property int count: 0
 
+    // Notificaciones activas (tracked) para el centro de control
+    readonly property var list: server.trackedNotifications
+    readonly property int activeCount: server.trackedNotifications?.values?.length ?? 0
+
+    function clearAll(): void {
+        const vs = server.trackedNotifications.values.slice();
+        for (const n of vs)
+            n.dismiss();
+    }
+
     Timer {
         id: resetTimer
         interval: 8000

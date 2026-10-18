@@ -6,6 +6,8 @@ import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Wayland
 import QtQuick
+import QtQuick.Shapes
+import QtQuick.Effects
 import "../common"
 import "../services"
 
@@ -18,7 +20,7 @@ PanelWindow {
         left: true
         right: true
     }
-    implicitHeight: 470
+    implicitHeight: 620
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.keyboardFocus: Overlay.mode !== "" ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
     exclusiveZone: 34 + Config.topMargin
@@ -35,7 +37,15 @@ PanelWindow {
         id: island
 
         anchors.horizontalCenter: parent.horizontalCenter
-        y: Config.topMargin
+        // Notch: pegado al borde superior (el -2 mete el borde de 1px fuera de pantalla para
+        // que el cuerpo del pill bese el borde sin dejar línea). Pill: flotando con el gap.
+        y: Config.notchMode ? -2 : Config.topMargin
+        Behavior on y {
+            NumberAnimation {
+                duration: 300
+                easing.type: Easing.OutCubic
+            }
+        }
 
         property bool ready: false
         property bool hovered: false
@@ -44,6 +54,10 @@ PanelWindow {
         // Modo efectivo: overlay (launcher/themes) manda; luego hover; luego peek; luego idle
         readonly property string mode: Overlay.mode !== "" ? Overlay.mode : (hovered ? "expanded" : (peek !== "" ? peek : "idle"))
 
+        // Notch: fondo negro + alas laterales. Solo en reposo/peeks (no expandido/overlay).
+        readonly property color notchBg: Theme.panelBg
+        readonly property bool notchResting: Config.notchMode && (mode === "idle" || mode === "media" || mode === "volume" || mode === "notif")
+
         // ¿Hay un scratchpad (workspace especial) mostrándose ahora?
         readonly property bool inSpecial: (Hyprland.focusedMonitor?.lastIpcObject?.specialWorkspace?.name ?? "") !== ""
 
@@ -51,9 +65,8 @@ PanelWindow {
         property string notifApp: ""
         property string notifText: ""
 
-        // Estado del dashboard (expandido)
-        property bool nightLight: false
-        property bool gameMode: false
+        // Estado del dashboard (expandido). Night light / Game mode viven en Quick (compartidos
+        // con el centro de control).
         property real mediaPos: 0
 
         function fmt(s: real): string {
@@ -84,8 +97,8 @@ PanelWindow {
         }
 
         // Tamaños por modo
-        width: mode === "launcher" ? 560 : mode === "themes" ? 720 : mode === "wallpaper" ? 760 : mode === "expanded" ? 820 : mode === "notif" ? 430 : mode === "media" ? 370 : mode === "volume" ? 300 : (idleRow.implicitWidth + 28)
-        height: mode === "launcher" ? 440 : mode === "themes" ? 210 : mode === "wallpaper" ? 230 : mode === "expanded" ? 190 : mode === "notif" ? 74 : mode === "media" ? 58 : mode === "volume" ? 42 : 30
+        width: mode === "control" ? 440 : mode === "display" ? 460 : mode === "sound" ? 420 : mode === "launcher" ? 560 : mode === "themes" ? 720 : mode === "wallpaper" ? 760 : mode === "expanded" ? 820 : mode === "notif" ? 430 : mode === "media" ? 370 : mode === "volume" ? 300 : Math.max(Config.collapsedWidth, idleRow.implicitWidth + Config.innerPadding * 2)
+        height: mode === "control" ? 470 : mode === "display" ? (74 + (Hyprland.monitors?.values?.length ?? 1) * 186 + 56) : mode === "sound" ? (170 + (Audio.sinks?.length ?? 1) * 58) : mode === "launcher" ? 440 : mode === "themes" ? 210 : mode === "wallpaper" ? 250 : mode === "expanded" ? Config.expandedHeight : mode === "notif" ? 74 : mode === "media" ? 58 : mode === "volume" ? 42 : Config.barHeight
 
         Behavior on width {
             NumberAnimation {
@@ -129,6 +142,8 @@ PanelWindow {
         Connections {
             target: Notifs
             function onReceived(appName: string, summary: string, body: string): void {
+                if (Quick.silenced) // Focus / Game mode: no molestar
+                    return;
                 island.notifApp = appName;
                 island.notifText = summary || body;
                 island.showPeek("notif");
@@ -139,16 +154,57 @@ PanelWindow {
         Rectangle {
             id: pill
             anchors.fill: parent
-            radius: (island.mode === "expanded" || island.mode === "launcher" || island.mode === "themes" || island.mode === "wallpaper") ? 26 : height / 2
-            color: Theme.islandBg
+            // Radio base (uniforme). En notch, las esquinas superiores van rectas (pegadas al borde).
+            readonly property real uni: (island.mode === "expanded" || island.mode === "launcher" || island.mode === "themes" || island.mode === "wallpaper" || island.mode === "control" || island.mode === "display" || island.mode === "sound") ? 26 : (Config.notchMode ? 16 : height / 2)
+            topLeftRadius: Config.notchMode ? 0 : uni
+            topRightRadius: Config.notchMode ? 0 : uni
+            bottomLeftRadius: uni
+            bottomRightRadius: uni
+            color: Config.notchMode ? island.notchBg : Theme.islandBg
             border.color: Theme.islandBorder
-            border.width: 1
+            border.width: Config.notchMode ? 0 : 1
 
-            Behavior on radius {
+            Behavior on topLeftRadius {
+                NumberAnimation {
+                    duration: 300
+                    easing.type: Easing.OutCubic
+                }
+            }
+            Behavior on topRightRadius {
+                NumberAnimation {
+                    duration: 300
+                    easing.type: Easing.OutCubic
+                }
+            }
+            Behavior on bottomLeftRadius {
                 NumberAnimation {
                     duration: 450
                     easing.type: Easing.OutCubic
                 }
+            }
+            Behavior on bottomRightRadius {
+                NumberAnimation {
+                    duration: 450
+                    easing.type: Easing.OutCubic
+                }
+            }
+
+            // Alas laterales cóncavas: funden el notch con el borde superior de la pantalla
+            NotchWing {
+                anchors.right: parent.left
+                anchors.top: parent.top
+                size: 24
+                fill: island.notchBg
+                mirror: true
+                visible: Config.notchMode
+            }
+            NotchWing {
+                anchors.left: parent.right
+                anchors.top: parent.top
+                size: 24
+                fill: island.notchBg
+                mirror: false
+                visible: Config.notchMode
             }
 
             // ---------- idle (compacto) ----------
@@ -172,6 +228,17 @@ PanelWindow {
                     Row {
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 4
+
+                        // Glow en el color principal sobre los indicadores (solo en notch)
+                        layer.enabled: Config.notchMode
+                        layer.effect: MultiEffect {
+                            shadowEnabled: true
+                            shadowColor: Theme.green
+                            shadowBlur: 1.0
+                            blurMax: 18
+                            shadowOpacity: 0.8
+                            autoPaddingEnabled: true
+                        }
 
                         WsRow {
                             barWidth: 7
@@ -215,6 +282,17 @@ PanelWindow {
                     Row {
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 8
+
+                        // Glow en el color principal sobre wifi/batería (solo en notch)
+                        layer.enabled: Config.notchMode
+                        layer.effect: MultiEffect {
+                            shadowEnabled: true
+                            shadowColor: Theme.green
+                            shadowBlur: 1.0
+                            blurMax: 18
+                            shadowOpacity: 0.8
+                            autoPaddingEnabled: true
+                        }
 
                         Row {
                             anchors.verticalCenter: parent.verticalCenter
@@ -266,7 +344,7 @@ PanelWindow {
             // ---------- expanded (hover): dashboard ----------
             Item {
                 anchors.fill: parent
-                anchors.margins: 18
+                anchors.margins: Config.innerPadding
                 opacity: island.mode === "expanded" ? 1 : 0
                 visible: opacity > 0
                 Behavior on opacity {
@@ -495,17 +573,14 @@ PanelWindow {
                             PillButton {
                                 glyph: "dark_mode"
                                 label: "Night light"
-                                on: island.nightLight
-                                onToggled: {
-                                    island.nightLight = !island.nightLight;
-                                    Hyprland.dispatch("hl.dsp.exec_cmd('" + (island.nightLight ? "hyprsunset -t 4000" : "pkill hyprsunset") + "')");
-                                }
+                                on: Quick.nightLight
+                                onToggled: Quick.toggleNightLight()
                             }
                             PillButton {
                                 glyph: "sports_esports"
                                 label: "Game mode"
-                                on: island.gameMode
-                                onToggled: island.gameMode = !island.gameMode
+                                on: Quick.gameMode
+                                onToggled: Quick.toggleGameMode()
                             }
                         }
                     }
@@ -833,6 +908,45 @@ PanelWindow {
                 }
             }
 
+            // ---------- control (centro de control dentro de la isla) ----------
+            ControlContent {
+                anchors.fill: parent
+                anchors.margins: 16
+                opacity: island.mode === "control" ? 1 : 0
+                visible: opacity > 0
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 160
+                    }
+                }
+            }
+
+            // ---------- display (ajustes de pantalla) ----------
+            DisplayContent {
+                anchors.fill: parent
+                anchors.margins: 16
+                opacity: island.mode === "display" ? 1 : 0
+                visible: opacity > 0
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 160
+                    }
+                }
+            }
+
+            // ---------- sound (ajustes de sonido) ----------
+            SoundContent {
+                anchors.fill: parent
+                anchors.margins: 16
+                opacity: island.mode === "sound" ? 1 : 0
+                visible: opacity > 0
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 160
+                    }
+                }
+            }
+
             // Hover: expande (NoButton => no roba los clics a los botones internos).
             // Desactivado en modos overlay para que el launcher/temas reciban hover y clics.
             MouseArea {
@@ -1089,4 +1203,5 @@ PanelWindow {
             onClicked: parent.toggled()
         }
     }
+
 }
