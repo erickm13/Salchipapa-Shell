@@ -34,7 +34,7 @@ Item {
         const item = activeControls.find(entry => entry.id === id);
         return item ? item.size : 1;
     }
-    readonly property real cardsTop: 132
+    readonly property real cardsTop: 196
     function cardOffset(id: string): real {
         let offset = 0;
         for (let i = 0; i < activeControls.length; ++i) {
@@ -144,6 +144,83 @@ Item {
                         root.wifiDetailsOpen = modelData.id === "wifi";
                         root.bluetoothDetailsOpen = modelData.id === "bluetooth";
                         if (modelData.id === "wifi") Net.scanNetworks();
+                    }
+                }
+            }
+        }
+    }
+
+    // ===== Perfiles de energía =====
+    Rectangle {
+        id: powerPanel
+        anchors.left: parent.left
+        anchors.right: parent.right
+        y: 132
+        height: 54
+        radius: 16
+        color: Theme.panelCard
+        visible: !root.wifiDetailsOpen && !root.bluetoothDetailsOpen
+
+        Text {
+            anchors.left: parent.left
+            anchors.leftMargin: 14
+            anchors.top: parent.top
+            anchors.topMargin: 5
+            text: "Power mode"
+            color: Theme.secondaryText
+            font.family: Theme.bodyFontFamily
+            font.pixelSize: Theme.fontPx(9)
+            font.bold: true
+        }
+
+        Row {
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.leftMargin: 8
+            anchors.rightMargin: 8
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 6
+            spacing: 4
+
+            Repeater {
+                model: [
+                    { id: "turbo", title: "Turbo", icon: "rocket_launch", accent: Theme.peach },
+                    { id: "balanced", title: "Rendimiento", icon: "speed", accent: Theme.green },
+                    { id: "silent", title: "Silencioso", icon: "volume_off", accent: Theme.blue }
+                ]
+
+                delegate: Rectangle {
+                    id: profileChip
+                    required property var modelData
+                    width: (powerPanel.width - 24) / 3
+                    height: 32
+                    radius: 12
+                    color: PowerProfiles.mode === modelData.id ? modelData.accent : Theme.surface0
+
+                    Row {
+                        anchors.centerIn: parent
+                        spacing: 4
+                        Text {
+                            text: profileChip.modelData.icon
+                            color: PowerProfiles.mode === profileChip.modelData.id ? Theme.panelBg : profileChip.modelData.accent
+                            font.family: "Material Symbols Rounded"
+                            font.pixelSize: Theme.iconPx(14)
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                        Text {
+                            text: profileChip.modelData.title
+                            color: PowerProfiles.mode === profileChip.modelData.id ? Theme.panelBg : Theme.text
+                            font.family: Theme.bodyFontFamily
+                            font.pixelSize: Theme.fontPx(9)
+                            font.bold: PowerProfiles.mode === profileChip.modelData.id
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: PowerProfiles.setMode(profileChip.modelData.id)
                     }
                 }
             }
