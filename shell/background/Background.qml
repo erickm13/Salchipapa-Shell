@@ -54,7 +54,7 @@ Variants {
                 target: top
                 property: "opacity"
                 to: 1
-                duration: 500
+                duration: Config.appearanceWallpaperCrossfade
                 easing.type: Easing.InOutQuad
                 onFinished: {
                     base.source = top.source;

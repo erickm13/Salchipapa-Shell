@@ -13,6 +13,7 @@ import "picker"
 import "background"
 
 ShellRoot {
+    // Sincroniza la sombra nativa de Hyprland con los controles de Appearance.
     // Fondo de pantalla (capa Background, por monitor)
     Background {}
 
@@ -24,7 +25,9 @@ ShellRoot {
             const n = event.name;
             if (n.endsWith("v2"))
                 return;
-            if (["activespecial", "workspace", "moveworkspace", "focusedmon"].includes(n)) {
+            if (n === "configreloaded") {
+                WindowShadowSync.sync();
+            } else if (["activespecial", "workspace", "moveworkspace", "focusedmon"].includes(n)) {
                 Hyprland.refreshMonitors();
                 Hyprland.refreshWorkspaces();
             } else if (["openwindow", "closewindow", "movewindow"].includes(n)) {
@@ -62,7 +65,10 @@ ShellRoot {
     // El lanzador (Super+R) y el selector de temas (Super+T) ahora son MODOS de la
     // Dynamic Island (ver common/Overlay.qml + designs/LauncherContent/ThemeContent).
     // Forzamos la instancia del singleton Overlay para que registre sus GlobalShortcuts.
-    Component.onCompleted: Overlay.mode
+    Component.onCompleted: {
+        Overlay.mode;
+        WindowShadowSync.sync();
+    }
 
     // Captura de región con freeze (Super+Shift+S)
     AreaPicker {}

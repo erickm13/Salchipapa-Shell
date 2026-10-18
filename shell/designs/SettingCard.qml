@@ -17,8 +17,8 @@ Rectangle {
     signal sliderIconTapped
 
     height: 82
-    radius: 16
-    color: cardMouse.containsMouse ? Theme.panelCardHi : Theme.panelCard
+    radius: Theme.radiusLarge
+    color: cardMouse.containsMouse ? Qt.tint(Theme.panelCardHi, Theme.hoverFill) : Theme.panelCard
     Behavior on color {
         ColorAnimation {
             duration: 120
@@ -35,14 +35,15 @@ Rectangle {
     }
 
     Text {
+        font.family: Theme.bodyFontFamily
         id: cardLabel
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.topMargin: 12
         anchors.leftMargin: 16
         text: card.label
-        color: Theme.subtext
-        font.pixelSize: 11
+        color: Theme.secondaryText
+        font.pixelSize: Theme.fontPx(11)
         font.bold: true
     }
     Text {
@@ -52,7 +53,7 @@ Rectangle {
         text: "chevron_right"
         font.family: "Material Symbols Rounded"
         font.pixelSize: 18
-        color: cardMouse.containsMouse ? Theme.text : Theme.overlay0
+        color: cardMouse.containsMouse ? Theme.text : Theme.tertiaryText
     }
 
     SettingSlider {

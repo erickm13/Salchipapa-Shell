@@ -120,6 +120,7 @@ Item {
             color: Theme.overlay1
         }
         TextInput {
+            font.family: Theme.bodyFontFamily
             id: searchInput
             anchors.left: searchIcon.right
             anchors.leftMargin: 12
@@ -127,7 +128,7 @@ Item {
             anchors.rightMargin: 12
             anchors.verticalCenter: parent.verticalCenter
             color: "#ffffff"
-            font.pixelSize: 15
+            font.pixelSize: Theme.fontPx(15)
             clip: true
             focus: Overlay.mode === "themes"
             onTextChanged: {
@@ -138,7 +139,7 @@ Item {
             Text {
                 anchors.verticalCenter: parent.verticalCenter
                 text: "Buscar temas…"
-                color: Theme.overlay0
+                color: Theme.tertiaryText
                 font: parent.font
                 visible: parent.text.length === 0
             }
@@ -150,13 +151,14 @@ Item {
             Keys.onEscapePressed: Overlay.close()
         }
         Text {
+            font.family: Theme.bodyFontFamily
             id: counter
             anchors.right: parent.right
             anchors.rightMargin: 20
             anchors.verticalCenter: parent.verticalCenter
             text: root.results.length > 0 ? (root.sel + 1) + "/" + root.results.length : "0/0"
-            color: Theme.subtext
-            font.pixelSize: 12
+            color: Theme.secondaryText
+            font.pixelSize: Theme.fontPx(12)
         }
     }
 
@@ -240,10 +242,11 @@ Item {
                     }
                 }
                 Text {
+                    font.family: Theme.bodyFontFamily
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: card.modelData.name
                     color: "#ffffff"
-                    font.pixelSize: 12
+                    font.pixelSize: Theme.fontPx(12)
                     font.bold: index === root.sel
                 }
             }
@@ -262,11 +265,12 @@ Item {
     }
 
     Text {
+        font.family: Theme.bodyFontFamily
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         anchors.margins: 12
         text: "Enter para aplicar"
         color: Theme.overlay1
-        font.pixelSize: 11
+        font.pixelSize: Theme.fontPx(11)
     }
 }

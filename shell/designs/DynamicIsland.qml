@@ -68,6 +68,11 @@ PanelWindow {
         // Estado del dashboard (expandido). Night light / Game mode viven en Quick (compartidos
         // con el centro de control).
         property real mediaPos: 0
+        property var calendarMonth: new Date()
+        property var selectedDate: new Date()
+        readonly property var calendarMonthDate: new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1)
+        readonly property int calendarFirstDayOffset: (calendarMonthDate.getDay() - Config.clockWeekStart + 7) % 7
+        readonly property int calendarDaysInMonth: new Date(calendarMonthDate.getFullYear(), calendarMonthDate.getMonth() + 1, 0).getDate()
 
         function fmt(s: real): string {
             s = Math.max(0, Math.floor(s));
@@ -97,8 +102,8 @@ PanelWindow {
         }
 
         // Tamaños por modo
-        width: mode === "control" ? 440 : mode === "display" ? 460 : mode === "sound" ? 420 : mode === "launcher" ? 560 : mode === "themes" ? 720 : mode === "wallpaper" ? 760 : mode === "expanded" ? 820 : mode === "notif" ? 430 : mode === "media" ? 370 : mode === "volume" ? 300 : Math.max(Config.collapsedWidth, idleRow.implicitWidth + Config.innerPadding * 2)
-        height: mode === "control" ? 470 : mode === "display" ? (74 + (Hyprland.monitors?.values?.length ?? 1) * 186 + 56) : mode === "sound" ? (170 + (Audio.sinks?.length ?? 1) * 58) : mode === "launcher" ? 440 : mode === "themes" ? 210 : mode === "wallpaper" ? 250 : mode === "expanded" ? Config.expandedHeight : mode === "notif" ? 74 : mode === "media" ? 58 : mode === "volume" ? 42 : Config.barHeight
+        width: mode === "control" ? 440 : mode === "display" ? 460 : mode === "sound" ? 420 : mode === "launcher" ? 560 : mode === "themes" ? 720 : mode === "wallpaper" ? 760 : mode === "calendar" ? 300 : mode === "expanded" ? 500 : mode === "notif" ? 430 : mode === "media" ? 370 : mode === "volume" ? 300 : Math.max(Config.collapsedWidth, idleRow.implicitWidth + Config.innerPadding * 2)
+        height: mode === "control" ? 470 : mode === "display" ? (74 + (Hyprland.monitors?.values?.length ?? 1) * 186 + 56) : mode === "sound" ? (170 + (Audio.sinks?.length ?? 1) * 58) : mode === "launcher" ? 440 : mode === "themes" ? 210 : mode === "wallpaper" ? 250 : mode === "calendar" ? 250 : mode === "expanded" ? 116 : mode === "notif" ? 74 : mode === "media" ? 58 : mode === "volume" ? 42 : Config.barHeight
 
         Behavior on width {
             NumberAnimation {
@@ -117,7 +122,7 @@ PanelWindow {
 
         SystemClock {
             id: clock
-            precision: SystemClock.Minutes
+            precision: Config.clockShowSeconds ? SystemClock.Seconds : SystemClock.Minutes
         }
 
         // --- Disparadores de peeks contextuales ---
@@ -151,11 +156,59 @@ PanelWindow {
         }
 
         // ================= Píldora =================
+        Item {
+            id: pillShadow
+            readonly property int pad: Math.max(32, Math.round(Config.appearanceShadowSpread * 0.32))
+            x: -pad
+            y: -pad
+            width: island.width + pad * 2
+            height: island.height + pad * 2
+            layer.enabled: true
+            layer.effect: MultiEffect {
+                shadowEnabled: true
+                shadowColor: Theme.shadow
+                shadowOpacity: Config.appearanceShadowOpacity / 100
+                shadowBlur: Config.appearanceShadowBlur / 100
+                blurMax: Math.max(4, Math.round(Config.appearanceShadowSpread * 0.22))
+                shadowVerticalOffset: Config.appearanceShadowOffset
+                autoPaddingEnabled: true
+            }
+
+            Rectangle {
+                x: pillShadow.pad
+                y: pillShadow.pad
+                width: pillShadow.width - pillShadow.pad * 2
+                height: pillShadow.height - pillShadow.pad * 2
+                readonly property real uni: (island.mode === "expanded" || island.mode === "calendar" || island.mode === "launcher" || island.mode === "themes" || island.mode === "wallpaper" || island.mode === "control" || island.mode === "display" || island.mode === "sound") ? Theme.radiusLarge : (Config.notchMode ? Theme.radiusMedium : height / 2)
+                topLeftRadius: Config.notchMode ? 0 : uni
+                topRightRadius: Config.notchMode ? 0 : uni
+                bottomLeftRadius: uni
+                bottomRightRadius: uni
+                color: Config.notchMode ? island.notchBg : Theme.islandBg
+
+                NotchWing {
+                    anchors.right: parent.left
+                    anchors.top: parent.top
+                    size: 24
+                    fill: island.notchBg
+                    mirror: true
+                    visible: Config.notchMode
+                }
+                NotchWing {
+                    anchors.left: parent.right
+                    anchors.top: parent.top
+                    size: 24
+                    fill: island.notchBg
+                    mirror: false
+                    visible: Config.notchMode
+                }
+            }
+        }
         Rectangle {
             id: pill
             anchors.fill: parent
             // Radio base (uniforme). En notch, las esquinas superiores van rectas (pegadas al borde).
-            readonly property real uni: (island.mode === "expanded" || island.mode === "launcher" || island.mode === "themes" || island.mode === "wallpaper" || island.mode === "control" || island.mode === "display" || island.mode === "sound") ? 26 : (Config.notchMode ? 16 : height / 2)
+            readonly property real uni: (island.mode === "expanded" || island.mode === "calendar" || island.mode === "launcher" || island.mode === "themes" || island.mode === "wallpaper" || island.mode === "control" || island.mode === "display" || island.mode === "sound") ? Theme.radiusLarge : (Config.notchMode ? Theme.radiusMedium : height / 2)
             topLeftRadius: Config.notchMode ? 0 : uni
             topRightRadius: Config.notchMode ? 0 : uni
             bottomLeftRadius: uni
@@ -244,7 +297,7 @@ PanelWindow {
                             barWidth: 7
                             baseLen: 7
                             anchors.verticalCenter: parent.verticalCenter
-                            visible: !island.inSpecial // ocultar ws normales si estás en un scratchpad
+                            visible: Config.clockShowWorkspaceDots && !island.inSpecial // ocultar ws normales si estás en un scratchpad
                         }
                         // Scratchpads activos (música/comms/sysmon…)
                         SpecialRow {
@@ -271,10 +324,11 @@ PanelWindow {
 
                     // Hora
                     Text {
+                            font.family: Theme.displayFontFamily
                         anchors.verticalCenter: parent.verticalCenter
-                        text: Qt.formatDateTime(clock.date, "HH:mm")
+                        text: Qt.formatDateTime(clock.date, Config.clock24Hour ? (Config.clockShowSeconds ? "HH:mm:ss" : "HH:mm") : (Config.clockShowSeconds ? "h:mm:ss AP" : "h:mm AP"))
                         color: "#ffffff"
-                        font.pixelSize: 14
+                        font.pixelSize: Theme.fontPx(16)
                         font.bold: true
                     }
 
@@ -282,6 +336,7 @@ PanelWindow {
                     Row {
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 8
+                        visible: Config.clockShowBatteryWifi
 
                         // Glow en el color principal sobre wifi/batería (solo en notch)
                         layer.enabled: Config.notchMode
@@ -341,363 +396,347 @@ PanelWindow {
                 }
             }
 
-            // ---------- expanded (hover): dashboard ----------
+            // ---------- expanded (hover): isla compacta horizontal ----------
             Item {
                 anchors.fill: parent
-                anchors.margins: Config.innerPadding
+                anchors.leftMargin: 22
+                anchors.rightMargin: 22
                 opacity: island.mode === "expanded" ? 1 : 0
                 visible: opacity > 0
                 Behavior on opacity {
-                    NumberAnimation {
-                        duration: 180
+                    NumberAnimation { duration: 180 }
+                }
+
+                // Marca y escritorios a la izquierda.
+                Column {
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 5
+                    visible: Config.clockExpandedWorkspaces
+
+                    Row {
+                        spacing: 5
+                        Icon {
+                            text: "terminal"
+                            px: 13
+                            color: Theme.green
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                        Text {
+                            font.family: Theme.bodyFontFamily
+                            text: "Quickshell"
+                            color: "#ffffff"
+                            font.pixelSize: Theme.fontPx(12)
+                            font.bold: true
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+                    WsRow {
+                        barWidth: 7
+                        baseLen: 8
+                        visible: Config.clockShowWorkspaceDots && !island.inSpecial
+                    }
+                    SpecialRow {
+                        cell: 13
                     }
                 }
 
-                // ===== Zona superior: 3 columnas =====
-                Item {
-                    id: topArea
-                    anchors.top: parent.top
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.bottom: parent.bottom
+                // Hora y fecha centradas, con el reproductor debajo.
+                Column {
+                    anchors.centerIn: parent
+                    spacing: 7
 
-                    // --- Izquierda: Desktop (workspaces verticales) ---
-                    Column {
-                        id: leftCol
-                        anchors.top: parent.top
-                        anchors.left: parent.left
-                        width: 100
-                        spacing: 6
+                    Item {
+                        id: clockDateTarget
+                        width: clockDateRow.implicitWidth
+                        height: clockDateRow.implicitHeight
 
-                        Text {
-                            text: "Desktop"
-                            color: Theme.subtext
-                            font.pixelSize: 12
-                            font.bold: true
+                        Row {
+                            id: clockDateRow
+                            anchors.centerIn: parent
+                            spacing: 6
+                            Text {
+                                font.family: Theme.displayFontFamily
+                                text: Qt.formatDateTime(clock.date, Config.clock24Hour ? (Config.clockShowSeconds ? "HH:mm:ss" : "HH:mm") : (Config.clockShowSeconds ? "h:mm:ss AP" : "h:mm AP"))
+                                color: "#ffffff"
+                                font.pixelSize: Theme.fontPx(18)
+                                font.bold: true
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                            Text {
+                                font.family: Theme.bodyFontFamily
+                                text: Qt.formatDateTime(clock.date, "ddd, MMM d")
+                                color: Theme.secondaryText
+                                font.pixelSize: Theme.fontPx(11)
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
                         }
-                        Repeater {
-                            model: Config.workspaceCount
-                            delegate: Item {
-                                id: dw
-                                required property int index
-                                readonly property int wsId: index + 1
-                                readonly property bool focused: Hyprland.focusedWorkspace?.id === wsId
-                                readonly property bool occupied: Hyprland.workspaces.values.some(w => w.id === wsId)
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                island.calendarMonth = new Date(clock.date.getFullYear(), clock.date.getMonth(), 1);
+                                island.selectedDate = new Date(clock.date.getFullYear(), clock.date.getMonth(), clock.date.getDate());
+                                Overlay.mode = "calendar";
+                            }
+                        }
+                    }
 
-                                width: leftCol.width
-                                height: island.inSpecial ? 0 : 17
-                                visible: !island.inSpecial // ocultar ws normales si estás en un scratchpad
+                    Rectangle {
+                        width: 194
+                        height: 39
+                        radius: 13
+                        color: Theme.surface0
+                        visible: Config.clockExpandedMedia
+
+                        Row {
+                            anchors.fill: parent
+                            anchors.leftMargin: 8
+                            anchors.rightMargin: 9
+                            spacing: 7
+
+                            Rectangle {
+                                width: 27
+                                height: 27
+                                radius: 8
+                                color: Theme.surface1
+                                anchors.verticalCenter: parent.verticalCenter
                                 clip: true
-
-                                Rectangle {
-                                    id: dwBar
-                                    anchors.left: parent.left
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    width: 3
-                                    height: dw.focused ? 15 : (dw.occupied ? 11 : 7)
-                                    radius: 2
-                                    color: dw.focused ? Theme.green : (dw.occupied ? Theme.overlay2 : Theme.surface1)
-                                    Behavior on height {
-                                        NumberAnimation {
-                                            duration: 150
-                                        }
-                                    }
+                                Image {
+                                    anchors.fill: parent
+                                    source: Media.active?.trackArtUrl ?? ""
+                                    fillMode: Image.PreserveAspectCrop
+                                    visible: status === Image.Ready
+                                }
+                                Icon {
+                                    anchors.centerIn: parent
+                                    text: "music_note"
+                                    px: 14
+                                    color: Theme.green
+                                    visible: !(Media.active?.trackArtUrl)
+                                }
+                            }
+                            Column {
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: 92
+                                spacing: 1
+                                Text {
+                                    font.family: Theme.bodyFontFamily
+                                    width: parent.width
+                                    text: Media.title || "Sin reproducción"
+                                    color: "#ffffff"
+                                    font.pixelSize: Theme.fontPx(12)
+                                    font.bold: true
+                                    elide: Text.ElideRight
                                 }
                                 Text {
-                                    anchors.left: dwBar.right
-                                    anchors.leftMargin: 12
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    text: dw.wsId
-                                    color: dw.focused ? "#ffffff" : (dw.occupied ? Theme.text : Theme.overlay0)
-                                    font.pixelSize: 13
-                                    font.bold: dw.focused
-                                }
-                                MouseArea {
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: Hyprland.dispatch("hl.dsp.focus({workspace=" + dw.wsId + "})")
+                                    font.family: Theme.bodyFontFamily
+                                    width: parent.width
+                                    text: Media.artist || Media.album
+                                    color: Theme.secondaryText
+                                    font.pixelSize: Theme.fontPx(10)
+                                    elide: Text.ElideRight
                                 }
                             }
-                        }
-
-                        // Scratchpads activos (música/comms/sysmon…)
-                        SpecialRow {
-                            cell: 20
-                        }
-                    }
-
-                    // --- Centro: reloj + calendario ---
-                    Column {
-                        anchors.top: parent.top
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        spacing: 8
-
-                        Text {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: Qt.formatDateTime(clock.date, "HH:mm")
-                            color: "#ffffff"
-                            font.pixelSize: 32
-                            font.bold: true
-                        }
-                        Item {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            width: calRow.width
-                            height: calRow.height
-
-                            Row {
-                                id: calRow
-                                spacing: 8
-                                Repeater {
-                                    model: 5
-                                    delegate: Column {
-                                        id: cal
-                                        required property int index
-                                        readonly property date d: {
-                                            const b = new Date(clock.date);
-                                            b.setDate(b.getDate() + (index - 2));
-                                            return b;
-                                        }
-                                        readonly property bool today: index === 2
-                                        readonly property bool weekend: d.getDay() === 0 || d.getDay() === 6
-                                        spacing: 2
-                                        width: 30
-
-                                        Text {
-                                            anchors.horizontalCenter: parent.horizontalCenter
-                                            text: cal.today ? ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"][cal.d.getDay()] : ["D", "L", "M", "X", "J", "V", "S"][cal.d.getDay()]
-                                            color: cal.today ? Theme.green : (cal.weekend ? Theme.red : Theme.overlay0)
-                                            font.pixelSize: 10
-                                            font.bold: cal.today
-                                        }
-                                        Item {
-                                            anchors.horizontalCenter: parent.horizontalCenter
-                                            width: 30
-                                            height: 24
-                                            Text {
-                                                anchors.centerIn: parent
-                                                text: cal.d.getDate()
-                                                color: cal.today ? Theme.green : (cal.weekend ? Theme.red : Theme.text)
-                                                font.pixelSize: cal.today ? 19 : 13
-                                                font.bold: cal.today
-                                            }
+                            Item {
+                                width: 43
+                                height: parent.height
+                                anchors.verticalCenter: parent.verticalCenter
+                                Row {
+                                    anchors.centerIn: parent
+                                    spacing: 3
+                                    Repeater {
+                                        model: 7
+                                        Rectangle {
+                                            required property int index
+                                            width: 2
+                                            height: 2
+                                            radius: 1
+                                            color: Theme.green
+                                            opacity: Media.isPlaying ? 0.35 + ((index % 3) * 0.2) : 0.3
                                         }
                                     }
                                 }
                             }
-
-                            // Desvanecido en los lados (los días lejanos se difuminan)
-                            Rectangle {
-                                anchors.left: parent.left
-                                anchors.top: parent.top
-                                anchors.bottom: parent.bottom
-                                width: 34
-                                gradient: Gradient {
-                                    orientation: Gradient.Horizontal
-                                    GradientStop {
-                                        position: 0
-                                        color: Theme.islandBg
-                                    }
-                                    GradientStop {
-                                        position: 1
-                                        color: "transparent"
-                                    }
-                                }
-                            }
-                            Rectangle {
-                                anchors.right: parent.right
-                                anchors.top: parent.top
-                                anchors.bottom: parent.bottom
-                                width: 34
-                                gradient: Gradient {
-                                    orientation: Gradient.Horizontal
-                                    GradientStop {
-                                        position: 0
-                                        color: "transparent"
-                                    }
-                                    GradientStop {
-                                        position: 1
-                                        color: Theme.islandBg
-                                    }
-                                }
-                            }
                         }
-                    }
-
-                    // --- Derecha: Status ---
-                    Column {
-                        id: rightCol
-                        anchors.top: parent.top
-                        anchors.right: parent.right
-                        width: 200
-                        spacing: 4
-
-                        Text {
-                            text: "Status"
-                            color: Theme.subtext
-                            font.pixelSize: 12
-                            font.bold: true
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: Media.toggle()
+                            cursorShape: Qt.PointingHandCursor
                         }
-                        StatusRow {
-                            glyph: Battery.charging ? "battery_charging_full" : "battery_full"
-                            glyphColor: Theme.green
-                            value: Battery.percent + "%"
-                            label: Battery.charging ? "plugged in" : "on battery"
-                        }
-                        StatusRow {
-                            glyph: "wifi"
-                            glyphColor: Net.online ? Theme.green : Theme.overlay0
-                            value: Net.type === "wifi" ? Net.name : (Net.type === "ethernet" ? "Ethernet" : "Sin red")
-                            label: ""
-                        }
-                        StatusRow {
-                            glyph: "bluetooth"
-                            glyphColor: Bluetooth.enabled ? Theme.blue : Theme.overlay0
-                            value: Bluetooth.enabled ? "on" : "off"
-                            label: ""
-                        }
-                        StatusRow {
-                            glyph: Audio.micMuted ? "mic_off" : "mic"
-                            glyphColor: Audio.micMuted ? Theme.red : Theme.green
-                            value: Math.round(Audio.micVolume * 100) + "%"
-                            label: Audio.micMuted ? "mic off" : "mic on"
-                        }
-                        StatusRow {
-                            glyph: "notifications"
-                            glyphColor: Theme.subtext
-                            value: Notifs.count > 0 ? ("" + Notifs.count) : "No"
-                            label: "notifications"
-                        }
-                        Row {
-                            spacing: 6
-                            topPadding: 2
-                            PillButton {
-                                glyph: "dark_mode"
-                                label: "Night light"
-                                on: Quick.nightLight
-                                onToggled: Quick.toggleNightLight()
-                            }
-                            PillButton {
-                                glyph: "sports_esports"
-                                label: "Game mode"
-                                on: Quick.gameMode
-                                onToggled: Quick.toggleGameMode()
+                        WheelHandler {
+                            enabled: Config.mediaScrollToChangeTrack
+                            acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+                            onWheel: event => {
+                                if (event.angleDelta.y > 0) Media.prev();
+                                else if (event.angleDelta.y < 0) Media.next();
+                                event.accepted = true;
                             }
                         }
                     }
                 }
 
-                // ===== Reproductor (abajo-centro, bajo el calendario) =====
-                Row {
-                    id: mediaRow
-                    anchors.bottom: parent.bottom
-                    anchors.horizontalCenter: parent.horizontalCenter
+                // Notificaciones y estado de red/energía a la derecha.
+                Column {
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
                     spacing: 8
+                    visible: Config.clockExpandedStatus
 
-                    // Carátula
-                    Rectangle {
-                        anchors.verticalCenter: parent.verticalCenter
-                        width: 36
-                        height: 36
-                        radius: 9
-                        color: Theme.surface0
-                        clip: true
-
-                        Image {
-                            anchors.fill: parent
-                            source: Media.active?.trackArtUrl ?? ""
-                            fillMode: Image.PreserveAspectCrop
-                            visible: status === Image.Ready
+                    Row {
+                        anchors.right: parent.right
+                        spacing: 5
+                        Text {
+                            font.family: Theme.bodyFontFamily
+                            text: Notifs.count > 0 ? (Notifs.count + " notifications") : "All caught up"
+                            color: "#ffffff"
+                            font.pixelSize: Theme.fontPx(11)
+                            anchors.verticalCenter: parent.verticalCenter
                         }
                         Icon {
-                            anchors.centerIn: parent
-                            text: "music_note"
-                            px: 17
-                            color: Theme.overlay0
-                            visible: !(Media.active?.trackArtUrl)
-                        }
-                    }
-
-                    // Título + artista
-                    Column {
-                        anchors.verticalCenter: parent.verticalCenter
-                        width: 90
-                        spacing: 0
-
-                        Text {
-                            width: parent.width
-                            text: Media.title || "Sin reproducción"
-                            color: "#ffffff"
-                            font.pixelSize: 11
-                            font.bold: true
-                            elide: Text.ElideRight
-                        }
-                        Text {
-                            width: parent.width
-                            text: Media.artist
-                            color: Theme.subtext
-                            font.pixelSize: 10
-                            elide: Text.ElideRight
-                            visible: Media.artist !== ""
-                        }
-                    }
-
-                    // Progreso: tiempo · barra · tiempo
-                    Row {
-                        anchors.verticalCenter: parent.verticalCenter
-                        spacing: 6
-
-                        Text {
+                            text: "notifications"
+                            px: 12
+                            color: Notifs.count > 0 ? Theme.green : Theme.secondaryText
                             anchors.verticalCenter: parent.verticalCenter
-                            text: island.fmt(island.mediaPos)
-                            color: Theme.subtext
-                            font.pixelSize: 9
+                        }
+                    }
+                    Row {
+                        anchors.right: parent.right
+                        spacing: 7
+                        Icon {
+                            text: Net.type === "wifi" ? "signal_wifi_4_bar" : (Net.online ? "lan" : "signal_wifi_off")
+                            px: 14
+                            color: Net.online ? Theme.green : Theme.tertiaryText
+                            anchors.verticalCenter: parent.verticalCenter
                         }
                         Rectangle {
+                            width: 22
+                            height: 12
+                            radius: 3
+                            color: "transparent"
+                            border.width: 1
+                            border.color: Battery.percent <= 20 && !Battery.charging ? Theme.red : Theme.green
                             anchors.verticalCenter: parent.verticalCenter
-                            width: 60
-                            height: 4
-                            radius: 2
-                            color: Theme.surface0
-
                             Rectangle {
                                 anchors.left: parent.left
                                 anchors.verticalCenter: parent.verticalCenter
-                                height: parent.height
+                                anchors.leftMargin: 2
+                                width: Math.max(3, (parent.width - 4) * Battery.percent / 100)
+                                height: parent.height - 4
                                 radius: 2
-                                width: parent.width * (Media.active && Media.active.length > 0 ? Math.min(1, island.mediaPos / Media.active.length) : 0)
-                                color: Theme.green
+                                color: Battery.percent <= 20 && !Battery.charging ? Theme.red : Theme.green
+                            }
+                            Rectangle {
+                                anchors.left: parent.right
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: 2
+                                height: 5
+                                radius: 1
+                                color: Battery.percent <= 20 && !Battery.charging ? Theme.red : Theme.green
                             }
                         }
+                    }
+                }
+            }
+
+            // ---------- calendario (clic en la fecha) ----------
+            Item {
+                id: calendarPopup
+                anchors.fill: parent
+                opacity: island.mode === "calendar" ? 1 : 0
+                visible: opacity > 0
+                focus: island.mode === "calendar"
+                Keys.onEscapePressed: Overlay.close()
+                Behavior on opacity {
+                    NumberAnimation { duration: 160 }
+                }
+
+                Column {
+                    anchors.fill: parent
+                    anchors.leftMargin: 16
+                    anchors.rightMargin: 16
+                    anchors.topMargin: 12
+                    anchors.bottomMargin: 12
+                    spacing: 8
+
+                    Row {
+                        width: parent.width
+                        height: 22
+                        spacing: 8
+                        IslandButton {
+                            glyph: "‹"
+                            size: 22
+                            onTapped: island.calendarMonth = new Date(island.calendarMonth.getFullYear(), island.calendarMonth.getMonth() - 1, 1)
+                        }
                         Text {
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: island.fmt(Media.active?.length ?? 0)
-                            color: Theme.subtext
-                            font.pixelSize: 9
+                            font.family: Theme.bodyFontFamily
+                            width: parent.width - 60
+                            text: Qt.formatDateTime(island.calendarMonthDate, "MMMM yyyy")
+                            color: Theme.secondaryText
+                            font.pixelSize: Theme.fontPx(14)
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                        IslandButton {
+                            glyph: "›"
+                            size: 22
+                            onTapped: island.calendarMonth = new Date(island.calendarMonth.getFullYear(), island.calendarMonth.getMonth() + 1, 1)
                         }
                     }
 
-                    // Controles
-                    Row {
-                        anchors.verticalCenter: parent.verticalCenter
-                        spacing: 2
+                    Grid {
+                        width: parent.width
+                        columns: 7
+                        rowSpacing: 3
+                        columnSpacing: 2
 
-                        IslandButton {
-                            glyph: "skip_previous"
-                            useIconFont: true
-                            size: 22
-                            onTapped: Media.prev()
+                        Repeater {
+                            model: 7
+                            delegate: Text {
+                                required property int index
+                                width: (parent.width - 12) / 7
+                                height: 20
+                                text: ["S", "M", "T", "W", "T", "F", "S"][(index + Config.clockWeekStart) % 7]
+                                color: Theme.tertiaryText
+                                font.family: Theme.bodyFontFamily
+                                font.pixelSize: Theme.fontPx(10)
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
                         }
-                        IslandButton {
-                            glyph: Media.isPlaying ? "pause" : "play_arrow"
-                            useIconFont: true
-                            size: 22
-                            onTapped: Media.toggle()
-                        }
-                        IslandButton {
-                            glyph: "skip_next"
-                            useIconFont: true
-                            size: 22
-                            onTapped: Media.next()
+
+                        Repeater {
+                            model: 42
+                            delegate: Rectangle {
+                                id: calendarCell
+                                required property int index
+                                readonly property int dayNumber: index - island.calendarFirstDayOffset + 1
+                                readonly property bool inMonth: dayNumber >= 1 && dayNumber <= island.calendarDaysInMonth
+                                readonly property var cellDate: new Date(island.calendarMonthDate.getFullYear(), island.calendarMonthDate.getMonth(), dayNumber)
+                                readonly property bool selected: inMonth && island.selectedDate.getFullYear() === cellDate.getFullYear() && island.selectedDate.getMonth() === cellDate.getMonth() && island.selectedDate.getDate() === cellDate.getDate()
+                                width: (parent.width - 12) / 7
+                                height: 25
+                                radius: 10
+                                color: selected ? Theme.green : "transparent"
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: calendarCell.inMonth || Config.clockShowNeighbouringMonths ? calendarCell.cellDate.getDate() : ""
+                                    color: calendarCell.selected ? Theme.islandBg : (calendarCell.inMonth ? Theme.secondaryText : Theme.tertiaryText)
+                                    font.family: Theme.bodyFontFamily
+                                    font.pixelSize: Theme.fontPx(11)
+                                }
+                                MouseArea {
+                                    anchors.fill: parent
+                                    enabled: calendarCell.inMonth || Config.clockShowNeighbouringMonths
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        island.selectedDate = calendarCell.cellDate;
+                                        if (!calendarCell.inMonth)
+                                            island.calendarMonth = new Date(calendarCell.cellDate.getFullYear(), calendarCell.cellDate.getMonth(), 1);
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -723,31 +762,42 @@ PanelWindow {
                     radius: 5
                     anchors.left: parent.left
                     anchors.verticalCenter: parent.verticalCenter
-                    color: Media.isPlaying ? Theme.green : Theme.overlay0
+                    color: Media.isPlaying ? Theme.green : Theme.tertiaryText
                 }
 
                 Column {
                     anchors.left: mediaDot.right
                     anchors.leftMargin: 10
-                    anchors.right: mediaControls.left
-                    anchors.rightMargin: 10
+                    anchors.right: mediaControls.visible ? mediaControls.left : parent.right
+                    anchors.rightMargin: mediaControls.visible ? 10 : 0
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: 1
                     Text {
+                        font.family: Theme.bodyFontFamily
                         width: parent.width
                         text: Media.title || "Sin reproducción"
                         color: "#ffffff"
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.fontPx(12)
                         font.bold: true
                         elide: Text.ElideRight
                     }
                     Text {
+                        font.family: Theme.bodyFontFamily
+                        width: parent.width
+                        text: Media.album
+                        color: Theme.secondaryText
+                        font.pixelSize: Theme.fontPx(10)
+                        elide: Text.ElideRight
+                        visible: Config.mediaShowAlbum && Media.album !== ""
+                    }
+                    Text {
+                        font.family: Theme.bodyFontFamily
                         width: parent.width
                         text: Media.artist
-                        color: Theme.subtext
-                        font.pixelSize: 10
+                        color: Theme.secondaryText
+                        font.pixelSize: Theme.fontPx(10)
                         elide: Text.ElideRight
-                        visible: Media.artist !== ""
+                        visible: Config.mediaShowArtist && Media.artist !== ""
                     }
                 }
 
@@ -756,6 +806,7 @@ PanelWindow {
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: 10
+                    visible: Config.mediaShowControls
 
                     IslandButton {
                         glyph: "◁"
@@ -786,11 +837,12 @@ PanelWindow {
                 }
 
                 Text {
+                    font.family: Theme.bodyFontFamily
                     id: volIcon
                     anchors.left: parent.left
                     anchors.verticalCenter: parent.verticalCenter
                     text: Audio.muted ? "🔇" : "🔊"
-                    font.pixelSize: 14
+                    font.pixelSize: Theme.fontPx(14)
                 }
                 Rectangle {
                     anchors.left: volIcon.right
@@ -807,16 +859,17 @@ PanelWindow {
                         height: parent.height
                         width: parent.width * Math.min(1, Audio.volume)
                         radius: 3
-                        color: Audio.muted ? Theme.overlay0 : Theme.sapphire
+                        color: Audio.muted ? Theme.tertiaryText : Theme.sapphire
                     }
                 }
                 Text {
+                    font.family: Theme.bodyFontFamily
                     id: volPct
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
                     text: Math.round(Audio.volume * 100) + "%"
                     color: "#ffffff"
-                    font.pixelSize: 12
+                    font.pixelSize: Theme.fontPx(12)
                     font.bold: true
                 }
             }
@@ -850,18 +903,20 @@ PanelWindow {
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: 1
                     Text {
+                        font.family: Theme.bodyFontFamily
                         width: parent.width
                         text: island.notifApp || "Notificación"
                         color: Theme.mauve
-                        font.pixelSize: 10
+                        font.pixelSize: Theme.fontPx(10)
                         font.bold: true
                         elide: Text.ElideRight
                     }
                     Text {
+                        font.family: Theme.bodyFontFamily
                         width: parent.width
                         text: island.notifText
                         color: "#ffffff"
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.fontPx(12)
                         elide: Text.ElideRight
                         maximumLineCount: 2
                         wrapMode: Text.Wrap
@@ -1082,9 +1137,10 @@ PanelWindow {
         property color barColor: "#ffffff"
         spacing: 5
         Text {
+            font.family: Theme.bodyFontFamily
             text: parent.label
-            color: Theme.subtext
-            font.pixelSize: 10
+            color: Theme.secondaryText
+            font.pixelSize: Theme.fontPx(10)
             anchors.verticalCenter: parent.verticalCenter
         }
         Rectangle {
@@ -1132,7 +1188,8 @@ PanelWindow {
     component Icon: Text {
         property real px: 18
         font.family: "Material Symbols Rounded"
-        font.pixelSize: px
+        font.pixelSize: Theme.iconPx(px)
+        font.weight: Theme.iconWeight
         color: Theme.text
         verticalAlignment: Text.AlignVCenter
     }
@@ -1153,16 +1210,18 @@ PanelWindow {
             anchors.verticalCenter: parent.verticalCenter
         }
         Text {
+            font.family: Theme.bodyFontFamily
             text: parent.value
             color: "#ffffff"
-            font.pixelSize: 12
+            font.pixelSize: Theme.fontPx(12)
             font.bold: true
             anchors.verticalCenter: parent.verticalCenter
         }
         Text {
+            font.family: Theme.bodyFontFamily
             text: parent.label
-            color: Theme.subtext
-            font.pixelSize: 12
+            color: Theme.secondaryText
+            font.pixelSize: Theme.fontPx(12)
             anchors.verticalCenter: parent.verticalCenter
         }
     }
@@ -1187,13 +1246,14 @@ PanelWindow {
             Icon {
                 text: parent.parent.glyph
                 px: 14
-                color: parent.parent.on ? Theme.yellow : Theme.subtext
+                color: parent.parent.on ? Theme.yellow : Theme.secondaryText
                 anchors.verticalCenter: parent.verticalCenter
             }
             Text {
+                font.family: Theme.bodyFontFamily
                 text: parent.parent.label
                 color: Theme.text
-                font.pixelSize: 11
+                font.pixelSize: Theme.fontPx(11)
                 anchors.verticalCenter: parent.verticalCenter
             }
         }

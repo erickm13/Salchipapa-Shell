@@ -136,23 +136,25 @@ Item {
 
         // Cabecera
         Text {
+            font.family: Theme.bodyFontFamily
             id: notifTitle
             anchors.top: parent.top
             anchors.left: parent.left
             anchors.topMargin: 12
             anchors.leftMargin: 16
             text: "Notifications"
-            color: Theme.subtext
-            font.pixelSize: 11
+            color: Theme.secondaryText
+            font.pixelSize: Theme.fontPx(11)
             font.bold: true
         }
         Text {
+            font.family: Theme.bodyFontFamily
             anchors.verticalCenter: notifTitle.verticalCenter
             anchors.right: parent.right
             anchors.rightMargin: 16
             text: "Clear"
             color: clearMouse.containsMouse ? "#ffffff" : Theme.overlay1
-            font.pixelSize: 11
+            font.pixelSize: Theme.fontPx(11)
             visible: Notifs.activeCount > 0
             MouseArea {
                 id: clearMouse
@@ -166,13 +168,14 @@ Item {
 
         // Vacío
         Text {
+            font.family: Theme.bodyFontFamily
             anchors.top: notifTitle.bottom
             anchors.topMargin: 14
             anchors.left: parent.left
             anchors.leftMargin: 16
             text: "No notifications"
-            color: Theme.overlay0
-            font.pixelSize: 12
+            color: Theme.tertiaryText
+            font.pixelSize: Theme.fontPx(12)
             visible: Notifs.activeCount === 0
         }
 
@@ -222,25 +225,28 @@ Item {
                     spacing: 1
 
                     Text {
+                        font.family: Theme.bodyFontFamily
                         width: parent.width
                         text: nItem.modelData.appName || "Notificación"
                         color: Theme.mauve
-                        font.pixelSize: 10
+                        font.pixelSize: Theme.fontPx(10)
                         font.bold: true
                         elide: Text.ElideRight
                     }
                     Text {
+                        font.family: Theme.bodyFontFamily
                         width: parent.width
                         text: nItem.modelData.summary || nItem.modelData.body || ""
                         color: "#ffffff"
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.fontPx(12)
                         elide: Text.ElideRight
                     }
                     Text {
+                        font.family: Theme.bodyFontFamily
                         width: parent.width
                         text: nItem.modelData.body || ""
-                        color: Theme.subtext
-                        font.pixelSize: 10
+                        color: Theme.secondaryText
+                        font.pixelSize: Theme.fontPx(10)
                         elide: Text.ElideRight
                         visible: text.length > 0 && text !== nItem.modelData.summary
                     }
@@ -254,7 +260,7 @@ Item {
                     text: "close"
                     font.family: "Material Symbols Rounded"
                     font.pixelSize: 16
-                    color: nCloseMouse.containsMouse ? Theme.red : Theme.overlay0
+                    color: nCloseMouse.containsMouse ? Theme.red : Theme.tertiaryText
                     MouseArea {
                         id: nCloseMouse
                         anchors.fill: parent
@@ -315,7 +321,7 @@ Item {
                 anchors.centerIn: parent
                 text: bt.glyph
                 px: 20
-                color: bt.on ? Theme.islandBg : Theme.subtext
+                color: bt.on ? Theme.islandBg : Theme.secondaryText
             }
         }
         Column {
@@ -326,18 +332,20 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             spacing: 1
             Text {
+                font.family: Theme.bodyFontFamily
                 width: parent.width
                 text: bt.title
                 color: "#ffffff"
-                font.pixelSize: 13
+                font.pixelSize: Theme.fontPx(13)
                 font.bold: true
                 elide: Text.ElideRight
             }
             Text {
+                font.family: Theme.bodyFontFamily
                 width: parent.width
                 text: bt.subtitle
-                color: Theme.subtext
-                font.pixelSize: 10
+                color: Theme.secondaryText
+                font.pixelSize: Theme.fontPx(10)
                 elide: Text.ElideRight
             }
         }

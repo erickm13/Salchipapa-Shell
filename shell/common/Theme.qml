@@ -16,6 +16,30 @@ Singleton {
         return v ? "#" + v : fallback;
     }
 
+    function fontPx(size: real): int {
+        return Math.max(8, Math.round(size * Config.appearanceFontSize / 15));
+    }
+
+    function space(units: real): int {
+        return Math.max(0, Math.round(units * Config.appearanceSpacingUnit / 4));
+    }
+
+    function alpha(value: color, percent: real): color {
+        return Qt.rgba(value.r, value.g, value.b, Math.max(0, Math.min(1, percent / 100)));
+    }
+
+    function iconPx(size: real): int {
+        return Math.max(8, Math.round(size * Config.appearanceIconSize / 18));
+    }
+
+    // Paleta de la tabla @define-color que acompaña al tema.
+    readonly property var palette: ({
+        bg0: "#040e0d", bg1: "#091816", bg2: "#0f211f", bg3: "#152a26", bg4: "#2d3631",
+        fg: "#f5e2c5", red: "#ff6048", orange: "#ffa478", yellow: "#f5cd5b",
+        green: "#7ad9a8", aqua: "#3dd1b0", blue: "#5fc8d4", purple: "#e39aa8",
+        grey0: "#3a1a35", grey1: "#5a4d3e", grey2: "#c2ada2"
+    })
+
     FileView {
         path: Quickshell.env("HOME") + "/.local/state/salchipapa-shell/colors.json"
         watchChanges: true
@@ -31,34 +55,51 @@ Singleton {
     }
 
     // --- Superficies ---
-    readonly property color base: col("background", "#1e1e2e")
-    readonly property color mantle: col("surfaceContainerLow", "#181825")
-    readonly property color crust: col("surfaceContainerLowest", "#11111b")
-    readonly property color surface0: col("surfaceContainerHigh", "#313244")
-    readonly property color surface1: col("surfaceContainerHighest", "#45475a")
-    readonly property color overlay0: col("outline", "#6c7086")
-    readonly property color overlay1: col("outlineVariant", "#7f849c")
-    readonly property color overlay2: col("outline", "#9399b2")
-    readonly property color text: col("onBackground", "#cdd6f4")
-    readonly property color subtext: col("onSurfaceVariant", "#bac2de")
+    readonly property color base: palette.bg2
+    readonly property color mantle: palette.bg1
+    readonly property color crust: palette.bg0
+    readonly property color surface0: palette.bg3
+    readonly property color surface1: palette.bg4
+    readonly property color overlay0: palette.grey0
+    readonly property color overlay1: palette.grey1
+    readonly property color overlay2: palette.grey2
+    readonly property color text: palette.fg
+    readonly property color subtext: palette.grey2
 
     // --- Acentos (mapeados a roles M3; el acento principal es "green" = primary) ---
-    readonly property color green: col("primary", "#a6e3a1")
-    readonly property color blue: col("secondary", "#89b4fa")
-    readonly property color sapphire: col("primary", "#74c7ec")
-    readonly property color peach: col("tertiary", "#fab387")
-    readonly property color mauve: col("secondary", "#cba6f7")
-    readonly property color yellow: col("tertiary", "#f9e2af")
-    readonly property color red: col("error", "#f38ba8")
+    readonly property color schemePrimary: palette.green
+    readonly property color green: Config.appearanceAccent !== "" ? "#" + Config.appearanceAccent : schemePrimary
+    readonly property color shadow: col("shadow", "#000000")
+    readonly property color red: palette.red
+    readonly property color orange: palette.orange
+    readonly property color yellow: palette.yellow
+    readonly property color aqua: palette.aqua
+    readonly property color blue: palette.blue
+    readonly property color sapphire: palette.aqua
+    readonly property color peach: palette.orange
+    readonly property color mauve: palette.purple
+    readonly property color purple: palette.purple
 
     // --- Isla ---
-    readonly property color islandBg: col("surfaceContainerLowest", "#0b0b0f")
+    readonly property color islandBg: palette.bg0
     readonly property color islandBorder: "#1affffff"
 
-    // --- Paneles (look neutro: fondo negro + cards gris, estilo referencia) ---
-    readonly property color panelBg: "#0c0c0e"
-    readonly property color panelCard: "#1d1d20"
-    readonly property color panelCardHi: "#2b2b2f"
+    // --- Paneles: superficies neutras para mantener el contraste de la referencia ---
+    readonly property color panelBg: "#000000"
+    readonly property color panelCard: Qt.lighter(Config.appearanceColorBurst ? col("surfaceContainerLow", "#151513") : "#151513", 1 + Config.appearanceSurfaceLift / 100)
+    readonly property color panelCardHi: Qt.lighter(Config.appearanceColorBurst ? col("surfaceContainerHigh", "#22211f") : "#22211f", 1 + Config.appearanceSurfaceLift / 100)
+    readonly property color divider: alpha(panelCardHi, Config.appearanceDividerStrength)
+    readonly property color secondaryText: alpha(subtext, Config.appearanceSecondaryText)
+    readonly property color tertiaryText: alpha(overlay0, Config.appearanceTertiaryText)
+    readonly property color hoverFill: alpha(green, Config.appearanceHoverFill)
+    readonly property color selectedFill: alpha(green, Config.appearanceSelectedFill)
+    readonly property color modalDim: alpha("#000000", Config.appearanceModalDim)
+    readonly property int radiusSmall: Config.appearanceSmallRadius
+    readonly property int radiusMedium: Config.appearanceMediumRadius
+    readonly property int radiusLarge: Config.appearanceLargeRadius
+    readonly property string bodyFontFamily: Config.appearanceBodyFont !== "" ? Config.appearanceBodyFont : Qt.application.font.family
+    readonly property string displayFontFamily: Config.appearanceDisplayFont !== "" ? Config.appearanceDisplayFont : bodyFontFamily
+    readonly property int iconWeight: Math.max(100, Math.min(700, 100 + Config.appearanceIconStroke * 30))
 
     // --- Curvas de animación (Material 3) ---
     readonly property var spring: [0.38, 1.21, 0.22, 1, 1, 1]   // expressive, con overshoot (rebote)

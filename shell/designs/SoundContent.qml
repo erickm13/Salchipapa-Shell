@@ -46,10 +46,11 @@ Item {
                 }
             }
             Text {
+                font.family: Theme.bodyFontFamily
                 anchors.verticalCenter: parent.verticalCenter
                 text: "Sound"
                 color: "#ffffff"
-                font.pixelSize: 16
+                font.pixelSize: Theme.fontPx(16)
                 font.bold: true
             }
         }
@@ -84,9 +85,10 @@ Item {
         }
 
         Text {
+            font.family: Theme.bodyFontFamily
             text: "Output"
-            color: Theme.subtext
-            font.pixelSize: 11
+            color: Theme.secondaryText
+            font.pixelSize: Theme.fontPx(11)
             font.bold: true
             leftPadding: 4
             topPadding: 2
@@ -117,9 +119,10 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     text: dev.isDefault ? "volume_up" : "speaker"
                     px: 18
-                    color: dev.isDefault ? Theme.green : Theme.subtext
+                    color: dev.isDefault ? Theme.green : Theme.secondaryText
                 }
                 Text {
+                    font.family: Theme.bodyFontFamily
                     anchors.left: devIcon.right
                     anchors.right: devCheck.left
                     anchors.leftMargin: 12
@@ -127,7 +130,7 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     text: dev.modelData.description || dev.modelData.nickname || dev.modelData.name || "Salida"
                     color: "#ffffff"
-                    font.pixelSize: 12
+                    font.pixelSize: Theme.fontPx(12)
                     font.bold: dev.isDefault
                     elide: Text.ElideRight
                 }
@@ -166,13 +169,14 @@ Item {
         height: implicitHeight
 
         Text {
+            font.family: Theme.bodyFontFamily
             id: lbl
             anchors.top: parent.top
             anchors.left: parent.left
             anchors.leftMargin: 4
             text: ls.label
-            color: Theme.subtext
-            font.pixelSize: 11
+            color: Theme.secondaryText
+            font.pixelSize: Theme.fontPx(11)
             font.bold: true
         }
         SettingSlider {

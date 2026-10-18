@@ -73,10 +73,11 @@ Item {
                 }
             }
             Text {
+                font.family: Theme.bodyFontFamily
                 anchors.verticalCenter: parent.verticalCenter
                 text: "Display"
                 color: "#ffffff"
-                font.pixelSize: 16
+                font.pixelSize: Theme.fontPx(16)
                 font.bold: true
             }
         }
@@ -116,7 +117,7 @@ Item {
                     anchors.leftMargin: 14
                     text: "desktop_windows"
                     px: 18
-                    color: Theme.subtext
+                    color: Theme.secondaryText
                 }
                 Column {
                     anchors.left: monIcon.right
@@ -124,25 +125,28 @@ Item {
                     anchors.leftMargin: 10
                     spacing: 1
                     Text {
+                        font.family: Theme.bodyFontFamily
                         text: mon.modelData.name
                         color: "#ffffff"
-                        font.pixelSize: 13
+                        font.pixelSize: Theme.fontPx(13)
                         font.bold: true
                     }
                     Text {
+                        font.family: Theme.bodyFontFamily
                         text: mon.modelData.width + "×" + mon.modelData.height + " · " + Math.round(mon.rr) + " Hz · " + mon.modelData.scale + "×"
-                        color: Theme.subtext
-                        font.pixelSize: 10
+                        color: Theme.secondaryText
+                        font.pixelSize: Theme.fontPx(10)
                     }
                 }
                 Text {
+                    font.family: Theme.bodyFontFamily
                     anchors.top: parent.top
                     anchors.right: parent.right
                     anchors.topMargin: 14
                     anchors.rightMargin: 14
                     text: "focused"
                     color: Theme.green
-                    font.pixelSize: 10
+                    font.pixelSize: Theme.fontPx(10)
                     font.bold: true
                     visible: mon.modelData.focused
                 }
@@ -189,11 +193,12 @@ Item {
                                 }
                             }
                             Text {
+                                font.family: Theme.bodyFontFamily
                                 id: scLabel
                                 anchors.centerIn: parent
                                 text: sc.modelData + "×"
                                 color: sc.active ? Theme.islandBg : Theme.text
-                                font.pixelSize: 11
+                                font.pixelSize: Theme.fontPx(11)
                                 font.bold: sc.active
                             }
                             MouseArea {
@@ -220,20 +225,22 @@ Item {
                     color: resMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.05) : "transparent"
 
                     Text {
+                        font.family: Theme.bodyFontFamily
                         anchors.left: parent.left
                         anchors.leftMargin: 6
                         anchors.verticalCenter: parent.verticalCenter
                         text: "Resolution"
-                        color: Theme.subtext
-                        font.pixelSize: 11
+                        color: Theme.secondaryText
+                        font.pixelSize: Theme.fontPx(11)
                     }
                     Text {
+                        font.family: Theme.bodyFontFamily
                         anchors.right: resChevron.left
                         anchors.rightMargin: 6
                         anchors.verticalCenter: parent.verticalCenter
                         text: mon.modelData.width + "×" + mon.modelData.height + " @ " + Math.round(mon.rr) + " Hz"
                         color: "#ffffff"
-                        font.pixelSize: 11
+                        font.pixelSize: Theme.fontPx(11)
                         font.bold: true
                     }
                     Icon {
@@ -243,7 +250,7 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                         text: "chevron_right"
                         px: 16
-                        color: Theme.overlay0
+                        color: Theme.tertiaryText
                     }
                     MouseArea {
                         id: resMouse
@@ -285,7 +292,7 @@ Item {
                     anchors.centerIn: parent
                     text: "dark_mode"
                     px: 18
-                    color: Quick.nightLight ? Theme.islandBg : Theme.subtext
+                    color: Quick.nightLight ? Theme.islandBg : Theme.secondaryText
                 }
             }
             Column {
@@ -294,15 +301,17 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 1
                 Text {
+                    font.family: Theme.bodyFontFamily
                     text: "Night Light"
                     color: "#ffffff"
-                    font.pixelSize: 13
+                    font.pixelSize: Theme.fontPx(13)
                     font.bold: true
                 }
                 Text {
+                    font.family: Theme.bodyFontFamily
                     text: Quick.nightLight ? "On" : "Off"
-                    color: Theme.subtext
-                    font.pixelSize: 10
+                    color: Theme.secondaryText
+                    font.pixelSize: Theme.fontPx(10)
                 }
             }
 

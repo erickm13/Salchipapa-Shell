@@ -88,6 +88,7 @@ Item {
             color: Theme.overlay1
         }
         TextInput {
+            font.family: Theme.bodyFontFamily
             id: searchInput
             anchors.left: searchIcon.right
             anchors.leftMargin: 12
@@ -95,7 +96,7 @@ Item {
             anchors.rightMargin: 12
             anchors.verticalCenter: parent.verticalCenter
             color: "#ffffff"
-            font.pixelSize: 15
+            font.pixelSize: Theme.fontPx(15)
             clip: true
             focus: Overlay.mode === "wallpaper"
             onTextChanged: {
@@ -105,7 +106,7 @@ Item {
             Text {
                 anchors.verticalCenter: parent.verticalCenter
                 text: "Buscar fondos…"
-                color: Theme.overlay0
+                color: Theme.tertiaryText
                 font: parent.font
                 visible: parent.text.length === 0
             }
@@ -141,13 +142,14 @@ Item {
                     text: "palette"
                     font.family: "Material Symbols Rounded"
                     font.pixelSize: 14
-                    color: root.applyColors ? Theme.islandBg : Theme.subtext
+                    color: root.applyColors ? Theme.islandBg : Theme.secondaryText
                     anchors.verticalCenter: parent.verticalCenter
                 }
                 Text {
+                    font.family: Theme.bodyFontFamily
                     text: "Colores"
-                    color: root.applyColors ? Theme.islandBg : Theme.subtext
-                    font.pixelSize: 11
+                    color: root.applyColors ? Theme.islandBg : Theme.secondaryText
+                    font.pixelSize: Theme.fontPx(11)
                     font.bold: root.applyColors
                     anchors.verticalCenter: parent.verticalCenter
                 }
@@ -160,13 +162,14 @@ Item {
         }
 
         Text {
+            font.family: Theme.bodyFontFamily
             id: counter
             anchors.right: parent.right
             anchors.rightMargin: 20
             anchors.verticalCenter: parent.verticalCenter
             text: root.results.length > 0 ? (root.sel + 1) + "/" + root.results.length : "0/0"
-            color: Theme.subtext
-            font.pixelSize: 12
+            color: Theme.secondaryText
+            font.pixelSize: Theme.fontPx(12)
         }
     }
 
@@ -261,13 +264,14 @@ Item {
                         height: 22
                         color: "#b3000000"
                         Text {
+                            font.family: Theme.bodyFontFamily
                             anchors.fill: parent
                             anchors.leftMargin: 8
                             anchors.rightMargin: 8
                             verticalAlignment: Text.AlignVCenter
                             text: root.nameOf(cell.modelData)
                             color: "#ffffff"
-                            font.pixelSize: 10
+                            font.pixelSize: Theme.fontPx(10)
                             elide: Text.ElideRight
                         }
                     }
@@ -288,11 +292,12 @@ Item {
     }
 
     Text {
+        font.family: Theme.bodyFontFamily
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         anchors.margins: 12
         text: "Enter para aplicar"
         color: Theme.overlay1
-        font.pixelSize: 11
+        font.pixelSize: Theme.fontPx(11)
     }
 }

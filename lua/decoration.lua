@@ -1,4 +1,4 @@
--- Decoración: redondeo, blur y sombra (la sombra = "glow" del acento del tema)
+-- Decoración: redondeo, blur y sombra oscura según el rol shadow del tema.
 local v = require("lua.vars")
 
 hl.config({
@@ -16,10 +16,10 @@ hl.config({
 		},
 		shadow = {
 			enabled = true,
-			range = 10,
-			render_power = 4,
-			color = "rgba(" .. v.primary .. "55)",
-			color_inactive = "rgba(0a0a0f99)",
+			range = 24,
+			render_power = 3,
+			color = "rgba(" .. v.shadow .. "ee)",
+			color_inactive = "rgba(" .. v.shadow .. "ee)",
 		},
 	},
 })

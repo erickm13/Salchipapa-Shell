@@ -17,6 +17,12 @@ Singleton {
     readonly property bool isPlaying: active?.isPlaying ?? false
     readonly property string title: active?.trackTitle ?? ""
     readonly property string artist: active?.trackArtist ?? ""
+    readonly property string album: active?.trackAlbum ?? ""
+    // Algunos reproductores publican la letra como metadato MPRIS opcional.
+    readonly property string lyrics: {
+        const metadata = active?.metadata ?? ({});
+        return metadata["xesam:asText"] ?? metadata["lyrics"] ?? "";
+    }
 
     function toggle(): void {
         if (active?.canTogglePlaying)

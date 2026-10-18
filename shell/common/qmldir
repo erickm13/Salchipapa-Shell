@@ -2,3 +2,4 @@ singleton Config Config.qml
 singleton Theme Theme.qml
 singleton Overlay Overlay.qml
 singleton Wallpaper Wallpaper.qml
+singleton WindowShadowSync WindowShadowSync.qml

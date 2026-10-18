@@ -49,7 +49,8 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             text: sr.glyph
             font.family: "Material Symbols Rounded"
-            font.pixelSize: 17
+            font.pixelSize: Theme.iconPx(17)
+            font.weight: Theme.iconWeight
             color: Theme.islandBg
             MouseArea {
                 anchors.fill: parent
@@ -60,12 +61,13 @@ Item {
         }
 
         Text {
+            font.family: Theme.bodyFontFamily
             anchors.right: parent.right
             anchors.rightMargin: 12
             anchors.verticalCenter: parent.verticalCenter
             text: Math.round(sr.value * 100) + "%"
-            color: fill.width > parent.width - 44 ? Theme.islandBg : Theme.subtext
-            font.pixelSize: 10
+            color: fill.width > parent.width - 44 ? Theme.islandBg : Theme.secondaryText
+            font.pixelSize: Theme.fontPx(10)
             font.bold: true
         }
 

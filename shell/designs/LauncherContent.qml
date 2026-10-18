@@ -58,6 +58,7 @@ Item {
             color: Theme.overlay1
         }
         TextInput {
+            font.family: Theme.bodyFontFamily
             id: searchInput
             anchors.left: searchIcon.right
             anchors.leftMargin: 12
@@ -65,7 +66,7 @@ Item {
             anchors.rightMargin: 20
             anchors.verticalCenter: parent.verticalCenter
             color: "#ffffff"
-            font.pixelSize: 16
+            font.pixelSize: Theme.fontPx(16)
             clip: true
             focus: Overlay.mode === "launcher"
             onTextChanged: {
@@ -76,7 +77,7 @@ Item {
             Text {
                 anchors.verticalCenter: parent.verticalCenter
                 text: "Buscar aplicaciones…"
-                color: Theme.overlay0
+                color: Theme.tertiaryText
                 font: parent.font
                 visible: parent.text.length === 0
             }
@@ -152,18 +153,20 @@ Item {
                 spacing: 0
 
                 Text {
+                    font.family: Theme.bodyFontFamily
                     width: parent.width
                     text: item.modelData.name ?? ""
                     color: "#ffffff"
-                    font.pixelSize: 13
+                    font.pixelSize: Theme.fontPx(13)
                     font.bold: true
                     elide: Text.ElideRight
                 }
                 Text {
+                    font.family: Theme.bodyFontFamily
                     width: parent.width
                     text: item.modelData.comment || item.modelData.genericName || ""
-                    color: Theme.subtext
-                    font.pixelSize: 10
+                    color: Theme.secondaryText
+                    font.pixelSize: Theme.fontPx(10)
                     elide: Text.ElideRight
                     visible: text.length > 0
                 }

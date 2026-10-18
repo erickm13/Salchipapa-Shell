@@ -34,6 +34,7 @@ return {
 	scratch = scripts .. "/scratch.sh",
 	-- Colores del tema (hex sin #)
 	primary = scheme.primary or "a6e3a1",
+	shadow = scheme.shadow or "000000",
 	tertiary = scheme.tertiary or "94e2d5",
 	secondary = scheme.secondary or "f9e2af",
 	onPrimary = scheme.onPrimary or "11111b",

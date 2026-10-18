@@ -4,23 +4,20 @@ pragma ComponentBehavior: Bound
 // el resto de categorías son marcadores por ahora.
 import QtQuick
 import Quickshell
-import Quickshell.Wayland
+import Quickshell.Io
+import QtQuick.Effects
 import "../common"
+import "../services"
 
-PanelWindow {
+FloatingWindow {
     id: win
 
     visible: Overlay.settings
     color: "transparent"
-    exclusiveZone: 0
-    anchors {
-        top: true
-        bottom: true
-        left: true
-        right: true
-    }
-    WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.keyboardFocus: Overlay.settings ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    title: "Salchipapa Settings"
+    screen: Quickshell.screens[0]
+    implicitWidth: Math.min(1080, screen.width - 96)
+    implicitHeight: Math.min(620, screen.height - 144)
 
     readonly property var categories: [
         {
@@ -77,28 +74,43 @@ PanelWindow {
 
     property int category: 0
     property string query: ""
+    property string currentScheme: "Dynamic"
+
+    readonly property var accentColors: [Theme.green, Theme.red, Theme.orange, Theme.yellow, Theme.aqua, Theme.blue, Theme.purple]
+    readonly property var installedFonts: ["System default"].concat(Qt.fontFamilies().sort())
+
+    FileView {
+        path: Quickshell.env("HOME") + "/.local/state/salchipapa-shell/scheme"
+        watchChanges: true
+        printErrors: false
+        onFileChanged: reload()
+        onLoaded: win.currentScheme = text().trim() || "Dynamic"
+        onLoadFailed: win.currentScheme = "Dynamic"
+    }
+
+    function openThemeSelector(): void {
+        Overlay.settings = false;
+        Overlay.mode = "themes";
+    }
+
+    function openWallpaperSelector(): void {
+        Overlay.settings = false;
+        Overlay.mode = "wallpaper";
+    }
 
     readonly property var filtered: {
         const q = query.trim().toLowerCase();
         return q === "" ? categories : categories.filter(c => c.name.toLowerCase().includes(q));
     }
 
-    // Captura de clics fuera del panel (cierra). Sin oscurecer el fondo.
-    MouseArea {
-        anchors.fill: parent
-        onClicked: Overlay.settings = false
-    }
-
     // ===== Card =====
     Rectangle {
         id: cardBg
-        anchors.centerIn: parent
-        width: 600
-        height: 440
-        radius: 20
+        anchors.fill: parent
+        radius: Config.appearanceScreenCorners ? Config.appearanceScreenCornerRadius : 0
         color: Theme.panelBg
         border.width: 1
-        border.color: Theme.islandBorder
+        border.color: Theme.divider
 
         focus: Overlay.settings
         Keys.onEscapePressed: Overlay.settings = false
@@ -113,8 +125,10 @@ PanelWindow {
             anchors.left: parent.left
             anchors.top: parent.top
             anchors.bottom: parent.bottom
-            width: 198
-            radius: 20
+            anchors.topMargin: 18
+            anchors.bottomMargin: 18
+            width: 220
+            radius: parent.radius
             color: Theme.panelBg
             // Cuadra el borde derecho (tapa las esquinas redondeadas de ese lado)
             Rectangle {
@@ -130,9 +144,11 @@ PanelWindow {
                 anchors.top: parent.top
                 anchors.left: parent.left
                 anchors.right: parent.right
-                anchors.margins: 12
+                anchors.leftMargin: 12
+                anchors.rightMargin: 12
+                anchors.topMargin: 0
                 height: 34
-                radius: 10
+                radius: Theme.radiusSmall
                 color: Theme.panelCard
 
                 Text {
@@ -146,6 +162,7 @@ PanelWindow {
                     color: Theme.overlay1
                 }
                 TextInput {
+                    font.family: Theme.bodyFontFamily
                     id: searchInput
                     anchors.left: sIcon.right
                     anchors.right: parent.right
@@ -153,14 +170,14 @@ PanelWindow {
                     anchors.rightMargin: 10
                     anchors.verticalCenter: parent.verticalCenter
                     color: "#ffffff"
-                    font.pixelSize: 13
+                    font.pixelSize: Theme.fontPx(13)
                     clip: true
                     focus: Overlay.settings
                     onTextChanged: win.query = text
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
                         text: "Search Settings"
-                        color: Theme.overlay0
+                        color: Theme.text
                         font: parent.font
                         visible: parent.text.length === 0
                     }
@@ -242,29 +259,32 @@ PanelWindow {
                         anchors.centerIn: parent
                         text: content.cat ? content.cat.icon : ""
                         font.family: "Material Symbols Rounded"
-                        font.pixelSize: 26
+                        font.pixelSize: Theme.iconPx(26)
+                        font.weight: Theme.iconWeight
                         color: Theme.green
                     }
                 }
                 Text {
+                    font.family: Theme.displayFontFamily
                     id: hTitle
                     anchors.top: hIcon.bottom
                     anchors.horizontalCenter: parent.horizontalCenter
                     anchors.topMargin: 6
                     text: content.cat ? content.cat.name : ""
                     color: "#ffffff"
-                    font.pixelSize: 15
+                    font.pixelSize: Theme.fontPx(15)
                     font.bold: true
                 }
                 Text {
+                    font.family: Theme.bodyFontFamily
                     anchors.top: hTitle.bottom
                     anchors.horizontalCenter: parent.horizontalCenter
                     anchors.topMargin: 2
                     width: parent.width - 48
                     horizontalAlignment: Text.AlignHCenter
                     text: content.cat ? content.cat.desc : ""
-                    color: Theme.subtext
-                    font.pixelSize: 11
+                    color: Theme.secondaryText
+                    font.pixelSize: Theme.fontPx(11)
                     wrapMode: Text.Wrap
                 }
             }
@@ -283,7 +303,7 @@ PanelWindow {
                 Column {
                     id: controlsCol
                     width: parent.width
-                    spacing: 12
+                    spacing: Theme.space(3)
 
                     // ---- Bar & Island ----
                     ToggleRow {
@@ -339,16 +359,652 @@ PanelWindow {
                         onMoved: v => Config.opt.innerPadding = v
                     }
 
+                    // ---- Media ----
+                    PxSlider {
+                        visible: win.category === 1
+                        width: parent.width
+                        label: "Song name width"
+                        from: 60
+                        to: 240
+                        value: Config.mediaTitleWidth
+                        onMoved: v => Config.opt.mediaTitleWidth = v
+                    }
+                    PxSlider {
+                        visible: win.category === 1
+                        width: parent.width
+                        label: "Album art size"
+                        from: 40
+                        to: 160
+                        value: Config.mediaAlbumArtSize
+                        onMoved: v => Config.opt.mediaAlbumArtSize = v
+                    }
+                    Text {
+                        font.family: Theme.bodyFontFamily
+                        visible: win.category === 1
+                        width: parent.width
+                        text: "What to show"
+                        color: Theme.text
+                        font.pixelSize: Theme.fontPx(11)
+                    }
+                    ToggleRow {
+                        visible: win.category === 1
+                        width: parent.width
+                        label: "Album line"
+                        checked: Config.mediaShowAlbum
+                        onToggled: Config.opt.mediaShowAlbum = !Config.mediaShowAlbum
+                    }
+                    ToggleRow {
+                        visible: win.category === 1
+                        width: parent.width
+                        label: "Artist line"
+                        checked: Config.mediaShowArtist
+                        onToggled: Config.opt.mediaShowArtist = !Config.mediaShowArtist
+                    }
+                    ToggleRow {
+                        visible: win.category === 1
+                        width: parent.width
+                        label: "Transport buttons"
+                        checked: Config.mediaShowControls
+                        onToggled: Config.opt.mediaShowControls = !Config.mediaShowControls
+                    }
+                    ToggleRow {
+                        visible: win.category === 1
+                        width: parent.width
+                        label: "Lyrics"
+                        checked: Config.mediaShowLyrics
+                        onToggled: Config.opt.mediaShowLyrics = !Config.mediaShowLyrics
+                    }
+                    ToggleRow {
+                        visible: win.category === 1
+                        width: parent.width
+                        label: "Scroll to change track"
+                        checked: Config.mediaScrollToChangeTrack
+                        onToggled: Config.opt.mediaScrollToChangeTrack = !Config.mediaScrollToChangeTrack
+                    }
+
+                    // ---- Clock & Date ----
+                    ToggleRow {
+                        visible: win.category === 2
+                        width: parent.width
+                        label: "24-hour time"
+                        checked: Config.clock24Hour
+                        onToggled: Config.opt.clock24Hour = !Config.clock24Hour
+                    }
+                    ToggleRow {
+                        visible: win.category === 2
+                        width: parent.width
+                        label: "Show seconds"
+                        checked: Config.clockShowSeconds
+                        onToggled: Config.opt.clockShowSeconds = !Config.clockShowSeconds
+                    }
+                    ToggleRow {
+                        visible: win.category === 2
+                        width: parent.width
+                        label: "Workspace dots beside the clock"
+                        checked: Config.clockShowWorkspaceDots
+                        onToggled: Config.opt.clockShowWorkspaceDots = !Config.clockShowWorkspaceDots
+                    }
+                    ToggleRow {
+                        visible: win.category === 2
+                        width: parent.width
+                        label: "Battery and Wi-Fi beside the clock"
+                        checked: Config.clockShowBatteryWifi
+                        onToggled: Config.opt.clockShowBatteryWifi = !Config.clockShowBatteryWifi
+                    }
+                    Text {
+                        font.family: Theme.bodyFontFamily
+                        visible: win.category === 2
+                        width: parent.width
+                        text: "Expanded island"
+                        color: Theme.text
+                        font.pixelSize: Theme.fontPx(11)
+                    }
+                    ToggleRow {
+                        visible: win.category === 2
+                        width: parent.width
+                        label: "Workspaces on the left"
+                        checked: Config.clockExpandedWorkspaces
+                        onToggled: Config.opt.clockExpandedWorkspaces = !Config.clockExpandedWorkspaces
+                    }
+                    ToggleRow {
+                        visible: win.category === 2
+                        width: parent.width
+                        label: "Status on the right"
+                        checked: Config.clockExpandedStatus
+                        onToggled: Config.opt.clockExpandedStatus = !Config.clockExpandedStatus
+                    }
+                    ToggleRow {
+                        visible: win.category === 2
+                        width: parent.width
+                        label: "Media card under the clock"
+                        checked: Config.clockExpandedMedia
+                        onToggled: Config.opt.clockExpandedMedia = !Config.clockExpandedMedia
+                    }
+                    Text {
+                        font.family: Theme.bodyFontFamily
+                        visible: win.category === 2
+                        width: parent.width
+                        text: "Calendar"
+                        color: Theme.text
+                        font.pixelSize: Theme.fontPx(11)
+                    }
+                    PxSlider {
+                        visible: win.category === 2
+                        width: parent.width
+                        label: "Week starts on"
+                        from: 0
+                        to: 6
+                        unit: ""
+                        value: Config.clockWeekStart
+                        onMoved: v => Config.opt.clockWeekStart = v
+                    }
+                    PxSlider {
+                        visible: win.category === 2
+                        width: parent.width
+                        label: "Day cell height"
+                        from: 20
+                        to: 48
+                        value: Config.clockCalendarDayHeight
+                        onMoved: v => Config.opt.clockCalendarDayHeight = v
+                    }
+                    ToggleRow {
+                        visible: win.category === 2
+                        width: parent.width
+                        label: "Show neighbouring months"
+                        checked: Config.clockShowNeighbouringMonths
+                        onToggled: Config.opt.clockShowNeighbouringMonths = !Config.clockShowNeighbouringMonths
+                    }
+
+                    // ---- Appearance ----
+                    Rectangle {
+                        visible: win.category === 3
+                        width: parent.width
+                        height: 68
+                        radius: 12
+                        color: Theme.panelCard
+
+                        Rectangle {
+                            anchors.top: parent.top
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            height: 34
+                            color: "transparent"
+                            Text {
+                                font.family: Theme.bodyFontFamily
+                                anchors.left: parent.left
+                                anchors.leftMargin: 12
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: "Theme"
+                                color: "#ffffff"
+                                font.pixelSize: Theme.fontPx(13)
+                            }
+                            Row {
+                                anchors.right: parent.right
+                                anchors.rightMargin: 12
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: 4
+                                Text {
+                                    font.family: Theme.bodyFontFamily
+                                    text: win.currentScheme
+                                    color: Theme.secondaryText
+                                    font.pixelSize: Theme.fontPx(11)
+                                }
+                                Text {
+                                    text: "arrow_forward"
+                                    font.family: "Material Symbols Rounded"
+                                    font.pixelSize: 13
+                                    color: Theme.tertiaryText
+                                }
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: win.openThemeSelector()
+                            }
+                        }
+                        Rectangle {
+                            anchors.top: parent.top
+                            anchors.topMargin: 34
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            height: 1
+                    color: Theme.divider
+                        }
+                        Item {
+                            anchors.top: parent.top
+                            anchors.topMargin: 35
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            height: 33
+                            Text {
+                                font.family: Theme.bodyFontFamily
+                                anchors.left: parent.left
+                                anchors.leftMargin: 12
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: "Wallpaper"
+                                color: "#ffffff"
+                                font.pixelSize: Theme.fontPx(13)
+                            }
+                            Row {
+                                anchors.right: parent.right
+                                anchors.rightMargin: 12
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: 4
+                                Text {
+                                    font.family: Theme.bodyFontFamily
+                                    text: Wallpaper.current.length > 0 ? Wallpaper.current.split("/").pop().replace(/\.[^.]+$/, "") : "Choose…"
+                                    color: Theme.secondaryText
+                                    font.pixelSize: Theme.fontPx(11)
+                                    elide: Text.ElideLeft
+                                }
+                                Text {
+                                    text: "arrow_forward"
+                                    font.family: "Material Symbols Rounded"
+                                    font.pixelSize: 13
+                                    color: Theme.tertiaryText
+                                }
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: win.openWallpaperSelector()
+                            }
+                        }
+                    }
+                    Text {
+                        font.family: Theme.bodyFontFamily
+                        visible: win.category === 3
+                        width: parent.width
+                        text: "Accent"
+                        color: Theme.text
+                        font.pixelSize: Theme.fontPx(11)
+                    }
+                    Rectangle {
+                        visible: win.category === 3
+                        width: parent.width
+                        height: 44
+                        radius: 12
+                        color: Theme.panelCard
+                        Text {
+                            font.family: Theme.bodyFontFamily
+                            anchors.left: parent.left
+                            anchors.leftMargin: 12
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: "Accent colour"
+                            color: "#ffffff"
+                            font.pixelSize: Theme.fontPx(13)
+                        }
+                        Row {
+                            anchors.right: parent.right
+                            anchors.rightMargin: 10
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 6
+                            Repeater {
+                                model: win.accentColors
+                                delegate: Rectangle {
+                                    required property int index
+                                    required property var modelData
+                                    width: 15
+                                    height: 15
+                                    radius: 8
+                                    color: modelData
+                                    border.width: (Config.appearanceAccent === modelData.replace("#", "") || (Config.appearanceAccent === "" && index === 0)) ? 2 : 0
+                                    border.color: "#ffffff"
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        anchors.margins: -3
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: Config.opt.appearanceAccent = index === 0 ? "" : modelData.replace("#", "")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Rectangle {
+                        visible: win.category === 3
+                        width: parent.width
+                        height: 42
+                        radius: 12
+                        color: Theme.panelCard
+                        Text {
+                            font.family: Theme.bodyFontFamily
+                            anchors.left: parent.left
+                            anchors.leftMargin: 12
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: "Custom (#rrggbb)"
+                            color: "#ffffff"
+                            font.pixelSize: Theme.fontPx(13)
+                        }
+                        Rectangle {
+                            anchors.right: parent.right
+                            anchors.rightMargin: 8
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 150
+                            height: 30
+                            radius: 8
+                        color: Theme.divider
+                            TextInput {
+                                font.family: Theme.bodyFontFamily
+                                id: accentInput
+                                anchors.fill: parent
+                                anchors.leftMargin: 10
+                                anchors.rightMargin: 10
+                                verticalAlignment: TextInput.AlignVCenter
+                                color: "#ffffff"
+                                font.pixelSize: Theme.fontPx(13)
+                                text: Config.appearanceAccent !== "" ? "#" + Config.appearanceAccent : ""
+                                clip: true
+                                validator: RegularExpressionValidator { regularExpression: /^#?[0-9a-fA-F]{6}$/ }
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: "#rrggbb"
+                                    color: Theme.tertiaryText
+                                    font: parent.font
+                                    visible: accentInput.text.length === 0
+                                }
+                                onEditingFinished: {
+                                    if (text.length === 0)
+                                        Config.opt.appearanceAccent = "";
+                                    else if (acceptableInput)
+                                        Config.opt.appearanceAccent = text.replace("#", "").toLowerCase();
+                                }
+                            }
+                        }
+                        Connections {
+                            target: Config
+                            function onAppearanceAccentChanged(): void {
+                                accentInput.text = Config.appearanceAccent !== "" ? "#" + Config.appearanceAccent : "";
+                            }
+                        }
+                    }
+                    ToggleRow {
+                        visible: win.category === 3
+                        width: parent.width
+                        label: "Color burst (a different palette colour per surface)"
+                        checked: Config.appearanceColorBurst
+                        onToggled: Config.opt.appearanceColorBurst = !Config.appearanceColorBurst
+                    }
+                    Text {
+                        font.family: Theme.bodyFontFamily
+                        visible: win.category === 3
+                        width: parent.width
+                        text: "Type"
+                        color: Theme.text
+                        font.pixelSize: Theme.fontPx(11)
+                    }
+                    PxSlider {
+                        visible: win.category === 3
+                        width: parent.width
+                        label: "Font size"
+                        from: 10
+                        to: 24
+                        value: Config.appearanceFontSize
+                        onMoved: v => Config.opt.appearanceFontSize = v
+                    }
+                    Rectangle {
+                        id: fontPicker
+                        visible: win.category === 3
+                        width: parent.width
+                        height: fontList.visible ? 174 : 42
+                        radius: 12
+                        color: Theme.panelCard
+
+                        Text {
+                            font.family: Theme.bodyFontFamily
+                            anchors.left: parent.left
+                            anchors.leftMargin: 12
+                            anchors.verticalCenter: fontField.verticalCenter
+                            text: "Body font"
+                            color: "#ffffff"
+                            font.pixelSize: Theme.fontPx(13)
+                        }
+                        Rectangle {
+                            id: fontField
+                            anchors.top: parent.top
+                            anchors.right: parent.right
+                            anchors.topMargin: 6
+                            anchors.rightMargin: 8
+                            width: 170
+                            height: 30
+                            radius: 8
+                            color: Theme.panelCardHi
+                            Text {
+                                font.family: Theme.bodyFontFamily
+                                anchors.left: parent.left
+                                anchors.leftMargin: 10
+                                anchors.right: fontArrow.left
+                                anchors.rightMargin: 4
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: Config.appearanceBodyFont || "System default"
+                                color: Theme.text
+                                font.pixelSize: Theme.fontPx(11)
+                                elide: Text.ElideRight
+                            }
+                            Text {
+                                id: fontArrow
+                                anchors.right: parent.right
+                                anchors.rightMargin: 8
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: fontList.visible ? "expand_less" : "expand_more"
+                                font.family: "Material Symbols Rounded"
+                                font.pixelSize: 15
+                                color: Theme.secondaryText
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: fontList.visible = !fontList.visible
+                            }
+                        }
+                        ListView {
+                            id: fontList
+                            visible: false
+                            anchors.top: fontField.bottom
+                            anchors.left: fontField.left
+                            anchors.right: fontField.right
+                            anchors.topMargin: 4
+                            height: 126
+                            clip: true
+                            model: win.installedFonts
+                            boundsBehavior: Flickable.StopAtBounds
+
+                            delegate: Rectangle {
+                                required property string modelData
+                                width: ListView.view.width
+                                height: 30
+                                radius: 6
+                                color: fontRowMouse.containsMouse ? Theme.panelCardHi : "transparent"
+                                Text {
+                                    anchors.left: parent.left
+                                    anchors.leftMargin: 8
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: modelData
+                                    color: Theme.text
+                                    font.family: modelData === "System default" ? Theme.bodyFontFamily : modelData
+                                    font.pixelSize: Theme.fontPx(11)
+                                    elide: Text.ElideRight
+                                }
+                                MouseArea {
+                                    id: fontRowMouse
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        Config.opt.appearanceBodyFont = modelData === "System default" ? "" : modelData;
+                                        fontList.visible = false;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Rectangle {
+                        id: displayFontPicker
+                        visible: win.category === 3
+                        width: parent.width
+                        height: displayFontList.visible ? 174 : 42
+                        radius: Theme.radiusMedium
+                        color: Theme.panelCard
+                        Text {
+                            font.family: Theme.bodyFontFamily
+                            anchors.left: parent.left
+                            anchors.leftMargin: 12
+                            anchors.verticalCenter: displayFontField.verticalCenter
+                            text: "Display font"
+                            color: "#ffffff"
+                            font.pixelSize: Theme.fontPx(13)
+                        }
+                        Rectangle {
+                            id: displayFontField
+                            anchors.top: parent.top
+                            anchors.right: parent.right
+                            anchors.topMargin: 6
+                            anchors.rightMargin: 8
+                            width: 170
+                            height: 30
+                            radius: Theme.radiusSmall
+                            color: Theme.panelCardHi
+                            Text {
+                                font.family: Theme.displayFontFamily
+                                anchors.left: parent.left
+                                anchors.leftMargin: 10
+                                anchors.right: displayFontArrow.left
+                                anchors.rightMargin: 4
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: Config.appearanceDisplayFont || "System default"
+                                color: Theme.text
+                                font.pixelSize: Theme.fontPx(11)
+                                elide: Text.ElideRight
+                            }
+                            Text {
+                                id: displayFontArrow
+                                anchors.right: parent.right
+                                anchors.rightMargin: 8
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: displayFontList.visible ? "expand_less" : "expand_more"
+                                font.family: "Material Symbols Rounded"
+                                font.pixelSize: 15
+                                color: Theme.secondaryText
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: displayFontList.visible = !displayFontList.visible
+                            }
+                        }
+                        ListView {
+                            id: displayFontList
+                            visible: false
+                            anchors.top: displayFontField.bottom
+                            anchors.left: displayFontField.left
+                            anchors.right: displayFontField.right
+                            anchors.topMargin: 4
+                            height: 126
+                            clip: true
+                            model: win.installedFonts
+                            boundsBehavior: Flickable.StopAtBounds
+                            delegate: Rectangle {
+                                required property string modelData
+                                width: ListView.view.width
+                                height: 30
+                                radius: 6
+                                color: displayFontRow.containsMouse ? Theme.panelCardHi : "transparent"
+                                Text {
+                                    anchors.left: parent.left
+                                    anchors.leftMargin: 8
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: modelData
+                                    color: Theme.text
+                                    font.family: modelData === "System default" ? Theme.displayFontFamily : modelData
+                                    font.pixelSize: Theme.fontPx(11)
+                                    elide: Text.ElideRight
+                                }
+                                MouseArea {
+                                    id: displayFontRow
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        Config.opt.appearanceDisplayFont = modelData === "System default" ? "" : modelData;
+                                        displayFontList.visible = false;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Text {
+                        font.family: Theme.bodyFontFamily
+                        visible: win.category === 3
+                        width: parent.width
+                        text: "Shape & depth"
+                        color: Theme.text
+                        font.pixelSize: Theme.fontPx(11)
+                    }
+                    PxSlider { visible: win.category === 3; width: parent.width; label: "Spacing unit"; from: 2; to: 8; value: Config.appearanceSpacingUnit; onMoved: v => Config.opt.appearanceSpacingUnit = v }
+                    PxSlider { visible: win.category === 3; width: parent.width; label: "Small radius"; from: 0; to: 24; value: Config.appearanceSmallRadius; onMoved: v => Config.opt.appearanceSmallRadius = v }
+                    PxSlider { visible: win.category === 3; width: parent.width; label: "Medium radius"; from: 0; to: 32; value: Config.appearanceMediumRadius; onMoved: v => Config.opt.appearanceMediumRadius = v }
+                    PxSlider { visible: win.category === 3; width: parent.width; label: "Large radius"; from: 0; to: 40; value: Config.appearanceLargeRadius; onMoved: v => Config.opt.appearanceLargeRadius = v }
+                    ToggleRow {
+                        visible: win.category === 3
+                        width: parent.width
+                        label: "Screen corners"
+                        checked: Config.appearanceScreenCorners
+                        onToggled: Config.opt.appearanceScreenCorners = !Config.appearanceScreenCorners
+                    }
+                    PxSlider { visible: win.category === 3 && Config.appearanceScreenCorners; width: parent.width; label: "Screen corner radius"; from: 0; to: 32; value: Config.appearanceScreenCornerRadius; onMoved: v => Config.opt.appearanceScreenCornerRadius = v }
+                    PxSlider { visible: win.category === 3; width: parent.width; label: "Icon size"; from: 12; to: 32; value: Config.appearanceIconSize; onMoved: v => Config.opt.appearanceIconSize = v }
+                    PxSlider { visible: win.category === 3; width: parent.width; label: "Icon stroke"; from: 1; to: 20; value: Config.appearanceIconStroke; unit: ""; onMoved: v => Config.opt.appearanceIconStroke = v }
+
+                    Text {
+                        font.family: Theme.bodyFontFamily
+                        visible: win.category === 3
+                        width: parent.width
+                        text: "Surfaces & ink"
+                        color: Theme.text
+                        font.pixelSize: Theme.fontPx(11)
+                    }
+                    PxSlider { visible: win.category === 3; width: parent.width; label: "Surface lift"; from: 0; to: 20; value: Config.appearanceSurfaceLift; unit: "%"; onMoved: v => Config.opt.appearanceSurfaceLift = v }
+                    PxSlider { visible: win.category === 3; width: parent.width; label: "Divider strength"; from: 0; to: 100; value: Config.appearanceDividerStrength; unit: "%"; onMoved: v => Config.opt.appearanceDividerStrength = v }
+                    PxSlider { visible: win.category === 3; width: parent.width; label: "Secondary text"; from: 0; to: 100; value: Config.appearanceSecondaryText; unit: "%"; onMoved: v => Config.opt.appearanceSecondaryText = v }
+                    PxSlider { visible: win.category === 3; width: parent.width; label: "Tertiary text"; from: 0; to: 100; value: Config.appearanceTertiaryText; unit: "%"; onMoved: v => Config.opt.appearanceTertiaryText = v }
+                    PxSlider { visible: win.category === 3; width: parent.width; label: "Hover fill"; from: 0; to: 30; value: Config.appearanceHoverFill; unit: "%"; onMoved: v => Config.opt.appearanceHoverFill = v }
+                    PxSlider { visible: win.category === 3; width: parent.width; label: "Selected fill"; from: 0; to: 30; value: Config.appearanceSelectedFill; unit: "%"; onMoved: v => Config.opt.appearanceSelectedFill = v }
+                    PxSlider { visible: win.category === 3; width: parent.width; label: "Modal dim"; from: 0; to: 90; value: Config.appearanceModalDim; unit: "%"; onMoved: v => Config.opt.appearanceModalDim = v }
+
+                    Text {
+                        font.family: Theme.bodyFontFamily
+                        visible: win.category === 3
+                        width: parent.width
+                        text: "Shadow"
+                        color: Theme.text
+                        font.pixelSize: Theme.fontPx(11)
+                    }
+                    PxSlider { visible: win.category === 3; width: parent.width; label: "Opacity"; from: 0; to: 100; value: Config.appearanceShadowOpacity; unit: "%"; onMoved: v => { Config.opt.appearanceShadowOpacity = v; WindowShadowSync.scheduleSync(); } }
+                    PxSlider { visible: win.category === 3; width: parent.width; label: "Blur"; from: 0; to: 100; value: Config.appearanceShadowBlur; unit: "%"; onMoved: v => { Config.opt.appearanceShadowBlur = v; WindowShadowSync.scheduleSync(); } }
+                    PxSlider { visible: win.category === 3; width: parent.width; label: "Vertical offset"; from: 0; to: 30; value: Config.appearanceShadowOffset; onMoved: v => { Config.opt.appearanceShadowOffset = v; WindowShadowSync.scheduleSync(); } }
+                    PxSlider { visible: win.category === 3; width: parent.width; label: "Spread"; from: 0; to: 450; value: Config.appearanceShadowSpread; onMoved: v => { Config.opt.appearanceShadowSpread = v; WindowShadowSync.scheduleSync(); } }
+                    Text {
+                        font.family: Theme.bodyFontFamily
+                        visible: win.category === 3
+                        width: parent.width
+                        text: "Wallpaper"
+                        color: Theme.text
+                        font.pixelSize: Theme.fontPx(11)
+                    }
+                    PxSlider { visible: win.category === 3; width: parent.width; label: "Wallpaper crossfade"; from: 0; to: 1000; value: Config.appearanceWallpaperCrossfade; unit: "ms"; onMoved: v => Config.opt.appearanceWallpaperCrossfade = v }
+
                     // ---- Otras categorías (placeholder) ----
                     Item {
-                        visible: win.category !== 0
+                        visible: win.category !== 0 && win.category !== 1 && win.category !== 2 && win.category !== 3
                         width: parent.width
                         height: 90
                         Text {
+                            font.family: Theme.bodyFontFamily
                             anchors.centerIn: parent
                             text: "Próximamente"
-                            color: Theme.overlay0
-                            font.pixelSize: 13
+                            color: Theme.tertiaryText
+                            font.pixelSize: Theme.fontPx(13)
                         }
                     }
                 }
@@ -366,8 +1022,8 @@ PanelWindow {
         signal clicked
 
         height: 40
-        radius: 12
-        color: active ? Theme.panelCardHi : (navMouse.containsMouse ? Theme.panelCard : "transparent")
+        radius: Theme.radiusMedium
+        color: active ? Theme.panelCard : (navMouse.containsMouse ? Qt.tint(Theme.panelCard, Theme.hoverFill) : "transparent")
         Behavior on color {
             ColorAnimation {
                 duration: 120
@@ -387,17 +1043,19 @@ PanelWindow {
                 anchors.centerIn: parent
                 text: nav.iconName
                 font.family: "Material Symbols Rounded"
-                font.pixelSize: 15
-                color: nav.active ? Theme.islandBg : Theme.subtext
+                font.pixelSize: Theme.iconPx(15)
+                font.weight: Theme.iconWeight
+                color: nav.active ? Theme.islandBg : Theme.secondaryText
             }
         }
         Text {
+            font.family: Theme.bodyFontFamily
             anchors.left: ic.right
             anchors.leftMargin: 10
             anchors.verticalCenter: parent.verticalCenter
             text: nav.label
             color: nav.active ? "#ffffff" : Theme.text
-            font.pixelSize: 13
+            font.pixelSize: Theme.fontPx(15)
             font.bold: nav.active
         }
         MouseArea {
@@ -415,14 +1073,15 @@ PanelWindow {
         signal clicked
         width: 28
         height: 28
-        radius: 8
-        color: aMouse.containsMouse ? Theme.panelCardHi : Theme.panelCard
+        radius: Theme.radiusSmall
+        color: aMouse.containsMouse ? Qt.tint(Theme.panelCardHi, Theme.hoverFill) : Theme.panelCard
         Text {
             anchors.centerIn: parent
             text: arrow.glyph
             font.family: "Material Symbols Rounded"
-            font.pixelSize: 16
-            color: Theme.subtext
+            font.pixelSize: Theme.iconPx(16)
+            font.weight: Theme.iconWeight
+            color: Theme.secondaryText
         }
         MouseArea {
             id: aMouse
@@ -440,16 +1099,17 @@ PanelWindow {
         signal toggled
 
         height: 48
-        radius: 12
+        radius: Theme.radiusMedium
         color: Theme.panelCard
 
         Text {
+            font.family: Theme.bodyFontFamily
             anchors.left: parent.left
             anchors.leftMargin: 16
             anchors.verticalCenter: parent.verticalCenter
             text: tr.label
             color: "#ffffff"
-            font.pixelSize: 13
+            font.pixelSize: Theme.fontPx(14)
         }
         Rectangle {
             anchors.right: parent.right
@@ -496,10 +1156,11 @@ PanelWindow {
         signal moved(int v)
 
         height: 58
-        radius: 12
+        radius: Theme.radiusMedium
         color: Theme.panelCard
 
         Text {
+            font.family: Theme.bodyFontFamily
             id: pl
             anchors.top: parent.top
             anchors.left: parent.left
@@ -507,16 +1168,17 @@ PanelWindow {
             anchors.leftMargin: 14
             text: ps.label
             color: "#ffffff"
-            font.pixelSize: 13
+            font.pixelSize: Theme.fontPx(14)
         }
         Text {
+            font.family: Theme.bodyFontFamily
             anchors.top: parent.top
             anchors.right: parent.right
             anchors.topMargin: 12
             anchors.rightMargin: 14
-            text: ps.value + " " + ps.unit
-            color: Theme.subtext
-            font.pixelSize: 12
+            text: ps.unit === "" ? ("" + ps.value) : (ps.value + " " + ps.unit)
+            color: Theme.secondaryText
+            font.pixelSize: Theme.fontPx(13)
         }
 
         Rectangle {

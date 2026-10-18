@@ -1,5 +1,6 @@
 -- Reglas de ventana y de capas
 -- Flotar apps/diálogos comunes
+hl.window_rule({ match = { title = "^Salchipapa Settings$" }, float = true, center = true })
 hl.window_rule({ match = { class = "pavucontrol|org\\.pulseaudio\\.pavucontrol" }, float = true })
 hl.window_rule({ match = { class = "blueman-manager" }, float = true })
 hl.window_rule({ match = { class = "nm-connection-editor" }, float = true })
