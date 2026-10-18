@@ -14,6 +14,12 @@ import "../services"
 PanelWindow {
     id: win
 
+    // Fuente oficial actualizada: incluye los glifos de batería con sufijo _2.
+    FontLoader {
+        id: batterySymbols
+        source: "file://" + Quickshell.env("HOME") + "/.local/share/fonts/SalchipapaShell/MaterialSymbolsOutlined.ttf"
+    }
+
     color: "transparent"
     anchors {
         top: true
@@ -53,6 +59,8 @@ PanelWindow {
 
         // Modo efectivo: overlay (launcher/themes) manda; luego hover; luego peek; luego idle
         readonly property string mode: Overlay.mode !== "" ? Overlay.mode : (hovered ? "expanded" : (peek !== "" ? peek : "idle"))
+        readonly property string batteryGlyph: Battery.charging ? (Battery.percent >= 95 ? "battery_charging_full_2" : Battery.percent >= 65 ? "battery_charging_80_2" : Battery.percent >= 35 ? "battery_charging_50_2" : "battery_charging_20_2") : Battery.percent >= 95 ? "battery_android_full" : Battery.percent >= 80 ? "battery_android_6" : Battery.percent >= 65 ? "battery_android_5" : Battery.percent >= 50 ? "battery_android_4" : Battery.percent >= 35 ? "battery_android_3" : Battery.percent >= 20 ? "battery_android_2" : Battery.percent >= 5 ? "battery_android_1" : "battery_android_0"
+        readonly property string networkGlyph: Net.type === "ethernet" ? "lan" : Net.type === "wifi" ? (Net.wifiSignal >= 80 ? "signal_wifi_4_bar" : Net.wifiSignal >= 60 ? "network_wifi_3_bar" : Net.wifiSignal >= 35 ? "network_wifi_2_bar" : Net.wifiSignal >= 10 ? "network_wifi_1_bar" : "signal_wifi_0_bar") : "wifi_off"
 
         // Notch: fondo negro + alas laterales. Solo en reposo/peeks (no expandido/overlay).
         readonly property color notchBg: Theme.panelBg
@@ -158,20 +166,23 @@ PanelWindow {
         // ================= Píldora =================
         Item {
             id: pillShadow
-            readonly property int pad: Math.max(32, Math.round(Config.appearanceShadowSpread * 0.32))
+            // Match Hyprland's effective pixel range and leave room for its offset.
+            readonly property int pad: Math.max(2, WindowShadowSync.quickshellRange * 2 + Math.abs(Config.appearanceShadowOffset) + 2)
             x: -pad
             y: -pad
             width: island.width + pad * 2
             height: island.height + pad * 2
             layer.enabled: true
             layer.effect: MultiEffect {
-                shadowEnabled: true
+                shadowEnabled: WindowShadowSync.quickshellBlurRadius > 0 && WindowShadowSync.quickshellOpacity > 0
                 shadowColor: Theme.shadow
-                shadowOpacity: Config.appearanceShadowOpacity / 100
-                shadowBlur: Config.appearanceShadowBlur / 100
-                blurMax: Math.max(4, Math.round(Config.appearanceShadowSpread * 0.22))
+                shadowOpacity: WindowShadowSync.quickshellOpacity
+                // blurMax is the radius; use the already-combined range once.
+                shadowBlur: WindowShadowSync.quickshellBlur
+                blurMax: Math.max(2, WindowShadowSync.quickshellRange)
                 shadowVerticalOffset: Config.appearanceShadowOffset
-                autoPaddingEnabled: true
+                // pillShadow.pad provides explicit padding, including offset.
+                autoPaddingEnabled: false
             }
 
             Rectangle {
@@ -349,47 +360,34 @@ PanelWindow {
                             autoPaddingEnabled: true
                         }
 
-                        Row {
+                        Icon {
+                            text: island.networkGlyph
+                            iconFontFamily: batterySymbols.name !== "" ? batterySymbols.name : "Material Symbols Outlined"
+                            px: 18
+                            color: Net.online ? Theme.green : Theme.surface1
                             anchors.verticalCenter: parent.verticalCenter
-                            spacing: 2
-                            Rectangle {
-                                width: 3
-                                height: 5
-                                radius: 1
-                                anchors.bottom: parent.bottom
-                                color: Net.online ? Theme.green : Theme.surface1
-                            }
-                            Rectangle {
-                                width: 3
-                                height: 8
-                                radius: 1
-                                anchors.bottom: parent.bottom
-                                color: Net.online ? Theme.green : Theme.surface1
-                            }
-                            Rectangle {
-                                width: 3
-                                height: 11
-                                radius: 1
-                                anchors.bottom: parent.bottom
-                                color: Net.online ? Theme.green : Theme.surface1
-                            }
                         }
 
-                        Rectangle {
+                        Row {
                             anchors.verticalCenter: parent.verticalCenter
                             visible: Battery.available
-                            width: 26
-                            height: 13
-                            radius: 6.5
-                            color: Theme.surface1
+                            spacing: 4
 
-                            Rectangle {
-                                anchors.left: parent.left
-                                anchors.verticalCenter: parent.verticalCenter
-                                height: parent.height
-                                width: Math.max(parent.height, parent.width * Battery.percent / 100)
-                                radius: parent.radius
-                                color: Battery.percent <= 20 && !Battery.charging ? Theme.red : Theme.green
+                            Icon {
+                                text: island.batteryGlyph
+                                iconFontFamily: batterySymbols.name !== "" ? batterySymbols.name : "Material Symbols Outlined"
+                                px: 22
+                                color: Theme.green
+                            }
+
+                            Text {
+                                visible: Config.clockShowBatteryPercent
+                                text: Battery.percent + "%"
+                                color: Theme.text
+                                font.family: Theme.displayFontFamily
+                                font.pixelSize: Theme.fontPx(13)
+                                font.weight: 600
+                                verticalAlignment: Text.AlignVCenter
                             }
                         }
                     }
@@ -604,36 +602,18 @@ PanelWindow {
                         anchors.right: parent.right
                         spacing: 7
                         Icon {
-                            text: Net.type === "wifi" ? "signal_wifi_4_bar" : (Net.online ? "lan" : "signal_wifi_off")
-                            px: 14
+                            text: island.networkGlyph
+                            iconFontFamily: batterySymbols.name !== "" ? batterySymbols.name : "Material Symbols Outlined"
+                            px: 18
                             color: Net.online ? Theme.green : Theme.tertiaryText
                             anchors.verticalCenter: parent.verticalCenter
                         }
-                        Rectangle {
-                            width: 22
-                            height: 12
-                            radius: 3
-                            color: "transparent"
-                            border.width: 1
-                            border.color: Battery.percent <= 20 && !Battery.charging ? Theme.red : Theme.green
+                        Icon {
+                            text: island.batteryGlyph
+                            iconFontFamily: batterySymbols.name !== "" ? batterySymbols.name : "Material Symbols Outlined"
+                            px: 19
+                            color: Battery.percent <= 20 && !Battery.charging ? Theme.red : Theme.green
                             anchors.verticalCenter: parent.verticalCenter
-                            Rectangle {
-                                anchors.left: parent.left
-                                anchors.verticalCenter: parent.verticalCenter
-                                anchors.leftMargin: 2
-                                width: Math.max(3, (parent.width - 4) * Battery.percent / 100)
-                                height: parent.height - 4
-                                radius: 2
-                                color: Battery.percent <= 20 && !Battery.charging ? Theme.red : Theme.green
-                            }
-                            Rectangle {
-                                anchors.left: parent.right
-                                anchors.verticalCenter: parent.verticalCenter
-                                width: 2
-                                height: 5
-                                radius: 1
-                                color: Battery.percent <= 20 && !Battery.charging ? Theme.red : Theme.green
-                            }
                         }
                     }
                 }
@@ -1187,7 +1167,8 @@ PanelWindow {
     // Icono (Material Symbols Rounded; el texto es el nombre del icono, ej. "wifi")
     component Icon: Text {
         property real px: 18
-        font.family: "Material Symbols Rounded"
+        property string iconFontFamily: "Material Symbols Rounded"
+        font.family: iconFontFamily
         font.pixelSize: Theme.iconPx(px)
         font.weight: Theme.iconWeight
         color: Theme.text

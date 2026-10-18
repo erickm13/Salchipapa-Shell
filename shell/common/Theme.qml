@@ -34,10 +34,10 @@ Singleton {
 
     // Paleta de la tabla @define-color que acompaña al tema.
     readonly property var palette: ({
-        bg0: "#040e0d", bg1: "#091816", bg2: "#0f211f", bg3: "#152a26", bg4: "#2d3631",
+        bg0: "#040e0d", bg1: "#0a1816", bg2: "#0f211f", bg3: "#152a26", bg4: "#1d3631",
         fg: "#f5e2c5", red: "#ff6048", orange: "#ffa478", yellow: "#f5cd5b",
-        green: "#7ad9a8", aqua: "#3dd1b0", blue: "#5fc8d4", purple: "#e39aa8",
-        grey0: "#3a1a35", grey1: "#5a4d3e", grey2: "#c2ada2"
+        green: "#7ad9a8", aqua: "#3dd1b0", blue: "#5fc8d4", purple: "#e89aa8",
+        grey0: "#3a1a35", grey1: "#5a4d3e", grey2: "#c4b09a"
     })
 
     FileView {

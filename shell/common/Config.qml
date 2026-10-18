@@ -36,6 +36,7 @@ Singleton {
     readonly property bool clockShowSeconds: settings.clockShowSeconds
     readonly property bool clockShowWorkspaceDots: settings.clockShowWorkspaceDots
     readonly property bool clockShowBatteryWifi: settings.clockShowBatteryWifi
+    readonly property bool clockShowBatteryPercent: settings.clockShowBatteryPercent
     readonly property bool clockExpandedWorkspaces: settings.clockExpandedWorkspaces
     readonly property bool clockExpandedStatus: settings.clockExpandedStatus
     readonly property bool clockExpandedMedia: settings.clockExpandedMedia
@@ -108,6 +109,7 @@ Singleton {
             property bool clockShowSeconds: false
             property bool clockShowWorkspaceDots: true
             property bool clockShowBatteryWifi: true
+            property bool clockShowBatteryPercent: true
             property bool clockExpandedWorkspaces: true
             property bool clockExpandedStatus: true
             property bool clockExpandedMedia: true

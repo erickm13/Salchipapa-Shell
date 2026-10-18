@@ -251,7 +251,7 @@ fi
 fdir="$HOME/.config/foot"
 if [ -d "$fdir" ]; then
     cat >"$fdir/salchipapa-colors.ini" <<EOF
-[colors]
+[colors-dark]
 foreground=$(c onBackground)
 background=$(c background)
 regular0=$(c surfaceContainerLowest)

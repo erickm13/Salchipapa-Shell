@@ -109,7 +109,7 @@ FloatingWindow {
         anchors.fill: parent
         radius: Config.appearanceScreenCorners ? Config.appearanceScreenCornerRadius : 0
         color: Theme.panelBg
-        border.width: 1
+        border.width: 0
         border.color: Theme.divider
 
         focus: Overlay.settings
@@ -312,6 +312,13 @@ FloatingWindow {
                         label: "Notch mode"
                         checked: Config.notchMode
                         onToggled: Config.opt.notchMode = !Config.opt.notchMode
+                    }
+                    ToggleRow {
+                        visible: win.category === 0
+                        width: parent.width
+                        label: "Battery percentage in the island"
+                        checked: Config.clockShowBatteryPercent
+                        onToggled: Config.opt.clockShowBatteryPercent = !Config.clockShowBatteryPercent
                     }
                     PxSlider {
                         visible: win.category === 0

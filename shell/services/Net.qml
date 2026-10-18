@@ -9,12 +9,14 @@ Singleton {
 
     property string type: "none"   // "wifi" | "ethernet" | "none"
     property string name: ""       // SSID o nombre de conexión
+    property int wifiSignal: 100    // intensidad del AP conectado (0–100)
     readonly property bool online: type !== "none"
     property bool wifiEnabled: true // estado de la radio wifi (nmcli radio wifi)
 
     function refresh(): void {
         proc.running = true;
         radioProc.running = true;
+        signalProc.running = true;
     }
     function toggleWifi(): void {
         wifiProc.command = ["nmcli", "radio", "wifi", wifiEnabled ? "off" : "on"];
@@ -38,6 +40,21 @@ Singleton {
                     root.type = "none";
                     root.name = "";
                 }
+            }
+        }
+    }
+
+    // Intensidad de señal del AP conectado (porcentaje de NetworkManager).
+    Process {
+        id: signalProc
+        running: true
+        command: ["sh", "-c", "nmcli -t -f IN-USE,SIGNAL device wifi list --rescan no | awk -F: '$1 == \"*\" {print $2; exit}'"]
+        stdout: StdioCollector {
+            id: signalOut
+            onStreamFinished: {
+                const value = Number.parseInt(signalOut.text.trim(), 10);
+                if (Number.isFinite(value) && value >= 0)
+                    root.wifiSignal = value;
             }
         }
     }
