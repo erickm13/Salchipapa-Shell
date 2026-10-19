@@ -1,0 +1,225 @@
+(
+    config_name: "aura_19b6.ron",
+    brightness: Med,
+    current_mode: RainbowWave,
+    builtins: {
+        Static: (
+            mode: Static,
+            zone: r#None,
+            colour1: (
+                r: 166,
+                g: 0,
+                b: 0,
+            ),
+            colour2: (
+                r: 0,
+                g: 0,
+                b: 0,
+            ),
+            speed: Med,
+            direction: Right,
+        ),
+        Breathe: (
+            mode: Breathe,
+            zone: r#None,
+            colour1: (
+                r: 166,
+                g: 0,
+                b: 0,
+            ),
+            colour2: (
+                r: 0,
+                g: 0,
+                b: 0,
+            ),
+            speed: Med,
+            direction: Right,
+        ),
+        RainbowCycle: (
+            mode: RainbowCycle,
+            zone: r#None,
+            colour1: (
+                r: 166,
+                g: 0,
+                b: 0,
+            ),
+            colour2: (
+                r: 0,
+                g: 0,
+                b: 0,
+            ),
+            speed: Med,
+            direction: Right,
+        ),
+        RainbowWave: (
+            mode: RainbowWave,
+            zone: r#None,
+            colour1: (
+                r: 166,
+                g: 0,
+                b: 0,
+            ),
+            colour2: (
+                r: 0,
+                g: 0,
+                b: 0,
+            ),
+            speed: High,
+            direction: Right,
+        ),
+        Star: (
+            mode: Star,
+            zone: r#None,
+            colour1: (
+                r: 166,
+                g: 0,
+                b: 0,
+            ),
+            colour2: (
+                r: 0,
+                g: 0,
+                b: 0,
+            ),
+            speed: Med,
+            direction: Right,
+        ),
+        Rain: (
+            mode: Rain,
+            zone: r#None,
+            colour1: (
+                r: 166,
+                g: 0,
+                b: 0,
+            ),
+            colour2: (
+                r: 0,
+                g: 0,
+                b: 0,
+            ),
+            speed: Med,
+            direction: Right,
+        ),
+        Highlight: (
+            mode: Highlight,
+            zone: r#None,
+            colour1: (
+                r: 166,
+                g: 0,
+                b: 0,
+            ),
+            colour2: (
+                r: 0,
+                g: 0,
+                b: 0,
+            ),
+            speed: Med,
+            direction: Right,
+        ),
+        Laser: (
+            mode: Laser,
+            zone: r#None,
+            colour1: (
+                r: 166,
+                g: 0,
+                b: 0,
+            ),
+            colour2: (
+                r: 0,
+                g: 0,
+                b: 0,
+            ),
+            speed: Med,
+            direction: Right,
+        ),
+        Ripple: (
+            mode: Ripple,
+            zone: r#None,
+            colour1: (
+                r: 166,
+                g: 0,
+                b: 0,
+            ),
+            colour2: (
+                r: 0,
+                g: 0,
+                b: 0,
+            ),
+            speed: Med,
+            direction: Right,
+        ),
+        Pulse: (
+            mode: Pulse,
+            zone: r#None,
+            colour1: (
+                r: 166,
+                g: 0,
+                b: 0,
+            ),
+            colour2: (
+                r: 0,
+                g: 0,
+                b: 0,
+            ),
+            speed: Med,
+            direction: Right,
+        ),
+        Comet: (
+            mode: Comet,
+            zone: r#None,
+            colour1: (
+                r: 166,
+                g: 0,
+                b: 0,
+            ),
+            colour2: (
+                r: 0,
+                g: 0,
+                b: 0,
+            ),
+            speed: Med,
+            direction: Right,
+        ),
+        Flash: (
+            mode: Flash,
+            zone: r#None,
+            colour1: (
+                r: 166,
+                g: 0,
+                b: 0,
+            ),
+            colour2: (
+                r: 0,
+                g: 0,
+                b: 0,
+            ),
+            speed: Med,
+            direction: Right,
+        ),
+    },
+    multizone_on: false,
+    enabled: (
+        states: [
+            (
+                zone: Keyboard,
+                boot: true,
+                awake: true,
+                sleep: true,
+                shutdown: true,
+            ),
+            (
+                zone: Lightbar,
+                boot: true,
+                awake: true,
+                sleep: true,
+                shutdown: true,
+            ),
+            (
+                zone: Logo,
+                boot: true,
+                awake: true,
+                sleep: true,
+                shutdown: true,
+            ),
+        ],
+    ),
+)

@@ -27,8 +27,11 @@ PKGS=(
     qt6-wayland qt6-5compat qt6-svg qt6-imageformats qt6-multimedia qt6-multimedia-ffmpeg qt5-wayland
     # Vídeo del tema de SDDM
     gst-plugins-base gst-plugins-good gst-plugins-bad gst-plugins-ugly
-    # Audio, red, bluetooth, energía, brillo
-    pipewire pipewire-pulse pipewire-audio wireplumber libcanberra
+    # Gráficos comunes (los drivers de cada GPU se añaden en detect_gpu)
+    mesa lib32-mesa vulkan-icd-loader lib32-vulkan-icd-loader libva-utils
+    # Audio (sof-firmware: micro y altavoces de portátiles Intel), red, bluetooth, energía, brillo
+    pipewire pipewire-pulse pipewire-audio pipewire-alsa pipewire-jack wireplumber libcanberra
+    sof-firmware alsa-ucm-conf xdg-user-dirs
     networkmanager bluez bluez-utils upower power-profiles-daemon brightnessctl
     # Lo que usan los scripts y la isla
     matugen jq python imagemagick grim slurp swappy wl-clipboard cliphist hyprpicker
@@ -109,6 +112,59 @@ put() {
 }
 
 # ── Pasos ─────────────────────────────────────────────────────────
+# multilib (paquetes lib32-*: drivers de 32 bits para Steam/Wine) viene desactivado en Arch
+enable_multilib() {
+    grep -q '^\[multilib\]' /etc/pacman.conf && return 0
+    if grep -q '^#\[multilib\]' /etc/pacman.conf; then
+        sudo sed -i '/^#\[multilib\]/,/^#Include/ s/^#//' /etc/pacman.conf
+    else
+        printf '\n[multilib]\nInclude = /etc/pacman.d/mirrorlist\n' | sudo tee -a /etc/pacman.conf >/dev/null
+    fi
+    grep -q '^\[multilib\]' /etc/pacman.conf
+}
+
+# Drivers según las GPU que haya (por PCI: clase 0x03 = pantalla; 8086 Intel, 1002 AMD, 10de NVIDIA)
+GPUS=()
+detect_gpu() {
+    local d vendor
+    for d in /sys/bus/pci/devices/*; do
+        [[ "$(cat "$d/class")" == 0x03* ]] || continue
+        vendor="$(cat "$d/vendor")"
+        case "$vendor" in
+        0x8086) GPUS+=(intel) ;;
+        0x1002) GPUS+=(amd) ;;
+        0x10de) GPUS+=(nvidia) ;;
+        esac
+    done
+    if [[ " ${GPUS[*]} " == *" intel "* ]]; then
+        PKGS+=(intel-media-driver vulkan-intel lib32-vulkan-intel)
+    fi
+    if [[ " ${GPUS[*]} " == *" amd "* ]]; then
+        PKGS+=(vulkan-radeon lib32-vulkan-radeon)
+    fi
+    if [[ " ${GPUS[*]} " == *" nvidia "* ]]; then
+        # nvidia-open es para el kernel `linux`; con otros kernels (zen, lts…) hace falta la versión dkms
+        local kernels
+        kernels="$(pacman -Qq linux linux-lts linux-zen linux-hardened 2>/dev/null | tr '\n' ' ')"
+        if [ -z "$kernels" ] || [ "$kernels" = "linux " ]; then
+            PKGS+=(nvidia-open)
+        else
+            PKGS+=(nvidia-open-dkms)
+            for k in $kernels; do PKGS+=("$k-headers"); done
+        fi
+        PKGS+=(nvidia-utils lib32-nvidia-utils libva-nvidia-driver egl-wayland nvidia-prime)
+    fi
+}
+
+# NVIDIA: cargar sus módulos al arrancar (KMS temprano, evita pantalla negra al iniciar Hyprland)
+setup_nvidia_initramfs() {
+    local conf=/etc/mkinitcpio.conf.d/nvidia.conf
+    [ -f "$conf" ] && return 0
+    grep -q '^MODULES=.*nvidia_drm' /etc/mkinitcpio.conf && return 0
+    echo 'MODULES+=(nvidia nvidia_modeset nvidia_uvm nvidia_drm)' | sudo tee "$conf" >/dev/null
+    sudo mkinitcpio -P
+}
+
 install_pacman() {
     local missing
     mapfile -t missing < <(pacman -T "${PKGS[@]}" || true)
@@ -194,6 +250,22 @@ prepare_theme() {
     touch "$STATE/first-run"
 }
 
+# ASUS: ajustes de asusd (límite de carga, perfiles con/sin cargador). Las curvas de ventilador y
+# el RGB del teclado dependen del modelo: solo se copian en la misma placa (defaults/asusd/BOARD).
+install_asusd_config() {
+    local src="$REPO/defaults/asusd" f
+    sudo install -d /etc/asusd
+    sudo install -m644 "$src/asusd.ron" /etc/asusd/asusd.ron
+    if [ "$(cat /sys/class/dmi/id/board_name)" = "$(cat "$src/BOARD")" ]; then
+        for f in "$src"/fan_curves.ron "$src"/aura_*.ron; do
+            sudo install -m644 "$f" "/etc/asusd/$(basename "$f")"
+        done
+    else
+        echo "otra placa: se omiten curvas de ventilador y RGB"
+    fi
+    sudo systemctl try-restart asusd.service
+}
+
 install_papirus_rule() {
     sudo bash "$REPO/scripts/instalar-papirus-sudo.sh"
 }
@@ -249,10 +321,22 @@ while kill -0 $$ 2>/dev/null; do
 done 2>/dev/null &
 
 section "Paquetes"
+step "Repositorio multilib (32 bits)" enable_multilib
+detect_gpu
+if [ ${#GPUS[@]} -gt 0 ]; then
+    ok "GPU detectada: ${GPUS[*]}"
+else
+    warn "No se detectó GPU (¿máquina virtual?): solo drivers genéricos de mesa"
+fi
+IS_ASUS=0
 if grep -qi "asus" /sys/class/dmi/id/sys_vendor 2>/dev/null; then
-    PKGS+=(asusctl) # perfiles Turbo/Silencioso del centro de control
+    IS_ASUS=1
+    PKGS+=(asusctl) # perfiles Turbo/Silencioso del centro de control, carga, ventiladores, RGB
 fi
 step "Paquetes oficiales (${#PKGS[@]})" install_pacman
+if [[ " ${GPUS[*]} " == *" nvidia "* ]]; then
+    step "NVIDIA: módulos en el arranque (mkinitcpio)" setup_nvidia_initramfs
+fi
 step "Ayudante de AUR" install_aur_helper
 for p in "${AUR_PKGS[@]}"; do
     step "AUR: $p" aur_install "$p"
@@ -267,6 +351,9 @@ step "Tema GTK, iconos y cursor (gsettings)" set_gsettings
 section "Sistema"
 step "Regla sudoers de papirus-folders (color de carpetas)" install_papirus_rule
 step "Fondo y colores iniciales" prepare_theme
+if [ "$IS_ASUS" -eq 1 ]; then
+    step "ASUS: ajustes de asusd (carga, perfiles, ventiladores, RGB)" install_asusd_config
+fi
 step "Tema de SDDM ($SDDM_THEME)" install_sddm_theme
 step "Sesión por defecto en SDDM: Hyprland (uwsm)" set_sddm_session
 step "Servicios: NetworkManager, bluetooth, power-profiles, sddm" enable_services
