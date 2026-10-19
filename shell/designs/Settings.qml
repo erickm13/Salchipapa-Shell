@@ -77,7 +77,16 @@ FloatingWindow {
     property string currentScheme: "Dynamic"
 
     readonly property var accentColors: [Theme.green, Theme.red, Theme.orange, Theme.yellow, Theme.aqua, Theme.blue, Theme.purple]
-    readonly property var installedFonts: ["System default"].concat(Qt.fontFamilies().sort())
+    // Fuentes de interfaz recomendadas primero (si están instaladas); luego el resto, sin las de
+    // iconos/símbolos ni las variantes de escritura de Noto, que no sirven como texto de la shell.
+    readonly property var suggestedFonts: ["Google Sans Flex", "Inter", "Inter Display", "Geist", "Rubik"]
+    readonly property var installedFonts: {
+        const all = Qt.fontFamilies();
+        const picks = suggestedFonts.filter(f => all.includes(f));
+        const skip = /Symbols|Icons|Awesome|Webdings|Standard Symbols|Music|Noto (Sans|Serif|Kufi|Naskh|Nastaliq|Rashi|Fangsong|Traditional|Znamenny) \S/;
+        const rest = all.filter(f => !picks.includes(f) && !skip.test(f)).sort();
+        return ["System default"].concat(picks, rest);
+    }
 
     FileView {
         path: Quickshell.env("HOME") + "/.local/state/salchipapa-shell/scheme"
@@ -730,14 +739,14 @@ FloatingWindow {
                                     height: 15
                                     radius: 8
                                     color: modelData
-                                    border.width: (Config.appearanceAccent === modelData.replace("#", "") || (Config.appearanceAccent === "" && index === 0)) ? 2 : 0
+                                    border.width: (Config.appearanceAccent === String(modelData).replace("#", "") || (Config.appearanceAccent === "" && index === 0)) ? 2 : 0
                                     border.color: "#ffffff"
 
                                     MouseArea {
                                         anchors.fill: parent
                                         anchors.margins: -3
                                         cursorShape: Qt.PointingHandCursor
-                                        onClicked: Config.opt.appearanceAccent = index === 0 ? "" : modelData.replace("#", "")
+                                        onClicked: Config.opt.appearanceAccent = index === 0 ? "" : String(modelData).replace("#", "")
                                     }
                                 }
                             }
