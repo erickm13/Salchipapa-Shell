@@ -83,7 +83,7 @@ Desde una TTY libre (`Ctrl+Alt+F3`): `Hyprland -c <repo>/hyprland.lua`. `Super +
 | `Super + E` | Archivos (yazi) |
 | `Super + Q` | Cerrar ventana |
 | `Super + Backspace` | Bloquear pantalla (Quickshell + PAM) |
-| `Super + Alt + P` | Menú de energía de la isla |
+| `Super + Alt + P` | Menú de energía de la isla (flechas/Tab eligen, Enter/Espacio activan, Esc vuelve/cierra) |
 | `Super + V` | Historial del portapapeles (en la isla; Enter copia, Supr borra) |
 | `Super + .` | Selector de emojis (en la isla; español o inglés) |
 | `Super + Alt + Space` / `Super + F` | Flotar / pantalla completa |
