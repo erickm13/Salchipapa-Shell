@@ -34,12 +34,44 @@ Singleton {
         return Math.max(8, Math.round(size * Config.appearanceIconSize / 18));
     }
 
-    // Paleta de la tabla @define-color que acompaña al tema.
-    readonly property var palette: ({
+    // Paleta fija (la del tema salchipapa): solo se usa si el esquema activo no trae el color.
+    readonly property var basePalette: ({
         bg0: "#040e0d", bg1: "#0a1816", bg2: "#0f211f", bg3: "#152a26", bg4: "#1d3631",
         fg: "#f5e2c5", red: "#ff6048", orange: "#ffa478", yellow: "#f5cd5b",
         green: "#7ad9a8", aqua: "#3dd1b0", blue: "#5fc8d4", purple: "#e89aa8",
         grey0: "#3a1a35", grey1: "#5a4d3e", grey2: "#c4b09a"
+    })
+
+    // El primer rol que exista en el esquema activo (colors.json), o el color fijo
+    function pick(roles: var, fallback: string): string {
+        for (const r of roles)
+            if (c[r])
+                return "#" + c[r];
+        return fallback;
+    }
+
+    // Paleta de la shell conectada al esquema activo (temas guardados y matugen) por sus roles de
+    // Material 3: todos los esquemas los traen y son coherentes. Los colores "con nombre" de los
+    // temas exportados de caelestia no sirven (en gruvbox "red" es azul y "yellow" casi blanco).
+    // Amarillo y naranja no tienen rol M3: se quedan fijos como colores de aviso.
+    // Con el tema salchipapa los roles coinciden con la paleta fija (bg0 = surfaceContainerLowest…).
+    readonly property var palette: ({
+        bg0: pick(["surfaceContainerLowest", "background"], basePalette.bg0),
+        bg1: pick(["surfaceContainerLow"], basePalette.bg1),
+        bg2: pick(["surfaceContainer"], basePalette.bg2),
+        bg3: pick(["surfaceContainerHigh"], basePalette.bg3),
+        bg4: pick(["surfaceContainerHighest"], basePalette.bg4),
+        fg: pick(["onSurface"], basePalette.fg),
+        grey0: pick(["outlineVariant"], basePalette.grey0),
+        grey1: pick(["outline"], basePalette.grey1),
+        grey2: pick(["onSurfaceVariant"], basePalette.grey2),
+        green: pick(["primary"], basePalette.green),
+        red: pick(["error"], basePalette.red),
+        orange: basePalette.orange,
+        yellow: basePalette.yellow,
+        aqua: pick(["primary"], basePalette.aqua),
+        blue: pick(["secondary"], basePalette.blue),
+        purple: pick(["tertiary"], basePalette.purple)
     })
 
     FileView {
