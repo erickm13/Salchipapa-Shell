@@ -4,7 +4,9 @@ hl.config({
 	general = {
 		gaps_in = 5,
 		-- Menos espacio arriba para acercar las ventanas a la Dynamic Island.
-		gaps_out = { top = 0, right = 10, bottom = 10, left = 10 },
+		-- Arriba también 10: en los monitores sin isla las ventanas no quedan pegadas al borde.
+		-- La isla reserva 10 px menos (DynamicIsland.qml) para que bajo ella quede igual.
+		gaps_out = { top = 10, right = 10, bottom = 10, left = 10 },
 		border_size = 2,
 		col = {
 			active_border = "rgba(00000000)",

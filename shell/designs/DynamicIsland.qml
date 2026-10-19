@@ -29,7 +29,8 @@ PanelWindow {
     implicitHeight: 620
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.keyboardFocus: (Overlay.mode !== "" || island.showPolkit) ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
-    exclusiveZone: 34 + Config.topMargin
+    // -10: Hyprland ya deja 10 px de gaps_out arriba (lua/general.lua)
+    exclusiveZone: Math.max(0, 34 + Config.topMargin - 10)
 
     // Solo la píldora captura el ratón; el resto deja pasar los clics
     mask: Region {
