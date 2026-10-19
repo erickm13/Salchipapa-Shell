@@ -1,0 +1,7 @@
+# Variables de la sesión que uwsm exporta a todas las apps (se enlaza en ~/.config/uwsm).
+# Tema Qt y cursor
+export QT_QPA_PLATFORMTHEME='qtengine'
+export QT_WAYLAND_DISABLE_WINDOWDECORATION='1'
+export QT_AUTO_SCREEN_SCALE_FACTOR='1'
+export XCURSOR_THEME='Bibata-Modern-Classic'
+export XCURSOR_SIZE='24'

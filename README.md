@@ -4,30 +4,40 @@ Mi configuración de [Hyprland](https://hyprland.org/) desde cero, modular y reu
 Inspirada en la fluidez de [caelestia](https://github.com/caelestia-dots) (curvas Material 3),
 pero independiente de su shell.
 
-## Probar sin romper nada
-
-Esta config es solo archivos; **no sustituye** tu sesión actual hasta que tú quieras.
-Para probarla en una sesión Hyprland aparte, desde una TTY libre (`Ctrl+Alt+F3`):
+## Instalar (Arch Linux limpio)
 
 ```sh
-Hyprland -c ~/proyects/Salchipapa-Shell/hyprland.lua
+git clone https://github.com/erickm13/Salchipapa-Shell ~/proyects/Salchipapa-Shell
+~/proyects/Salchipapa-Shell/install.sh     # como tu usuario, sin sudo
 ```
+
+El instalador deja el escritorio igual que en el equipo original:
+
+- **Paquetes**: Hyprland, uwsm, SDDM, Quickshell y todo lo que usan la isla y los scripts
+  (oficiales + AUR: qtengine, Bibata, papirus-folders, Geist, Spotify, Vesktop, VS Code; `asusctl`
+  solo en equipos ASUS). Instala `yay` si no hay ayudante de AUR.
+- **Archivos**: fuentes de `assets/fonts/`, fondos de `wallpapers/` → `~/Pictures/Wallpapers`, avatar
+  `~/.face`, ajustes de la shell (`defaults/config.json`), GTK, Qt (`qtengine`), cursor y gsettings.
+- **Enlaces**: `~/.config/hypr` → este repo y `~/.config/uwsm` → `uwsm/` (lo que hubiera se
+  respalda como `<ruta>.bak-<fecha>`).
+- **Sistema**: regla sudoers de `papirus-folders`, tema de SDDM `enfield` (de qylock), sesión por
+  defecto *Hyprland (uwsm-managed)* y servicios (NetworkManager, bluetooth, power-profiles, sddm).
+- **Primer arranque**: `scripts/first-run.sh` aplica el fondo y el tema de `defaults/theme`.
+- Al final ofrece instalar [Salchipapa.Dots](https://github.com/erickm13/Salchipapa.Dots) (fish,
+  foot, kitty, nvim…); en *Terminal* elige **Foot**.
+
+Se puede repetir: salta lo ya instalado. Log en `~/.cache/salchipapa-shell/`.
+
+**Guardar tu estado actual en el repo** (antes de formatear): copia
+`~/.config/salchipapa-shell/config.json` a `defaults/config.json`, los fondos nuevos a `wallpapers/`
+y el tema/fondo activos a `defaults/theme`.
+
+## Probar sin instalar
+
+Desde una TTY libre (`Ctrl+Alt+F3`): `Hyprland -c <repo>/hyprland.lua`. `Super + Shift + Q` sale.
 
 > La config está en **Lua** (`hyprland.lua` + módulos en `lua/`), el formato nuevo de Hyprland
 > (el `.conf` se elimina en 0.57).
-
-`Super + Shift + Q` sale de esa sesión de prueba.
-
-## Instalar de verdad (cuando esté a tu gusto)
-
-```sh
-# respalda tu config actual
-mv ~/.config/hypr ~/.config/hypr.bak
-# enlaza esta
-ln -s ~/proyects/Salchipapa-Shell ~/.config/hypr
-```
-
-Para volver atrás: borra el symlink y restaura `~/.config/hypr.bak`.
 
 ## Estructura
 
@@ -46,7 +56,12 @@ Para volver atrás: borra el symlink y restaura `~/.config/hypr.bak`.
 | `lua/windowrules.lua` | Reglas de ventana y de capas (incl. scratchpads) |
 | `lua/keybinds.lua` | Atajos |
 | `lua/autostart.lua` | Arranque (polkit, llavero, cursor, cliphist, MPRIS, limpieza de papelera, Quickshell) |
-| `scripts/` | Scripts (capturas, areapicker helper, scratchpads y bloqueo de pantalla) |
+| `scripts/` | Scripts (capturas, areapicker helper, scratchpads, bloqueo, tema y primer arranque) |
+| `install.sh` | Instalador para Arch limpio |
+| `defaults/` | Ajustes de la shell, GTK, Qt y tema/fondo iniciales que copia el instalador |
+| `assets/` | Fuentes (Google Sans Flex, Material Symbols) y avatar |
+| `wallpapers/` | Fondos de pantalla (→ `~/Pictures/Wallpapers`) |
+| `uwsm/` | Variables de entorno de la sesión (→ `~/.config/uwsm`) |
 | `shell/services/LockScreen.qml` | Pantalla de bloqueo segura vía sesión Wayland y autenticación PAM |
 | `shell/` | La shell de Quickshell (isla, launcher, temas, picker) |
 
@@ -55,7 +70,7 @@ Para volver atrás: borra el symlink y restaura `~/.config/hypr.bak`.
 | Atajo | Acción |
 |---|---|
 | `Super + Return` | Terminal (foot) |
-| `Super + R` | Lanzador (fuzzel) |
+| `Super + R` | Lanzador de la isla |
 | `Super + B` | Navegador |
 | `Super + E` | Archivos (yazi) |
 | `Super + Q` | Cerrar ventana |
@@ -112,7 +127,7 @@ Píldora flotante centrada arriba (estilo iPhone):
 > Notificaciones: la shell **es** el servidor de notificaciones, por eso `lua/autostart.lua` **no**
 > lanza dunst (chocarían).
 
-Probar suelta: `qs -p ~/proyects/Salchipapa-Shell/shell/shell.qml` (se recarga sola al guardar).
+Probar suelta: `qs -p <repo>/shell/shell.qml` (se recarga sola al guardar).
 
 ## Pendiente
 
