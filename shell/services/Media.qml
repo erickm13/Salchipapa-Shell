@@ -1,6 +1,7 @@
 pragma Singleton
 // Reproductor multimedia activo vía MPRIS.
 import Quickshell
+import Quickshell.Hyprland
 import Quickshell.Services.Mpris
 
 Singleton {
@@ -35,5 +36,35 @@ Singleton {
     function prev(): void {
         if (active?.canGoPrevious)
             active.previous();
+    }
+    function stop(): void {
+        if (active?.canControl)
+            active.stop();
+    }
+
+    // Teclas multimedia (XF86Audio*, Ctrl+Super+Space/=/-): sin playerctl, directo por MPRIS
+    GlobalShortcut {
+        appid: "salchipapa"
+        name: "mediaToggle"
+        description: "Reproducir/pausar"
+        onPressed: root.toggle()
+    }
+    GlobalShortcut {
+        appid: "salchipapa"
+        name: "mediaNext"
+        description: "Siguiente pista"
+        onPressed: root.next()
+    }
+    GlobalShortcut {
+        appid: "salchipapa"
+        name: "mediaPrev"
+        description: "Pista anterior"
+        onPressed: root.prev()
+    }
+    GlobalShortcut {
+        appid: "salchipapa"
+        name: "mediaStop"
+        description: "Detener la reproducción"
+        onPressed: root.stop()
     }
 }

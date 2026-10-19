@@ -103,6 +103,18 @@ Desde una TTY libre (`Ctrl+Alt+F3`): `Hyprland -c <repo>/hyprland.lua`. `Super +
 | `Ctrl + Alt + R` | Grabar el monitor enfocado sin sonido |
 | `Super + Shift + Alt + R` | Grabar una región con sonido |
 | `Super + Shift + Alt + P` | Pausar/reanudar la grabación |
+| Teclas multimedia / `Ctrl + Super + Space`, `=`, `-` | Reproducir/pausar, siguiente, anterior (MPRIS, sin playerctl) |
+| `Super + Shift + Return` | Terminal con herdr |
+| `Super + Alt + E` | Archivos (Nemo) |
+| `Ctrl + Alt + Escape` / `Ctrl + Alt + V` | qps (procesos) / pavucontrol |
+| `Super + Shift + M` | Silenciar el audio |
+| `Ctrl + Alt + C` | Borrar todas las notificaciones |
+| `Ctrl + Alt + Delete` | Menú de energía (igual que `Super + Alt + P`) |
+| `Super + Alt + F` | Maximizar (pantalla completa con bordes) |
+| `Super + Shift + P` | Fijar la ventana flotante en todos los workspaces |
+| `Super + Alt + Shift + K` | Mostrar las teclas pulsadas (showmethekey) |
+| `Super + Alt + I` | opencode en la terminal (foot) |
+| `Ctrl + Shift + Alt + V` | Escribir lo último copiado (para campos que no dejan pegar) |
 | `Super + Shift + Q` | Salir de Hyprland |
 
 ## Shell (Quickshell) — modular, con diseños intercambiables

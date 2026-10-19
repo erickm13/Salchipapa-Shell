@@ -3,6 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Hyprland
 import Quickshell.Services.Notifications
 import "../common"
 
@@ -56,6 +57,13 @@ Singleton {
         const vs = server.trackedNotifications.values.slice();
         for (const n of vs)
             n.dismiss();
+    }
+
+    GlobalShortcut {
+        appid: "salchipapa"
+        name: "clearNotifs"
+        description: "Borrar todas las notificaciones"
+        onPressed: root.clearAll()
     }
 
     Timer {

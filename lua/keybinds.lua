@@ -177,6 +177,32 @@ hl.bind("CTRL + ALT + R", hl.dsp.exec_cmd(v.scripts .. "/record.sh screen nosoun
 hl.bind(mod .. " + SHIFT + ALT + R", hl.dsp.exec_cmd(v.scripts .. "/record.sh region sound")) -- región + sonido
 hl.bind(mod .. " + SHIFT + ALT + P", hl.dsp.exec_cmd(v.scripts .. "/record.sh pause")) -- pausar/reanudar
 
+-- Multimedia (por MPRIS en la shell; no hace falta playerctl)
+for _, k in ipairs({ "XF86AudioPlay", "XF86AudioPause" }) do
+	hl.bind(k, hl.dsp.global("salchipapa:mediaToggle"), { locked = true })
+end
+hl.bind("XF86AudioNext", hl.dsp.global("salchipapa:mediaNext"), { locked = true })
+hl.bind("XF86AudioPrev", hl.dsp.global("salchipapa:mediaPrev"), { locked = true })
+hl.bind("XF86AudioStop", hl.dsp.global("salchipapa:mediaStop"), { locked = true })
+hl.bind("CTRL + " .. mod .. " + Space", hl.dsp.global("salchipapa:mediaToggle"))
+hl.bind("CTRL + " .. mod .. " + EQUAL", hl.dsp.global("salchipapa:mediaNext"))
+hl.bind("CTRL + " .. mod .. " + MINUS", hl.dsp.global("salchipapa:mediaPrev"))
+
+-- Atajos traídos de caelestia
+hl.bind(mod .. " + SHIFT + Return", hl.dsp.exec_cmd(v.terminal .. " -e herdr")) -- terminal con herdr
+hl.bind(mod .. " + ALT + E", hl.dsp.exec_cmd("nemo"))
+hl.bind("CTRL + ALT + Escape", hl.dsp.exec_cmd("qps")) -- procesos
+hl.bind("CTRL + ALT + V", hl.dsp.exec_cmd("pavucontrol"))
+hl.bind(mod .. " + SHIFT + M", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"))
+hl.bind("CTRL + ALT + C", hl.dsp.global("salchipapa:clearNotifs")) -- borrar notificaciones
+hl.bind("CTRL + ALT + Delete", hl.dsp.global("salchipapa:power")) -- menú de energía (como Super+Alt+P)
+hl.bind(mod .. " + ALT + F", hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" })) -- maximizar (con bordes)
+hl.bind(mod .. " + SHIFT + P", hl.dsp.window.pin({ action = "toggle" })) -- fijar en todos los workspaces (flotantes)
+hl.bind(mod .. " + ALT + SHIFT + K", hl.dsp.exec_cmd("pkill -x showmethekey-gtk || showmethekey-gtk -k -A")) -- mostrar teclas (Super+Alt+K ya redimensiona)
+hl.bind(mod .. " + ALT + I", hl.dsp.exec_cmd(v.terminal .. " --working-directory=$HOME -e fish -i -c opencode")) -- opencode
+-- Pegado alternativo: escribe lo último copiado (para campos que no aceptan pegar)
+hl.bind("CTRL + SHIFT + ALT + V", hl.dsp.exec_cmd("sleep 0.5; wtype -- \"$(cliphist list | head -1 | cliphist decode)\""))
+
 -- Tecla del touchpad (keycode 199 = XF86TouchpadToggle): la shell lo activa/desactiva y guarda el estado
 hl.bind("XF86TouchpadToggle", hl.dsp.global("salchipapa:touchpad"), { locked = true })
 hl.bind("XF86AudioMute", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"), { locked = true })

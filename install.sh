@@ -42,6 +42,7 @@ PKGS=(
     foot kitty fuzzel yazi btop firefox pavucontrol thunar nemo
     gpu-screen-recorder # grabar pantalla (scripts/record.sh)
     hyprsunset # luz nocturna del centro de control
+    qps showmethekey # Ctrl+Alt+Esc, Super+Alt+Shift+K
     wtype # el selector de emojis escribe el elegido en la ventana
     # Thunar: miniaturas, montaje de USB/móvil (MTP, iPhone) y discos NTFS
     tumbler ffmpegthumbnailer thunar-volman gvfs gvfs-mtp gvfs-afc ntfs-3g xdg-utils
