@@ -21,6 +21,7 @@ Singleton {
     readonly property int topMargin: settings.gapFromEdge // separación de la barra al borde superior
     // Bar & Island
     readonly property bool notchMode: settings.notchMode
+    readonly property bool islandAllScreens: settings.islandAllScreens
     readonly property int barHeight: settings.barHeight
     readonly property int collapsedWidth: settings.collapsedWidth
     readonly property int expandedHeight: settings.expandedHeight
@@ -128,6 +129,7 @@ Singleton {
 
             // Bar & Island
             property bool notchMode: false
+            property bool islandAllScreens: true // false = solo en el monitor principal (el del workspace 1)
             property int barHeight: 30
             property int collapsedWidth: 90
             property int expandedHeight: 190

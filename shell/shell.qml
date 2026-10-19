@@ -64,9 +64,13 @@ ShellRoot {
         }
     }
 
-    // Barra (una por monitor, según el diseño activo)
+    // Monitor principal = el que tiene el workspace 1 (el mismo criterio que Ajustes > Display).
+    // Si aún no se conoce, el enfocado.
+    readonly property string primaryScreen: Hyprland.workspaces.values.find(w => w.id === 1)?.monitor?.name ?? Hyprland.focusedMonitor?.name ?? ""
+
+    // Barra (una por monitor, según el diseño activo; o solo en el principal)
     Variants {
-        model: Quickshell.screens
+        model: Config.islandAllScreens || primaryScreen === "" ? Quickshell.screens : Quickshell.screens.filter(s => s.name === primaryScreen)
 
         Loader {
             id: barLoader
