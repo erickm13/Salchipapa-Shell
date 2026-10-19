@@ -38,13 +38,16 @@ PKGS=(
     libnotify gnome-keyring trash-cli glib2 dconf
     # Apps de los atajos
     foot kitty fuzzel yazi btop firefox pavucontrol thunar nemo
+    # Thunar: miniaturas, montaje de USB/móvil (MTP, iPhone) y discos NTFS
+    tumbler ffmpegthumbnailer thunar-volman gvfs gvfs-mtp gvfs-afc ntfs-3g xdg-utils
     # Temas e iconos
     papirus-icon-theme adw-gtk-theme
     # Fuentes
     noto-fonts noto-fonts-emoji adwaita-fonts inter-font ttf-cascadia-code-nerd ttf-material-symbols-variable
+    ttf-jetbrains-mono-nerd # la de foot
 )
 # Paquetes de AUR (se instalan de uno en uno: si falla uno, siguen los demás)
-AUR_PKGS=(qtengine bibata-cursor-theme-bin papirus-folders otf-geist spotify vesktop-bin visual-studio-code-bin)
+AUR_PKGS=(qtengine bibata-cursor-theme-bin papirus-folders otf-geist ttf-rubik-vf spotify vesktop-bin visual-studio-code-bin)
 
 # ── Salida ────────────────────────────────────────────────────────
 BOLD=$'\e[1m' DIM=$'\e[2m' RED=$'\e[31m' GREEN=$'\e[32m' YELLOW=$'\e[33m' CYAN=$'\e[36m' RESET=$'\e[0m'
@@ -180,6 +183,20 @@ install_aur_helper() {
     (cd "$tmp/yay-bin" && makepkg -si --noconfirm)
 }
 
+mark_explicit() {
+    local p names=()
+    for p in "${PKGS[@]}" "${AUR_PKGS[@]}"; do
+        # el nombre exacto o su variante -git/-bin (quickshell-git cubre quickshell)
+        for q in "$p" "${p%-bin}" "$p-git" "$p-bin"; do
+            if pacman -Qq "$q" >/dev/null 2>&1; then
+                names+=("$q")
+                break
+            fi
+        done
+    done
+    sudo pacman -D --asexplicit "${names[@]}"
+}
+
 aur_install() {
     # Ya instalado (también su variante sin -bin/-git, p. ej. vesktop en vez de vesktop-bin)
     if [ -z "$(pacman -T "$1" || true)" ] || [ -z "$(pacman -T "${1%-bin}" || true)" ] ||
@@ -222,6 +239,9 @@ install_configs() {
     # Apps GTK4/libadwaita con el mismo tema que GTK3
     link /usr/share/themes/adw-gtk3-dark/gtk-4.0/assets "$HOME/.config/gtk-4.0/assets"
     link /usr/share/themes/adw-gtk3-dark/gtk-4.0/gtk-dark.css "$HOME/.config/gtk-4.0/gtk-dark.css"
+    # btop (Ctrl+Shift+Esc): si ~/.config/btop era un enlace a otro escritorio, se respalda entero
+    [ -L "$HOME/.config/btop" ] && backup "$HOME/.config/btop"
+    [ -f "$HOME/.config/btop/btop.conf" ] || install -Dm644 "$REPO/defaults/btop/btop.conf" "$HOME/.config/btop/btop.conf"
     # Cursor también para apps X11
     mkdir -p "$HOME/.icons/default"
     printf '[Icon Theme]\nName=Default\nInherits=Bibata-Modern-Classic\n' >"$HOME/.icons/default/index.theme"
@@ -341,11 +361,12 @@ step "Ayudante de AUR" install_aur_helper
 for p in "${AUR_PKGS[@]}"; do
     step "AUR: $p" aur_install "$p"
 done
+step "Marcar los paquetes como instalados a mano" mark_explicit
 
 section "Archivos del usuario"
 step "Fuentes (Google Sans Flex, Material Symbols)" install_fonts
 step "Fondos de pantalla y avatar" install_wallpapers
-step "Configs: Hyprland, uwsm, shell, GTK, Qt, cursor" install_configs
+step "Configs: Hyprland, uwsm, shell, GTK, Qt, btop, cursor" install_configs
 step "Tema GTK, iconos y cursor (gsettings)" set_gsettings
 
 section "Sistema"
