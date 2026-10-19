@@ -86,6 +86,13 @@ FloatingWindow {
     property string query: ""
     property string currentScheme: "Dynamic"
 
+    // Si los colores actuales salen del fondo, volver a generarlos al cambiar estilo o intensidad
+    function regenerateWallpaperColors(): void {
+        if (win.currentScheme.toLowerCase() === "dynamic" && Wallpaper.animated === "" && Wallpaper.current !== "")
+            regenProc.exec([Quickshell.shellDir + "/../scripts/wallpaper.sh", "--colors-only", Wallpaper.current]);
+    }
+    Process { id: regenProc }
+
     readonly property var accentColors: [Theme.green, Theme.red, Theme.orange, Theme.yellow, Theme.aqua, Theme.blue, Theme.purple]
     // Fuentes de interfaz recomendadas primero (si están instaladas); luego el resto, sin las de
     // iconos/símbolos ni las variantes de escritura de Noto, que no sirven como texto de la shell.
@@ -843,6 +850,48 @@ FloatingWindow {
                         checked: Config.appearanceColorBurst
                         onToggled: Config.opt.appearanceColorBurst = !Config.appearanceColorBurst
                     }
+                    ChoiceRow {
+                        visible: win.category === 3
+                        width: parent.width
+                        label: "Wallpaper colours: style"
+                        options: [
+                            { value: "scheme-tonal-spot", label: "Soft" },
+                            { value: "scheme-expressive", label: "Expressive" },
+                            { value: "scheme-fidelity", label: "Faithful" },
+                            { value: "scheme-vibrant", label: "Vibrant" },
+                            { value: "scheme-rainbow", label: "Rainbow" },
+                            { value: "scheme-fruit-salad", label: "Fruit salad" }
+                        ]
+                        current: Config.appearanceMatugenType
+                        onPicked: value => {
+                            Config.opt.appearanceMatugenType = value;
+                            win.regenerateWallpaperColors();
+                        }
+                    }
+                    ChoiceRow {
+                        visible: win.category === 3
+                        width: parent.width
+                        label: "Wallpaper colours: intensity"
+                        options: [
+                            { value: "0", label: "Pastel" },
+                            { value: "1", label: "Medium" },
+                            { value: "2", label: "Vivid" }
+                        ]
+                        current: String(Config.appearanceMatugenIntensity)
+                        onPicked: value => {
+                            Config.opt.appearanceMatugenIntensity = parseInt(value);
+                            win.regenerateWallpaperColors();
+                        }
+                    }
+                    Text {
+                        visible: win.category === 3
+                        width: parent.width
+                        wrapMode: Text.Wrap
+                        text: "Used when colours come from the wallpaper (Super+W with Colours on). Soft is the Material default; Expressive gives distinct hues. Intensity makes the accent colours deeper; backgrounds and text stay readable."
+                        color: Theme.tertiaryText
+                        font.family: Theme.bodyFontFamily
+                        font.pixelSize: Theme.fontPx(10)
+                    }
                     Text {
                         font.family: Theme.bodyFontFamily
                         visible: win.category === 3
@@ -1207,6 +1256,63 @@ FloatingWindow {
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             onClicked: arrow.clicked()
+        }
+    }
+
+    // Fila con opciones en píldoras (una elegida)
+    component ChoiceRow: Rectangle {
+        id: cr
+        property string label: ""
+        property var options: [] // [{value, label}]
+        property string current: ""
+        signal picked(string value)
+        height: crCol.implicitHeight + 24
+        radius: Theme.radiusMedium
+        color: Theme.panelCard
+        Column {
+            id: crCol
+            x: 16
+            y: 12
+            width: cr.width - 32
+            spacing: 10
+            Text {
+                text: cr.label
+                color: "#ffffff"
+                font.family: Theme.bodyFontFamily
+                font.pixelSize: Theme.fontPx(14)
+            }
+            Flow {
+                width: parent.width
+                spacing: 6
+                Repeater {
+                    model: cr.options
+                    delegate: Rectangle {
+                        id: chip
+                        required property var modelData
+                        readonly property bool on: cr.current === modelData.value
+                        width: chipText.implicitWidth + 24
+                        height: 28
+                        radius: 14
+                        color: on ? Theme.green : (chipMouse.containsMouse ? Theme.panelCardHi : Qt.rgba(1, 1, 1, 0.04))
+                        Text {
+                            id: chipText
+                            anchors.centerIn: parent
+                            text: chip.modelData.label
+                            color: chip.on ? Theme.crust : Theme.text
+                            font.family: Theme.bodyFontFamily
+                            font.pixelSize: Theme.fontPx(11)
+                            font.bold: chip.on
+                        }
+                        MouseArea {
+                            id: chipMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: if (!chip.on) cr.picked(chip.modelData.value)
+                        }
+                    }
+                }
+            }
         }
     }
 

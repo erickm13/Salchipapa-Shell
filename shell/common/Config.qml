@@ -108,6 +108,8 @@ Singleton {
     // Hyprland window blur
     readonly property bool windowBlurEnabled: settings.windowBlurEnabled
     readonly property bool touchpadEnabled: settings.touchpadEnabled
+    readonly property string appearanceMatugenType: settings.appearanceMatugenType
+    readonly property int appearanceMatugenIntensity: settings.appearanceMatugenIntensity
     readonly property bool recordSound: settings.recordSound
     readonly property int windowBlurSize: settings.windowBlurSize
     readonly property int windowBlurPasses: settings.windowBlurPasses
@@ -228,6 +230,9 @@ Singleton {
             // Hyprland window blur
             property bool windowBlurEnabled: true
             property bool touchpadEnabled: true
+            // Colores desde el fondo (scripts/wallpaper.sh): estilo de matugen e intensidad 0 pastel, 1 media, 2 viva
+            property string appearanceMatugenType: "scheme-tonal-spot"
+            property int appearanceMatugenIntensity: 0
             property bool recordSound: true // grabación de pantalla con sonido (card del centro de control)
             property int windowBlurSize: 5
             property int windowBlurPasses: 2

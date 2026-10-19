@@ -39,11 +39,32 @@ if [ "$colors_only" -eq 0 ]; then
 fi
 
 # Colores del wallpaper con matugen (Material You) -> apply-colors.sh
+# Estilo e intensidad: Ajustes > Appearance (config.json). Estilo = tipo de esquema de matugen
+# (tonal-spot = Material estándar). Intensidad 0 = pastel (tono 80 de Material en modo oscuro),
+# 1 = media, 2 = viva: oscurece y satura primary/secondary/tertiary (fondos y texto no cambian).
+cfg="$HOME/.config/salchipapa-shell/config.json"
+mtype=$(jq -r '.appearanceMatugenType // "scheme-tonal-spot"' "$cfg" 2>/dev/null || echo scheme-tonal-spot)
+intensity=$(jq -r '.appearanceMatugenIntensity // 0' "$cfg" 2>/dev/null || echo 0)
+
 if [ "$colors" != "nocolors" ] && command -v matugen >/dev/null; then
-    pal=$(matugen -j hex -m dark --prefer=saturation image "$wp" 2>/dev/null | jq -c '
+    pal=$(matugen -j hex -m dark --prefer=saturation -t "$mtype" image "$wp" 2>/dev/null | jq -c '
         .colors | to_entries
         | map({ key: (.key | gsub("_(?<c>[a-z])"; (.c | ascii_upcase))), value: (.value.dark.color | ltrimstr("#")) })
         | from_entries')
+    if [ -n "$pal" ] && [ "$pal" != "null" ] && [ "$intensity" != "0" ]; then
+        pal=$(python3 -c '
+import colorsys, json, sys
+pal, level = json.loads(sys.argv[1]), int(sys.argv[2])
+dl, ks = {1: (0.10, 1.25), 2: (0.18, 1.5)}.get(level, (0, 1))
+for role in ("primary", "secondary", "tertiary"):
+    if role not in pal:
+        continue
+    r, g, b = (int(pal[role][i:i + 2], 16) / 255 for i in (0, 2, 4))
+    h, l, s = colorsys.rgb_to_hls(r, g, b)
+    r, g, b = colorsys.hls_to_rgb(h, max(0.0, l - dl), min(1.0, s * ks))
+    pal[role] = "%02x%02x%02x" % tuple(round(v * 255) for v in (r, g, b))
+print(json.dumps(pal))' "$pal" "$intensity")
+    fi
     if [ -n "$pal" ] && [ "$pal" != "null" ]; then
         tmp=$(mktemp)
         printf '%s' "$pal" >"$tmp"
