@@ -379,7 +379,7 @@ install_grub_theme() {
     sudo mkdir -p /boot/grub/themes
     sudo cp -r "$REPO"/grub/themes/. /boot/grub/themes/
     local theme="/boot/grub/themes/$GRUB_THEME_NAME/theme.txt" key val
-    for kv in "GRUB_THEME=\"$theme\"" "GRUB_DISABLE_OS_PROBER=false" "GRUB_GFXMODE=auto"; do
+    for kv in "GRUB_THEME=\"$theme\"" "GRUB_DISABLE_OS_PROBER=false" "GRUB_GFXMODE=auto" "GRUB_DISABLE_BOOTNEXT=true"; do
         key="${kv%%=*}"
         if grep -q "^#\?$key=" /etc/default/grub; then
             sudo sed -i "s|^#\?$key=.*|$kv|" /etc/default/grub
