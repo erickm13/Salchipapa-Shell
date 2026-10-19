@@ -2,7 +2,9 @@ pragma Singleton
 // Servidor de notificaciones. OJO: sustituye a dunst (no pueden correr los dos).
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import Quickshell.Services.Notifications
+import "../common"
 
 Singleton {
     id: root
@@ -30,6 +32,26 @@ Singleton {
             n.dismiss();
     }
 
+    // Sonido al llegar (la spec deja el sonido al servidor). Respeta Focus/Game mode, el ajuste
+    // y las pistas `suppress-sound`, `sound-file` y `sound-name` que mande la app.
+    function playSound(n: var): void {
+        const h = n.hints ?? {};
+        if (!Config.notificationSound || Quick.silenced || h["suppress-sound"])
+            return;
+        if (h["sound-file"])
+            soundProc.command = ["pw-play", h["sound-file"]];
+        else if (h["sound-name"])
+            soundProc.command = ["canberra-gtk-play", "-i", h["sound-name"]];
+        else
+            soundProc.command = ["pw-play", "/usr/share/sounds/freedesktop/stereo/message-new-instant.oga"];
+        soundProc.running = false;
+        soundProc.running = true;
+    }
+
+    Process {
+        id: soundProc
+    }
+
     function clearAll(): void {
         const vs = server.trackedNotifications.values.slice();
         for (const n of vs)
@@ -54,6 +76,7 @@ Singleton {
             notif.tracked = true;
             root.count += 1;
             resetTimer.restart();
+            root.playSound(notif);
             root.received(notif.appName ?? "", notif.summary ?? "", notif.body ?? "", notif.urgency === NotificationUrgency.Critical);
         }
     }

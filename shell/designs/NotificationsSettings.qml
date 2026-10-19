@@ -38,6 +38,11 @@ Item {
                 checked: Config.opt.notificationShowBody
                 onToggled: Config.opt.notificationShowBody = !Config.opt.notificationShowBody
             }
+            ToggleSettingRow {
+                label: "Play sound"
+                checked: Config.opt.notificationSound
+                onToggled: Config.opt.notificationSound = !Config.opt.notificationSound
+            }
             SliderRow {
                 label: "History height"
                 value: Config.opt.notificationHistoryHeight

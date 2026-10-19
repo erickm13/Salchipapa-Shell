@@ -86,6 +86,7 @@ Singleton {
     readonly property int notificationUrgentTimeout: settings.notificationUrgentTimeout
     readonly property int notificationWidth: settings.notificationWidth
     readonly property bool notificationShowBody: settings.notificationShowBody
+    readonly property bool notificationSound: settings.notificationSound
     readonly property int notificationHistoryHeight: settings.notificationHistoryHeight
     readonly property int osdOnScreenTime: settings.osdOnScreenTime
     readonly property int osdLevelBarThickness: settings.osdLevelBarThickness
@@ -199,6 +200,7 @@ Singleton {
             property int notificationUrgentTimeout: 6000
             property int notificationWidth: 480
             property bool notificationShowBody: true
+            property bool notificationSound: true
             property int notificationHistoryHeight: 200
             property int osdOnScreenTime: 1500
             property int osdLevelBarThickness: 6
