@@ -14,7 +14,8 @@ Item {
     readonly property var results: {
         const all = DesktopEntries.applications.values;
         const q = query.trim().toLowerCase();
-        const list = q === "" ? all.slice() : all.filter(a => (a.name ?? "").toLowerCase().includes(q) || (a.genericName ?? "").toLowerCase().includes(q) || (a.comment ?? "").toLowerCase().includes(q));
+        // También por el id del .desktop (p. ej. "nemo" encuentra "Files", que es como se llama en el menú)
+        const list = q === "" ? all.slice() : all.filter(a => (a.name ?? "").toLowerCase().includes(q) || (a.genericName ?? "").toLowerCase().includes(q) || (a.comment ?? "").toLowerCase().includes(q) || (a.id ?? "").toLowerCase().includes(q));
         return list.sort((x, y) => (x.name ?? "").localeCompare(y.name ?? ""));
     }
 
@@ -138,14 +139,13 @@ Item {
                 visible: index === root.sel
             }
 
-            IconImage {
+            AppIcon {
                 id: appIcon
                 anchors.left: parent.left
                 anchors.leftMargin: 14
                 anchors.verticalCenter: parent.verticalCenter
-                implicitSize: 30
-                asynchronous: true
-                source: Quickshell.iconPath(item.modelData.icon, "image-missing")
+                size: 30
+                icon: item.modelData.icon ?? ""
             }
 
             Column {
