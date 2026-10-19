@@ -368,12 +368,13 @@ Item {
                     }
                 }
 
-                // Hover de la fila (sin robar el clic al botón de descartar)
+                // Hover y clic de la fila (el botón de descartar va encima y conserva su clic)
                 MouseArea {
                     id: nHover
                     anchors.fill: parent
                     hoverEnabled: true
-                    acceptedButtons: Qt.NoButton
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: Notifs.activate(nItem.modelData)
                 }
 
                 Column {

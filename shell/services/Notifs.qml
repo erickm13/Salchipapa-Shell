@@ -17,6 +17,19 @@ Singleton {
     readonly property var list: server.trackedNotifications
     readonly property int activeCount: server.trackedNotifications?.values?.length ?? 0
 
+    // Clic en una notificación: ejecuta su acción por defecto (p.ej. Firefox enfoca la pestaña).
+    function activate(n: var): void {
+        let action = null;
+        for (let i = 0; i < n.actions.length; i++) {
+            if (!action || n.actions[i].identifier === "default")
+                action = n.actions[i];
+        }
+        if (action)
+            action.invoke();
+        else
+            n.dismiss();
+    }
+
     function clearAll(): void {
         const vs = server.trackedNotifications.values.slice();
         for (const n of vs)
@@ -34,6 +47,8 @@ Singleton {
         keepOnReload: false
         bodySupported: true
         imageSupported: true
+        // Firefox (y otras apps) descartan sus avisos si el servidor no anuncia "actions".
+        actionsSupported: true
 
         onNotification: notif => {
             notif.tracked = true;
