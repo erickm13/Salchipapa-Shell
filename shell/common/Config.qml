@@ -107,6 +107,7 @@ Singleton {
     readonly property int idleSuspendMinutes: settings.idleSuspendMinutes
     // Hyprland window blur
     readonly property bool windowBlurEnabled: settings.windowBlurEnabled
+    readonly property bool touchpadEnabled: settings.touchpadEnabled
     readonly property int windowBlurSize: settings.windowBlurSize
     readonly property int windowBlurPasses: settings.windowBlurPasses
 
@@ -225,6 +226,7 @@ Singleton {
 
             // Hyprland window blur
             property bool windowBlurEnabled: true
+            property bool touchpadEnabled: true
             property int windowBlurSize: 5
             property int windowBlurPasses: 2
         }

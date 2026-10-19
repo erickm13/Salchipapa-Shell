@@ -103,6 +103,7 @@ ShellRoot {
         Idle.objectName; // bloqueo/suspensión automáticos
         LockScreen.mediaService = Media;
         WindowBlur.apply();
+        Touchpad.apply();
         WindowShadowSync.sync();
     }
 

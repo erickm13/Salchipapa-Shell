@@ -169,6 +169,8 @@ hl.bind(
 	hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"),
 	{ locked = true, repeating = true }
 )
+-- Tecla del touchpad (keycode 199 = XF86TouchpadToggle): la shell lo activa/desactiva y guarda el estado
+hl.bind("XF86TouchpadToggle", hl.dsp.global("salchipapa:touchpad"), { locked = true })
 hl.bind("XF86AudioMute", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"), { locked = true })
 hl.bind("XF86AudioMicMute", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"), { locked = true })
 

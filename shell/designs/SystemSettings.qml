@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Hyprland
 import "../common"
+import "../services"
 
 Item {
     id: root
@@ -72,6 +73,24 @@ Item {
         id: content
         width: parent.width
         spacing: Theme.space(4)
+
+        SettingsGroup {
+            width: parent.width
+            ToggleRow {
+                label: "Touchpad"
+                checked: Config.touchpadEnabled
+                onToggled: Touchpad.toggle()
+            }
+        }
+
+        Text {
+            width: parent.width
+            text: "The touchpad key on the keyboard also turns it on and off. Mice and other pointing devices are not affected."
+            color: Theme.tertiaryText
+            wrapMode: Text.Wrap
+            font.family: Theme.bodyFontFamily
+            font.pixelSize: Theme.fontPx(10)
+        }
 
         SettingsGroup {
             width: parent.width
