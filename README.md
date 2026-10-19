@@ -65,6 +65,7 @@ Desde una TTY libre (`Ctrl+Alt+F3`): `Hyprland -c <repo>/hyprland.lua`. `Super +
 | `wallpapers/` | Fondos de pantalla (→ `~/Pictures/Wallpapers`) |
 | `uwsm/` | Variables de entorno de la sesión (→ `~/.config/uwsm`) |
 | `bin/` | Scripts personales (temas de GRUB y SDDM, grabación, revisión de AUR) → `~/.local/bin` |
+| `scripts/update-emojis.sh` | Regenera `shell/assets/emojis.json` (emojibase + Nerd Fonts) |
 | `scripts/boot-themes.sh` | Temas de SDDM y GRUB (Ajustes > *Login & Boot*) |
 | `scripts/animated-wallpaper.sh` | Fondos animados de Wallpaper Engine (pestaña *Animados* de `Super+W`) |
 | `grub/themes/` | Temas de GRUB (el activo: `minegrub-world-selection`) → `/boot/grub/themes` |
@@ -84,6 +85,7 @@ Desde una TTY libre (`Ctrl+Alt+F3`): `Hyprland -c <repo>/hyprland.lua`. `Super +
 | `Super + Backspace` | Bloquear pantalla (Quickshell + PAM) |
 | `Super + Alt + P` | Menú de energía de la isla |
 | `Super + V` | Historial del portapapeles (en la isla; Enter copia, Supr borra) |
+| `Super + .` | Selector de emojis (en la isla; español o inglés) |
 | `Super + Alt + Space` / `Super + F` | Flotar / pantalla completa |
 | `Super + [1-0]` | Workspace |
 | `Super + Shift + [1-0]` | Mover ventana a workspace |

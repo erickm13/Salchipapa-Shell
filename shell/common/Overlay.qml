@@ -43,6 +43,12 @@ Singleton {
     }
     GlobalShortcut {
         appid: "salchipapa"
+        name: "emoji"
+        description: "Abrir/cerrar el selector de emojis (dentro de la isla)"
+        onPressed: root.mode = root.mode === "emoji" ? "" : "emoji"
+    }
+    GlobalShortcut {
+        appid: "salchipapa"
         name: "control"
         description: "Abrir/cerrar el centro de control (dentro de la isla)"
         onPressed: root.mode = root.mode === "control" ? "" : "control"
