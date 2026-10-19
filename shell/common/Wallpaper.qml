@@ -1,5 +1,6 @@
 pragma Singleton
-// Wallpaper actual. Lee el path que escribe `caelestia wallpaper` y se actualiza en vivo.
+// Wallpaper actual (lo escribe scripts/wallpaper.sh) y el fondo animado activo, si lo hay
+// (scripts/animated-wallpaper.sh). Se actualizan en vivo.
 import Quickshell
 import Quickshell.Io
 
@@ -7,6 +8,8 @@ Singleton {
     id: root
 
     property string current: ""
+    // id de Wallpaper Engine del fondo animado; vacío = fondo estático
+    property string animated: ""
 
     FileView {
         path: Quickshell.env("HOME") + "/.local/state/salchipapa-shell/wallpaper"
@@ -14,5 +17,14 @@ Singleton {
         printErrors: false
         onFileChanged: reload()
         onLoaded: root.current = text().trim()
+    }
+
+    FileView {
+        path: Quickshell.env("HOME") + "/.local/state/salchipapa-shell/animated"
+        watchChanges: true
+        printErrors: false
+        onFileChanged: reload()
+        onLoaded: root.animated = text().trim()
+        onLoadFailed: root.animated = ""
     }
 }

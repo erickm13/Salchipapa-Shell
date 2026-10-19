@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 // Selector de fondos, DENTRO de la isla (modo "wallpaper"). Igual que el de temas pero con
-// miniaturas. Al aplicar usa `caelestia wallpaper -f`, que genera los colores del fondo.
+// miniaturas. Dos pestañas (Tab para cambiar): estáticos de ~/Pictures/Wallpapers
+// (scripts/wallpaper.sh) y animados de Wallpaper Engine (scripts/animated-wallpaper.sh).
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -14,32 +15,57 @@ Item {
     property string query: ""
     property var files: [] // rutas de los wallpapers
     property bool applyColors: true // switch: generar colores del wallpaper (matugen)
+    property bool animatedTab: false // pestaña de fondos animados (Wallpaper Engine)
+    property var animatedList: [] // [{id, title, type, preview}]
+    readonly property string scripts: Quickshell.shellDir + "/../scripts"
 
+    // Estáticos: rutas. Animados: objetos. Las celdas usan titleOf/previewOf para ambos.
     readonly property var results: {
         const q = query.trim().toLowerCase();
+        if (animatedTab)
+            return q === "" ? animatedList : animatedList.filter(w => w.title.toLowerCase().includes(q));
         return q === "" ? files : files.filter(f => f.toLowerCase().includes(q));
     }
 
     function nameOf(path) {
         return (path.split("/").pop() || "").replace(/\.[^.]+$/, "");
     }
+    function titleOf(item): string {
+        return typeof item === "string" ? nameOf(item) : item.title;
+    }
+    function previewOf(item): string {
+        return "file://" + (typeof item === "string" ? item : item.preview);
+    }
 
     // Selecciona el wallpaper actual (la lista lo centra sola por StrictlyEnforceRange)
     function selectCurrent(): void {
-        const i = results.findIndex(f => f === Wallpaper.current);
+        const i = animatedTab ? results.findIndex(w => w.id === Wallpaper.animated) : results.findIndex(f => f === Wallpaper.current);
         sel = i >= 0 ? i : 0;
     }
 
+    function setTab(animated: bool): void {
+        if (animatedTab === animated)
+            return;
+        animatedTab = animated;
+        if (animated && animatedList.length === 0)
+            animatedProc.running = true;
+        selectCurrent();
+    }
+
     function apply(): void {
-        const f = results[sel];
-        if (f) {
-            // Cambia el fondo, pone el esquema en 'dynamic' (sigue al wallpaper) y recarga
-            // Hyprland (para que el glow de ventanas también tome los colores nuevos).
-            // wallpaper.sh cambia el fondo y (si el switch está activo) genera los colores con matugen
-            applyProc.command = [Quickshell.shellDir + "/../scripts/wallpaper.sh", f, root.applyColors ? "colors" : "nocolors"];
-            applyProc.running = true;
-            Overlay.close();
+        const item = results[sel];
+        if (!item)
+            return;
+        const colors = root.applyColors ? "colors" : "nocolors";
+        if (animatedTab) {
+            applyProc.command = [scripts + "/animated-wallpaper.sh", "set", item.id, colors];
+        } else {
+            // Un fondo estático quita el animado. wallpaper.sh cambia el fondo y (si el switch
+            // está activo) genera los colores con matugen.
+            applyProc.command = ["sh", "-c", '"$1/animated-wallpaper.sh" stop; "$1/wallpaper.sh" "$2" "$3"', "sh", scripts, item, colors];
         }
+        applyProc.running = true;
+        Overlay.close();
     }
 
     Connections {
@@ -49,7 +75,10 @@ Item {
                 root.query = "";
                 searchInput.text = "";
                 searchInput.forceActiveFocus();
+                root.animatedTab = Wallpaper.animated !== "";
                 listProc.running = true;
+                if (root.animatedTab)
+                    animatedProc.running = true;
             }
         }
     }
@@ -66,7 +95,27 @@ Item {
         }
     }
     Process {
+        id: animatedProc
+        command: [root.scripts + "/animated-wallpaper.sh", "list"]
+        stdout: StdioCollector {
+            id: animatedOut
+            onStreamFinished: {
+                try {
+                    root.animatedList = JSON.parse(animatedOut.text);
+                } catch (e) {
+                    root.animatedList = [];
+                }
+                if (root.animatedTab)
+                    root.selectCurrent();
+            }
+        }
+    }
+    Process {
         id: applyProc
+    }
+    Process {
+        id: stopProc
+        command: [root.scripts + "/animated-wallpaper.sh", "stop"]
     }
 
     // --- Buscador + contador ---
@@ -92,7 +141,7 @@ Item {
             id: searchInput
             anchors.left: searchIcon.right
             anchors.leftMargin: 12
-            anchors.right: colorToggle.left
+            anchors.right: tabs.left
             anchors.rightMargin: 12
             anchors.verticalCenter: parent.verticalCenter
             color: "#ffffff"
@@ -105,7 +154,7 @@ Item {
             }
             Text {
                 anchors.verticalCenter: parent.verticalCenter
-                text: "Buscar fondos…"
+                text: root.animatedTab ? "Buscar fondos animados…" : "Buscar fondos…"
                 color: Theme.tertiaryText
                 font: parent.font
                 visible: parent.text.length === 0
@@ -115,6 +164,111 @@ Item {
             Keys.onReturnPressed: root.apply()
             Keys.onEnterPressed: root.apply()
             Keys.onEscapePressed: Overlay.close()
+            Keys.onTabPressed: {
+                root.setTab(!root.animatedTab);
+                root.sel = 0;
+                root.selectCurrent();
+            }
+        }
+
+        // Pestañas: Estáticos / Animados (+ quitar el animado activo)
+        Row {
+            id: tabs
+            anchors.right: colorToggle.left
+            anchors.rightMargin: 12
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 6
+
+            Rectangle {
+                visible: root.animatedTab && Wallpaper.animated !== ""
+                width: stopRow.implicitWidth + 16
+                height: 24
+                radius: 12
+                color: stopMouse.containsMouse ? Theme.red : Theme.surface0
+                Row {
+                    id: stopRow
+                    anchors.centerIn: parent
+                    spacing: 4
+                    Text {
+                        text: "stop_circle"
+                        font.family: "Material Symbols Rounded"
+                        font.pixelSize: 14
+                        color: stopMouse.containsMouse ? Theme.islandBg : Theme.secondaryText
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                    Text {
+                        text: "Quitar"
+                        font.family: Theme.bodyFontFamily
+                        font.pixelSize: Theme.fontPx(11)
+                        color: stopMouse.containsMouse ? Theme.islandBg : Theme.secondaryText
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                }
+                MouseArea {
+                    id: stopMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: stopProc.running = true
+                }
+            }
+
+            Rectangle {
+                width: tabRow.implicitWidth + 6
+                height: 24
+                radius: 12
+                color: Theme.surface0
+                Row {
+                    id: tabRow
+                    anchors.centerIn: parent
+                    spacing: 2
+                    Repeater {
+                        model: [{ label: "Estáticos", icon: "image", animated: false }, { label: "Animados", icon: "animated_images", animated: true }]
+                        delegate: Rectangle {
+                            id: tab
+                            required property var modelData
+                            readonly property bool on: root.animatedTab === modelData.animated
+                            width: tabContent.implicitWidth + 14
+                            height: 20
+                            radius: 10
+                            color: on ? Theme.green : "transparent"
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: Theme.hoverDuration
+                                }
+                            }
+                            Row {
+                                id: tabContent
+                                anchors.centerIn: parent
+                                spacing: 4
+                                Text {
+                                    text: tab.modelData.icon
+                                    font.family: "Material Symbols Rounded"
+                                    font.pixelSize: 13
+                                    color: tab.on ? Theme.islandBg : Theme.secondaryText
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
+                                Text {
+                                    text: tab.modelData.label
+                                    font.family: Theme.bodyFontFamily
+                                    font.pixelSize: Theme.fontPx(11)
+                                    font.bold: tab.on
+                                    color: tab.on ? Theme.islandBg : Theme.secondaryText
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    root.setTab(tab.modelData.animated);
+                                    searchInput.forceActiveFocus();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // Switch: aplicar colores del wallpaper (matugen) sí/no
@@ -249,11 +403,32 @@ Item {
 
                     Image {
                         anchors.fill: parent
-                        source: "file://" + cell.modelData
+                        source: root.previewOf(cell.modelData)
                         sourceSize: Qt.size(360, 220)
                         fillMode: Image.PreserveAspectCrop
                         asynchronous: true
                         cache: false
+                    }
+
+                    // Animados: tipo (escena, vídeo, web) y si es el activo
+                    Rectangle {
+                        visible: typeof cell.modelData !== "string"
+                        anchors.top: parent.top
+                        anchors.right: parent.right
+                        anchors.margins: 6
+                        width: typeText.implicitWidth + 12
+                        height: 18
+                        radius: 9
+                        color: "#b3000000"
+                        Text {
+                            id: typeText
+                            anchors.centerIn: parent
+                            text: typeof cell.modelData === "string" ? "" : ((cell.modelData.id === Wallpaper.animated ? "● " : "") + ({ scene: "Escena", video: "Vídeo", web: "Web" }[cell.modelData.type] ?? cell.modelData.type))
+                            color: typeof cell.modelData !== "string" && cell.modelData.id === Wallpaper.animated ? Theme.green : "#ffffff"
+                            font.family: Theme.bodyFontFamily
+                            font.pixelSize: Theme.fontPx(9)
+                            font.bold: true
+                        }
                     }
 
                     // Nombre (franja inferior)
@@ -269,7 +444,7 @@ Item {
                             anchors.leftMargin: 8
                             anchors.rightMargin: 8
                             verticalAlignment: Text.AlignVCenter
-                            text: root.nameOf(cell.modelData)
+                            text: root.titleOf(cell.modelData)
                             color: "#ffffff"
                             font.pixelSize: Theme.fontPx(10)
                             elide: Text.ElideRight
@@ -296,7 +471,7 @@ Item {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         anchors.margins: 12
-        text: "Enter para aplicar"
+        text: "Enter para aplicar · Tab: estáticos/animados"
         color: Theme.overlay1
         font.pixelSize: Theme.fontPx(11)
     }

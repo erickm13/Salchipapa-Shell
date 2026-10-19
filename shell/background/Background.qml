@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 // Fondo de pantalla renderizado por la shell (capa Background, una por monitor).
-// Lee el wallpaper de Wallpaper.current (lo escribe `caelestia wallpaper`) y hace crossfade.
+// Lee el wallpaper de Wallpaper.current (lo escribe scripts/wallpaper.sh) y hace crossfade.
+// Con un fondo animado (linux-wallpaperengine, también en la capa Background) se oculta para no taparlo.
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
@@ -14,6 +15,7 @@ Variants {
 
         required property var modelData
         screen: modelData
+        visible: Wallpaper.animated === ""
 
         WlrLayershell.layer: WlrLayer.Background
         WlrLayershell.exclusionMode: ExclusionMode.Ignore

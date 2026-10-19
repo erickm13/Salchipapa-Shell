@@ -1,7 +1,0 @@
-#!/usr/bin/env fish
-
-pkill -f linux-wallpaperengine 2>/dev/null
-rm -f ~/.local/share/wallpaper-picker/current.json
-
-# Restaurar wallpaper estático de caelestia
-caelestia wallpaper -r 2>/dev/null

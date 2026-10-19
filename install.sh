@@ -49,7 +49,8 @@ PKGS=(
     ttf-jetbrains-mono-nerd # la de foot
 )
 # Paquetes de AUR (se instalan de uno en uno: si falla uno, siguen los demás)
-AUR_PKGS=(qtengine bibata-cursor-theme-bin papirus-folders otf-geist ttf-rubik-vf spotify vesktop-bin visual-studio-code-bin)
+AUR_PKGS=(qtengine bibata-cursor-theme-bin papirus-folders otf-geist ttf-rubik-vf spotify vesktop-bin visual-studio-code-bin
+    linux-wallpaperengine-git) # fondos animados de Wallpaper Engine (necesita Steam + la Workshop)
 
 # ── Salida ────────────────────────────────────────────────────────
 BOLD=$'\e[1m' DIM=$'\e[2m' RED=$'\e[31m' GREEN=$'\e[32m' YELLOW=$'\e[33m' CYAN=$'\e[36m' RESET=$'\e[0m'

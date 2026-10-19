@@ -64,7 +64,8 @@ Desde una TTY libre (`Ctrl+Alt+F3`): `Hyprland -c <repo>/hyprland.lua`. `Super +
 | `assets/` | Fuentes (Google Sans Flex, Material Symbols) y avatar |
 | `wallpapers/` | Fondos de pantalla (→ `~/Pictures/Wallpapers`) |
 | `uwsm/` | Variables de entorno de la sesión (→ `~/.config/uwsm`) |
-| `bin/` | Scripts personales (monitores, touchpad, GRUB, SDDM, Wallpaper Engine, grabación…) → `~/.local/bin` |
+| `bin/` | Scripts personales (temas de GRUB y SDDM, grabación, revisión de AUR) → `~/.local/bin` |
+| `scripts/animated-wallpaper.sh` | Fondos animados de Wallpaper Engine (pestaña *Animados* de `Super+W`) |
 | `grub/themes/` | Temas de GRUB (el activo: `minegrub-world-selection`) → `/boot/grub/themes` |
 | `scripts/monitor-autodetect` | Perfil de monitores al conectar/desconectar (`~/.config/salchipapa-shell/display-profiles.json`) |
 | `shell/services/LockScreen.qml` | Pantalla de bloqueo segura vía sesión Wayland y autenticación PAM |
