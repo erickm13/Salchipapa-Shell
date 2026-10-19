@@ -155,7 +155,8 @@ detect_gpu() {
     if [[ " ${GPUS[*]} " == *" nvidia "* ]]; then
         # nvidia-open es para el kernel `linux`; con otros kernels (zen, lts…) hace falta la versión dkms
         local kernels
-        kernels="$(pacman -Qq linux linux-lts linux-zen linux-hardened 2>/dev/null | tr '\n' ' ')"
+        # (pacman -Qq falla si alguno no está instalado: || true para que set -e no corte el script)
+        kernels="$( (pacman -Qq linux linux-lts linux-zen linux-hardened 2>/dev/null || true) | tr '\n' ' ')"
         if [ -z "$kernels" ] || [ "$kernels" = "linux " ]; then
             PKGS+=(nvidia-open)
         else
