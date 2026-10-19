@@ -49,6 +49,12 @@ Singleton {
     }
     GlobalShortcut {
         appid: "salchipapa"
+        name: "perf"
+        description: "Abrir/cerrar la página de rendimiento (dentro de la isla)"
+        onPressed: root.mode = root.mode === "perf" ? "" : "perf"
+    }
+    GlobalShortcut {
+        appid: "salchipapa"
         name: "control"
         description: "Abrir/cerrar el centro de control (dentro de la isla)"
         onPressed: root.mode = root.mode === "control" ? "" : "control"
