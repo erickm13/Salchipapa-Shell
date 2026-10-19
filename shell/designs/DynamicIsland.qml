@@ -303,7 +303,7 @@ PanelWindow {
                     Row {
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 4
-                        visible: false
+                        visible: !Quick.gameMode
 
                         // Glow en el color principal sobre los indicadores (solo en notch)
                         layer.enabled: Config.notchMode && !Config.gameMode
@@ -353,7 +353,7 @@ PanelWindow {
                         color: "#ffffff"
                         font.pixelSize: Theme.fontPx(16)
                         font.bold: true
-                        visible: false
+                        visible: !Quick.gameMode
                     }
 
                     // Indicador persistente para que Game Mode siga visible
@@ -361,17 +361,17 @@ PanelWindow {
                     Row {
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 4
-                        visible: true
+                        visible: Quick.gameMode
 
                         Icon {
-                            text: Quick.gameMode ? "sports_esports" : PowerProfiles.mode === "turbo" ? "rocket_launch" : PowerProfiles.mode === "silent" ? "volume_off" : "speed"
+                            text: "sports_esports"
                             px: 18
-                            color: Quick.gameMode ? Theme.yellow : PowerProfiles.mode === "turbo" ? Theme.peach : PowerProfiles.mode === "silent" ? Theme.blue : Theme.green
+                            color: Theme.yellow
                             anchors.verticalCenter: parent.verticalCenter
                         }
                         Text {
-                            text: Quick.gameMode ? "GAME MODE" : PowerProfiles.mode === "turbo" ? "TURBO" : PowerProfiles.mode === "silent" ? "SILENCIOSO" : "RENDIMIENTO"
-                            color: Quick.gameMode ? Theme.yellow : PowerProfiles.mode === "turbo" ? Theme.peach : PowerProfiles.mode === "silent" ? Theme.blue : Theme.green
+                            text: "GAME MODE"
+                            color: Theme.yellow
                             font.family: Theme.bodyFontFamily
                             font.pixelSize: Theme.fontPx(10)
                             font.bold: true
@@ -383,7 +383,7 @@ PanelWindow {
                     Row {
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 8
-                        visible: false
+                        visible: Config.clockShowBatteryWifi && !Quick.gameMode
 
                         // Glow en el color principal sobre wifi/batería (solo en notch)
                         layer.enabled: Config.notchMode && !Config.gameMode
