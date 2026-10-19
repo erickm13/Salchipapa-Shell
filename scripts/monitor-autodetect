@@ -8,10 +8,12 @@
 #   { "HDMI-A-1|eDP-2": [ { "name": "eDP-2", "disabled": true },
 #                         { "name": "HDMI-A-1", "res": "1920x1080", "hz": "60", "x": 0, "y": 0,
 #                           "scale": 1, "transform": 0 } ] }
-# Con un solo monitor se recarga Hyprland (vuelve a lua/monitors.lua). Sin perfil, todos en auto.
+# Con un solo monitor se reactiva y se recarga Hyprland (vuelve a lua/monitors.lua). Sin perfil,
+# todos en automático.
 #
 # OJO: con la config en Lua `hyprctl keyword` no vale; los monitores se aplican con
-# `hyprctl eval 'hl.monitor({...})'`.
+# `hyprctl eval 'hl.monitor({...})'`. Y una pantalla apagada solo vuelve con `disabled = false`
+# explícito (sin él, hl.monitor responde "ok" pero la deja apagada).
 set -uo pipefail
 
 profiles="${XDG_CONFIG_HOME:-$HOME/.config}/salchipapa-shell/display-profiles.json"
@@ -23,8 +25,14 @@ flock -n 9 || exit 0
 
 log() { echo "[$(date '+%H:%M:%S')] $*" >>"$log_file"; }
 
+# Sin pantallas activas Hyprland crea una salida virtual FALLBACK: no cuenta como monitor
 current_key() {
-    hyprctl monitors all -j 2>/dev/null | jq -r '[.[].name | select(. != null and . != "")] | sort | join("|")'
+    hyprctl monitors all -j 2>/dev/null |
+        jq -r '[.[].name | select(. != null and . != "" and . != "FALLBACK" and (startswith("HEADLESS") | not))] | sort | join("|")'
+}
+
+enable() {
+    hyprctl eval "hl.monitor({ output = \"$1\", disabled = false, mode = \"preferred\", position = \"auto\", scale = 1 })" >>"$log_file" 2>&1
 }
 
 wake() { hyprctl dispatch 'hl.dsp.dpms({ action = "on" })' >/dev/null 2>&1 || true; }
@@ -32,7 +40,7 @@ wake() { hyprctl dispatch 'hl.dsp.dpms({ action = "on" })' >/dev/null 2>&1 || tr
 enable_all() {
     local name
     for name in ${1//|/ }; do
-        hyprctl eval "hl.monitor({ output = \"$name\", mode = \"preferred\", position = \"auto\", scale = 1 })" >>"$log_file" 2>&1
+        enable "$name"
     done
     log "sin perfil: todos en automático ($1)"
     wake
@@ -43,15 +51,17 @@ apply_profile() {
     log "monitores: '$key'"
 
     if [[ "$key" != *"|"* ]]; then
+        enable "$key"
         hyprctl reload >>"$log_file" 2>&1
-        log "un solo monitor: config recargada"
+        log "un solo monitor: reactivado y config recargada"
+        wake
         return
     fi
 
     lua=$(jq -r --arg k "$key" '
         .[$k] // empty | .[] | select(.name) |
         if .disabled then "hl.monitor({ output = \"\(.name)\", disabled = true })"
-        else "hl.monitor({ output = \"\(.name)\", mode = \"\(.res)@\(.hz)\", position = \"\(.x)x\(.y)\", scale = \(.scale // 1), transform = \(.transform // 0) })"
+        else "hl.monitor({ output = \"\(.name)\", disabled = false, mode = \"\(.res)@\(.hz)\", position = \"\(.x)x\(.y)\", scale = \(.scale // 1), transform = \(.transform // 0) })"
         end' "$profiles" 2>/dev/null)
 
     if [ -z "$lua" ]; then
@@ -69,10 +79,11 @@ apply_profile() {
 }
 
 log "=== monitor-autodetect iniciado ==="
-sleep 2
+sleep 2 9>&-
 last=$(current_key)
 apply_profile "$last"
-while sleep 3; do
+# 9>&-: el sleep no hereda el candado (si no, sigue bloqueado unos segundos tras cerrar el script)
+while sleep 3 9>&-; do
     key=$(current_key)
     [ -n "$key" ] || continue
     if [ "$key" != "$last" ]; then
