@@ -66,6 +66,11 @@ FloatingWindow {
             desc: "Reloj, fondo y contenido de la pantalla de bloqueo."
         },
         {
+            name: "Display",
+            icon: "monitor",
+            desc: "Monitores: posición, resolución, frecuencia, orientación y perfiles automáticos."
+        },
+        {
             name: "System",
             icon: "settings",
             desc: "Espacios de trabajo e información de la shell."
@@ -321,6 +326,13 @@ FloatingWindow {
                         label: "Notch mode"
                         checked: Config.notchMode
                         onToggled: Config.opt.notchMode = !Config.opt.notchMode
+                    }
+                    ToggleRow {
+                        visible: win.category === 0
+                        width: parent.width
+                        label: "Show the island on all monitors (off: only on the primary one, the one with workspace 1)"
+                        checked: Config.islandAllScreens
+                        onToggled: Config.opt.islandAllScreens = !Config.islandAllScreens
                     }
                     ToggleRow {
                         visible: win.category === 0
@@ -600,8 +612,13 @@ FloatingWindow {
                         width: parent.width
                         height: visible ? implicitHeight : 0
                     }
-                    SystemSettings {
+                    DisplaySettings {
                         visible: win.category === 9
+                        width: parent.width
+                        height: visible ? implicitHeight : 0
+                    }
+                    SystemSettings {
+                        visible: win.category === 10
                         width: parent.width
                         height: visible ? implicitHeight : 0
                     }
