@@ -1,0 +1,54 @@
+#!/usr/bin/env fish
+
+set conf ~/.config/hypr/monitors.conf
+
+# Home: DP-1 vertical 27" + HDMI-A-1 ultrawide 3440x1440
+set setup1_monitors "monitor = DP-2, 1920x1080@165, 0x0, 1, transform, 3
+monitor = HDMI-A-1, 3440x1440@99.98, 1080x0, 1
+monitor = eDP-2, disabled"
+
+# Abuelos: Xiaomi (HDMI-A-1) izquierda + Acer 75Hz (DP-1) derecha
+set setup2_monitors "monitor = HDMI-A-1, 1920x1080@165, 1920x0, 1
+monitor = DP-1, 1920x1080@75, 0x0, 1
+monitor = eDP-2, disabled"
+
+set laptop_monitors "monitor = eDP-2, 1920x1200@165, 0x0, 1"
+
+if test (count $argv) -eq 0
+    echo "Uso: monitor-mode [setup1|setup2|laptop]"
+    echo ""
+    echo "  setup1 — home"
+    echo "  setup2 — abuelos"
+    echo "  laptop — Pantalla laptop"
+    exit 0
+end
+
+set mode $argv[1]
+
+set tmp (mktemp)
+grep -v "^monitor" $conf >$tmp 2>/dev/null
+cp $tmp $conf
+rm $tmp
+
+if test "$mode" = setup1
+    echo "monitor = DP-2, 1920x1080@165, 0x0, 1, transform, 3" >>$conf
+    echo "monitor = HDMI-A-1, 3440x1440@99.98, 1080x0, 1" >>$conf
+    echo "monitor = eDP-2, disabled" >>$conf
+    hyprctl reload
+    echo "monitor mode: setup1 — home"
+else if test "$mode" = setup2
+    echo "monitor = HDMI-A-1, 1920x1080@165, 1920x0, 1" >>$conf
+    echo "monitor = DP-1, 1920x1080@75, 0x0, 1" >>$conf
+    echo "monitor = eDP-2, disabled" >>$conf
+    hyprctl reload
+    echo "monitor mode: setup2 — abuelos"
+else if test "$mode" = laptop
+    echo "monitor = eDP-2, 1920x1200@165, 0x0, 1" >>$conf
+    echo "monitor = DP-1, disabled" >>$conf
+    echo "monitor = HDMI-A-1, disabled" >>$conf
+    hyprctl reload
+    echo "monitor mode: Laptop"
+else
+    echo "Modo desconocido: $mode"
+    exit 1
+end

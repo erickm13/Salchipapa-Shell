@@ -1,0 +1,27 @@
+[
+  {
+    "id": "setup-1784434318413-30",
+    "name": "Abuelos",
+    "icon": "monitor",
+    "monitors": [
+      {
+        "name": "HDMI-A-1",
+        "res": "1920x1080",
+        "hz": "165",
+        "x": 1920,
+        "y": 0,
+        "scale": 1,
+        "transform": 0
+      },
+      {
+        "name": "DP-1",
+        "res": "1920x1080",
+        "hz": "75",
+        "x": 0,
+        "y": 0,
+        "scale": 1,
+        "transform": 0
+      }
+    ]
+  }
+]

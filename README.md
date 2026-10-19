@@ -22,6 +22,8 @@ El instalador deja el escritorio igual que en el equipo original:
   respalda como `<ruta>.bak-<fecha>`).
 - **Sistema**: regla sudoers de `papirus-folders`, tema de SDDM `enfield` (de qylock), sesión por
   defecto *Hyprland (uwsm-managed)* y servicios (NetworkManager, bluetooth, power-profiles, sddm).
+- **GRUB** (si el equipo lo usa): temas de `grub/themes/`, tema activo y otros sistemas en el menú.
+- **Scripts**: `bin/` enlazado en `~/.local/bin`; perfiles de monitor en `~/.config/salchipapa-shell/`.
 - **Primer arranque**: `scripts/first-run.sh` aplica el fondo y el tema de `defaults/theme`.
 - Al final ofrece instalar [Salchipapa.Dots](https://github.com/erickm13/Salchipapa.Dots) (fish,
   foot, kitty, nvim…); en *Terminal* elige **Foot**.
@@ -62,6 +64,9 @@ Desde una TTY libre (`Ctrl+Alt+F3`): `Hyprland -c <repo>/hyprland.lua`. `Super +
 | `assets/` | Fuentes (Google Sans Flex, Material Symbols) y avatar |
 | `wallpapers/` | Fondos de pantalla (→ `~/Pictures/Wallpapers`) |
 | `uwsm/` | Variables de entorno de la sesión (→ `~/.config/uwsm`) |
+| `bin/` | Scripts personales (monitores, touchpad, GRUB, SDDM, Wallpaper Engine, grabación…) → `~/.local/bin` |
+| `grub/themes/` | Temas de GRUB (el activo: `minegrub-world-selection`) → `/boot/grub/themes` |
+| `scripts/monitor-autodetect` | Perfil de monitores al conectar/desconectar (`~/.config/salchipapa-shell/display-profiles.json`) |
 | `shell/services/LockScreen.qml` | Pantalla de bloqueo segura vía sesión Wayland y autenticación PAM |
 | `shell/` | La shell de Quickshell (isla, launcher, temas, picker) |
 

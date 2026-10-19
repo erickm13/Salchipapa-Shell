@@ -1,0 +1,39 @@
+#!/usr/bin/env fish
+
+set themes_dir /usr/share/sddm/themes
+set conf /etc/sddm.conf.d/theme.conf
+
+set themes (ls -1 $themes_dir | grep -v '^elarun$' | grep -v '^maldives$' | grep -v '^maya$')
+
+if test (count $argv) -eq 1
+    set selected $argv[1]
+else if command -v fzf &> /dev/null
+    set selected (echo $themes | tr ' ' '\n' | fzf --prompt="Tema SDDM: " --height=20 --reverse --border)
+else
+    for i in (seq (count $themes))
+        echo "$i) $themes[$i]"
+    end
+    read -P "Número: " choice
+    set selected $themes[$choice]
+end
+
+if test -z "$selected"
+    echo "Ningún tema seleccionado."
+    exit 1
+end
+
+if ! test -d $themes_dir/$selected
+    echo "Tema '$selected' no encontrado."
+    exit 1
+end
+
+if ! test -f $conf
+    echo "[Theme]" | sudo tee $conf > /dev/null
+    echo "Current=$selected" | sudo tee -a $conf > /dev/null
+else if grep -q '^Current=' $conf
+    sudo sed -i "s|^Current=.*|Current=$selected|" $conf
+else
+    echo "Current=$selected" | sudo tee -a $conf > /dev/null
+end
+
+echo "Tema activo: $selected"

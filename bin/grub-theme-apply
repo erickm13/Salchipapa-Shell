@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+import sys, re, subprocess
+
+if len(sys.argv) < 2:
+    print("Usage: grub-theme-apply <theme-name>")
+    sys.exit(1)
+
+theme = sys.argv[1]
+path = f"/boot/grub/themes/{theme}/theme.txt"
+conf = "/etc/default/grub"
+
+with open(conf) as f:
+    content = f.read()
+
+if re.search(r'(?m)^GRUB_THEME=', content):
+    content = re.sub(r'(?m)^GRUB_THEME=.*$', f'GRUB_THEME="{path}"', content)
+else:
+    content += f'\nGRUB_THEME="{path}"\n'
+
+with open(conf, "w") as f:
+    f.write(content)
+
+subprocess.run(["grub-mkconfig", "-o", "/boot/grub/grub.cfg"], check=True)
+print(f"GRUB theme: {theme}")

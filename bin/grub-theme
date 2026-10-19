@@ -1,0 +1,44 @@
+#!/usr/bin/env fish
+
+set themes_dir /boot/grub/themes
+
+if not test -d $themes_dir
+    echo "No se encontró $themes_dir"
+    exit 1
+end
+
+set themes (ls $themes_dir)
+
+if test (count $themes) -eq 0
+    echo "No hay temas en $themes_dir"
+    exit 1
+end
+
+if type -q fzf
+    set selected (printf '%s\n' $themes | fzf --prompt="Tema GRUB: " --preview="ls $themes_dir/{}")
+else
+    for i in (seq (count $themes))
+        echo "$i) $themes[$i]"
+    end
+    read -P "Elegí número: " num
+    set selected $themes[$num]
+end
+
+if test -z "$selected"
+    echo "Cancelado"
+    exit 0
+end
+
+set theme_path "$themes_dir/$selected/theme.txt"
+
+if not test -f $theme_path
+    echo "No se encontró theme.txt en $selected"
+    exit 1
+end
+
+echo "Aplicando tema: $selected"
+
+sudo sed -i 's|^#\?GRUB_THEME=.*|GRUB_THEME="'"$theme_path"'"|' /etc/default/grub
+sudo grub-mkconfig -o /boot/grub/grub.cfg
+
+echo "Listo — reiniciá para ver el cambio"

@@ -13,6 +13,7 @@ DOTS_URL="https://github.com/erickm13/Salchipapa.Dots.git"
 QYLOCK_URL="https://github.com/Darkkal44/qylock.git"
 QYLOCK_REV="db61a972b4b23728d9944a906e70029ca8a5899d" # versión probada del tema de SDDM
 SDDM_THEME="enfield"
+GRUB_THEME_NAME="minegrub-world-selection" # de grub/themes/
 STAMP="$(date +%Y%m%d-%H%M%S)"
 LOG_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/salchipapa-shell"
 LOG="$LOG_DIR/install-$STAMP.log"
@@ -36,6 +37,7 @@ PKGS=(
     # Lo que usan los scripts y la isla
     matugen jq python imagemagick grim slurp swappy wl-clipboard cliphist hyprpicker
     libnotify gnome-keyring trash-cli glib2 dconf
+    fish # varios scripts de bin/ son de fish
     # Apps de los atajos
     foot kitty fuzzel yazi btop firefox pavucontrol thunar nemo
     # Thunar: miniaturas, montaje de USB/móvil (MTP, iPhone) y discos NTFS
@@ -239,12 +241,27 @@ install_configs() {
     # Apps GTK4/libadwaita con el mismo tema que GTK3
     link /usr/share/themes/adw-gtk3-dark/gtk-4.0/assets "$HOME/.config/gtk-4.0/assets"
     link /usr/share/themes/adw-gtk3-dark/gtk-4.0/gtk-dark.css "$HOME/.config/gtk-4.0/gtk-dark.css"
+    # Perfiles de monitor (scripts/monitor-autodetect) y configuraciones guardadas
+    for f in display-profiles.json display-setups.json; do
+        [ -f "$HOME/.config/salchipapa-shell/$f" ] || install -Dm644 "$REPO/defaults/$f" "$HOME/.config/salchipapa-shell/$f"
+    done
     # btop (Ctrl+Shift+Esc): si ~/.config/btop era un enlace a otro escritorio, se respalda entero
     [ -L "$HOME/.config/btop" ] && backup "$HOME/.config/btop"
     [ -f "$HOME/.config/btop/btop.conf" ] || install -Dm644 "$REPO/defaults/btop/btop.conf" "$HOME/.config/btop/btop.conf"
     # Cursor también para apps X11
     mkdir -p "$HOME/.icons/default"
     printf '[Icon Theme]\nName=Default\nInherits=Bibata-Modern-Classic\n' >"$HOME/.icons/default/index.theme"
+}
+
+# Scripts de bin/ -> ~/.local/bin (enlaces). Si ya hay uno igual se reemplaza sin respaldo.
+install_bin() {
+    local f dst
+    mkdir -p "$HOME/.local/bin"
+    for f in "$REPO"/bin/*; do
+        dst="$HOME/.local/bin/$(basename "$f")"
+        [ -f "$dst" ] && [ ! -L "$dst" ] && cmp -s "$f" "$dst" && rm "$dst"
+        link "$f" "$dst"
+    done
 }
 
 set_gsettings() {
@@ -300,6 +317,28 @@ install_sddm_theme() {
     sudo mkdir -p /usr/share/sddm/themes /etc/sddm.conf.d
     sudo cp -r "$tmp/qylock/themes/$SDDM_THEME" "/usr/share/sddm/themes/$SDDM_THEME"
     printf '[Theme]\nCurrent=%s\n' "$SDDM_THEME" | sudo tee /etc/sddm.conf.d/theme.conf >/dev/null
+}
+
+# GRUB: temas de grub/themes/, el activo y los otros sistemas (Windows…) en el menú.
+# Solo si el equipo arranca con GRUB (con systemd-boot se omite).
+install_grub_theme() {
+    if [ ! -d /boot/grub ] || ! command -v grub-mkconfig >/dev/null; then
+        echo "sin GRUB: se omite"
+        return 0
+    fi
+    sudo pacman -S --needed --noconfirm os-prober
+    sudo mkdir -p /boot/grub/themes
+    sudo cp -r "$REPO"/grub/themes/. /boot/grub/themes/
+    local theme="/boot/grub/themes/$GRUB_THEME_NAME/theme.txt" key val
+    for kv in "GRUB_THEME=\"$theme\"" "GRUB_DISABLE_OS_PROBER=false" "GRUB_GFXMODE=auto"; do
+        key="${kv%%=*}"
+        if grep -q "^#\?$key=" /etc/default/grub; then
+            sudo sed -i "s|^#\?$key=.*|$kv|" /etc/default/grub
+        else
+            echo "$kv" | sudo tee -a /etc/default/grub >/dev/null
+        fi
+    done
+    sudo grub-mkconfig -o /boot/grub/grub.cfg
 }
 
 # SDDM recuerda la última sesión y usuario: arrancar ya en "Hyprland (uwsm-managed)"
@@ -366,7 +405,8 @@ step "Marcar los paquetes como instalados a mano" mark_explicit
 section "Archivos del usuario"
 step "Fuentes (Google Sans Flex, Material Symbols)" install_fonts
 step "Fondos de pantalla y avatar" install_wallpapers
-step "Configs: Hyprland, uwsm, shell, GTK, Qt, btop, cursor" install_configs
+step "Configs: Hyprland, uwsm, shell, monitores, GTK, Qt, btop, cursor" install_configs
+step "Scripts de bin/ en ~/.local/bin" install_bin
 step "Tema GTK, iconos y cursor (gsettings)" set_gsettings
 
 section "Sistema"
@@ -376,6 +416,7 @@ if [ "$IS_ASUS" -eq 1 ]; then
     step "ASUS: ajustes de asusd (carga, perfiles, ventiladores, RGB)" install_asusd_config
 fi
 step "Tema de SDDM ($SDDM_THEME)" install_sddm_theme
+step "Tema de GRUB ($GRUB_THEME_NAME) y otros sistemas en el menú" install_grub_theme
 step "Sesión por defecto en SDDM: Hyprland (uwsm)" set_sddm_session
 step "Servicios: NetworkManager, bluetooth, power-profiles, sddm" enable_services
 

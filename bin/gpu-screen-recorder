@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+# Dos cosas importantes en este launcher:
+#  1. NO usar prime-run: el monitor eDP-2 va por la iGPU Intel y gsr
+#     captura/codifica en la GPU del monitor; prime-run (offload NVIDIA)
+#     no lo soporta y sus vars rompen VAAPI de Intel.
+#  2. Redirigir stdout/stderr a /dev/null: caelestia lanza gsr y cierra
+#     su tubería tras 1 s; si gsr la hereda como stderr, al escribir la
+#     siguiente línea recibe SIGPIPE y muere (sobre todo con audio).
+exec /usr/bin/gpu-screen-recorder "$@" >/dev/null 2>&1

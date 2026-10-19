@@ -1,0 +1,722 @@
+#!/usr/bin/env python3
+
+import gi
+gi.require_version("Gtk", "4.0")
+gi.require_version("Adw", "1")
+from gi.repository import Gtk, Adw, GLib, Gdk, GdkPixbuf
+import subprocess, json, random as rnd, os, threading, glob
+
+STEAM_WE = os.path.expanduser("~/.local/share/Steam/steamapps/workshop/content/431960")
+CACHE_FILE = os.path.expanduser("~/.cache/wallpaper-picker.json")
+DATA_DIR = os.path.expanduser("~/.local/share/wallpaper-picker")
+FAVORITES_FILE = os.path.join(DATA_DIR, "favorites.json")
+HISTORY_FILE = os.path.join(DATA_DIR, "history.json")
+CURRENT_FILE = os.path.join(DATA_DIR, "current.json")
+THUMB_DIR = os.path.expanduser("~/.cache/wallpaper-picker-thumbs")
+IMG_W, IMG_H = 440, 248
+MAX_HISTORY = 30
+
+os.makedirs(DATA_DIR, exist_ok=True)
+os.makedirs(THUMB_DIR, exist_ok=True)
+
+CSS = b"""
+window { background-color: alpha(@window_bg_color, 0.92); }
+.wp-outer {
+    transition: transform 240ms ease, opacity 200ms ease;
+    transform: scale(0.65);
+    opacity: 0.32;
+}
+.wp-outer.near {
+    transform: scale(0.80);
+    opacity: 0.55;
+}
+.wp-outer.center {
+    transition: transform 320ms cubic-bezier(0.22, 1.8, 0.36, 1), opacity 200ms ease;
+    transform: scale(1.0);
+    opacity: 1.0;
+}
+.wp-card {
+    border-radius: 12px;
+    background: alpha(@window_fg_color, 0.05);
+}
+.wp-card.active { box-shadow: 0 8px 32px alpha(black, 0.65); }
+.wp-label { font-size: 12px; margin-top: 5px; color: alpha(@window_fg_color, 0.45); }
+.wp-label.active { font-weight: bold; color: @window_fg_color; }
+.fav-btn {
+    border-radius: 50%;
+    padding: 2px 5px;
+    min-width: 0;
+    min-height: 0;
+    background: alpha(black, 0.45);
+    color: white;
+    font-size: 11px;
+    border: none;
+}
+.fav-btn.active { color: gold; }
+.res-badge {
+    border-radius: 6px;
+    padding: 1px 5px;
+    font-size: 10px;
+    font-weight: bold;
+    background: alpha(black, 0.6);
+    color: white;
+    border: none;
+}
+.res-badge.r4k { color: #f59e0b; }
+.res-badge.r1440p { color: #34d399; }
+.filter-chip { border-radius: 20px; padding: 3px 10px; font-size: 12px; }
+searchentry { border-radius: 10px; font-size: 13px; }
+.current-label { font-size: 12px; color: alpha(@window_fg_color, 0.65); }
+"""
+
+
+def load_json(path, default):
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except Exception:
+        return default
+
+
+def save_json(path, data):
+    try:
+        with open(path, "w") as f:
+            json.dump(data, f)
+    except Exception:
+        pass
+
+
+def find_video_file(folder_path):
+    for ext in ("*.mp4", "*.webm", "*.avi", "*.mov"):
+        files = [f for f in glob.glob(os.path.join(folder_path, ext))
+                 if "preview" not in os.path.basename(f).lower()]
+        if files:
+            return files[0]
+    return None
+
+
+def detect_resolution(folder_path):
+    import glob
+    for ext in ("*.mp4", "*.webm", "*.avi", "*.mov"):
+        files = [f for f in glob.glob(os.path.join(folder_path, ext))
+                 if "preview" not in os.path.basename(f).lower()]
+        if files:
+            try:
+                r = subprocess.run(
+                    ["ffprobe", "-v", "quiet", "-select_streams", "v:0",
+                     "-show_entries", "stream=width,height", "-of", "csv=p=0", files[0]],
+                    capture_output=True, text=True, timeout=3
+                )
+                if r.returncode == 0 and r.stdout.strip():
+                    w, h = map(int, r.stdout.strip().split(","))
+                    if w >= 3840 or h >= 2160:
+                        return "4K"
+                    elif w >= 2560 or h >= 1440:
+                        return "1440p"
+                    elif w >= 1920 or h >= 1080:
+                        return "1080p"
+                    else:
+                        return f"{h}p"
+            except Exception:
+                pass
+    return ""
+
+
+def get_wallpapers():
+    if os.path.exists(CACHE_FILE):
+        try:
+            if os.path.getmtime(CACHE_FILE) > os.path.getmtime(STEAM_WE):
+                cached = load_json(CACHE_FILE, [])
+                if cached and len(cached[0]) >= 6:
+                    return [tuple(x) for x in cached]
+        except Exception:
+            pass
+
+    result = []
+    for folder in sorted(os.listdir(STEAM_WE)):
+        preview = os.path.join(STEAM_WE, folder, "preview.jpg")
+        project_file = os.path.join(STEAM_WE, folder, "project.json")
+        if not os.path.exists(preview):
+            continue
+        title, wp_type, tags = folder, "unknown", []
+        try:
+            with open(project_file) as f:
+                data = json.load(f)
+                title = data.get("title", folder)
+                wp_type = data.get("type", "unknown").lower()
+                tags = [t.lower() for t in data.get("tags", [])]
+        except Exception:
+            pass
+        resolution = detect_resolution(os.path.join(STEAM_WE, folder))
+        result.append((folder, title, preview, wp_type, tags, resolution))
+
+    save_json(CACHE_FILE, result)
+    return result
+
+
+def get_current_wp_id():
+    try:
+        out = subprocess.check_output(["ps", "-C", "linux-wallpaperengine", "-o", "args="], text=True)
+        for part in out.split():
+            if part.isdigit() and len(part) > 5:
+                return part
+    except Exception:
+        pass
+    return load_json(CURRENT_FILE, {}).get("id")
+
+
+def get_monitors():
+    try:
+        out = subprocess.check_output(["hyprctl", "monitors", "-j"], text=True)
+        return [m["name"] for m in json.loads(out)]
+    except Exception:
+        return ["HDMI-A-1"]
+
+
+def apply_wallpaper(wp_id, screens):
+    subprocess.run(["pkill", "-f", "linux-wallpaperengine"], stderr=subprocess.DEVNULL)
+    import time; time.sleep(0.3)
+    args = ["prime-run", "linux-wallpaperengine", "--fps", "165", "--silent",
+            "--no-audio-processing", "--fullscreen-pause-only-active",
+            "--scaling", "fill"]
+    for screen in screens:
+        args += ["--screen-root", screen, "--bg", wp_id]
+    subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                     start_new_session=True)
+    save_json(CURRENT_FILE, {"id": wp_id, "screens": screens})
+
+
+class WallpaperPicker(Adw.ApplicationWindow):
+    def __init__(self, app):
+        super().__init__(application=app, title="Wallpaper Engine")
+        self.set_default_size(1500, 400)
+        self.set_resizable(False)
+
+        provider = Gtk.CssProvider()
+        provider.load_from_data(CSS)
+        Gtk.StyleContext.add_provider_for_display(
+            Gdk.Display.get_default(), provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
+
+        self.all_wallpapers = get_wallpapers()
+        self.visible_wallpapers = list(self.all_wallpapers)
+        self.cards = []
+        self.current_wp_id = get_current_wp_id()
+        self.favorites = set(load_json(FAVORITES_FILE, []))
+        self.history = load_json(HISTORY_FILE, [])
+        self.monitors = get_monitors()
+        self.selected_monitors = set(self.monitors)
+        self.active_filter = "all"
+        self.active_category = None
+        self.search_query = ""
+        self.categories = sorted(set(w[3] for w in self.all_wallpapers if w[3] not in ("unknown", "")))
+        self._video_frames = {}
+        self._video_loading = set()
+        self._video_center = None
+        self._video_timer = None
+        self._video_debounce = None
+        self._prev_center = -1
+
+        vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        vbox.set_margin_top(10)
+        vbox.set_margin_bottom(10)
+        vbox.set_margin_start(12)
+        vbox.set_margin_end(12)
+        self.set_content(vbox)
+
+        header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        vbox.append(header)
+
+        self.current_label = Gtk.Label()
+        self.current_label.add_css_class("current-label")
+        self.current_label.set_halign(Gtk.Align.START)
+        self.current_label.set_hexpand(True)
+        self.update_current_label()
+        header.append(self.current_label)
+
+        for mon in self.monitors:
+            cb = Gtk.CheckButton(label=mon)
+            cb.set_active(True)
+            cb.connect("toggled", self.on_monitor_toggled, mon)
+            header.append(cb)
+
+        btn_random = Gtk.Button(label="🎲 Aleatorio")
+        btn_random.connect("clicked", self.on_random)
+        header.append(btn_random)
+
+        btn_stop = Gtk.Button(label="⏹ Stop")
+        btn_stop.connect("clicked", self.on_stop)
+        header.append(btn_stop)
+
+        autostart_enabled = not os.path.exists(os.path.join(DATA_DIR, "no-autostart"))
+        self.toggle_autostart = Gtk.CheckButton(label="Restaurar al inicio")
+        self.toggle_autostart.set_active(autostart_enabled)
+        self.toggle_autostart.connect("toggled", self.on_autostart_toggled)
+        header.append(self.toggle_autostart)
+
+        filters_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        vbox.append(filters_box)
+
+        self.search = Gtk.SearchEntry()
+        self.search.set_placeholder_text("Buscar wallpaper...")
+        self.search.set_hexpand(True)
+        self.search.connect("search-changed", self.on_search)
+        self.search.connect("activate", lambda e: self.select_current())
+        filters_box.append(self.search)
+
+        self.filter_btns = {}
+        for label, key in [("Todos", "all"), ("⭐ Favoritos", "favs"), ("🕐 Historial", "history")]:
+            btn = Gtk.ToggleButton(label=label)
+            btn.add_css_class("filter-chip")
+            btn.set_active(key == "all")
+            btn.connect("toggled", self.on_filter_toggled, key)
+            filters_box.append(btn)
+            self.filter_btns[key] = btn
+
+        if self.categories:
+            cat_model = Gtk.StringList()
+            cat_model.append("Categoría")
+            for c in self.categories:
+                cat_model.append(c.capitalize())
+            self.cat_drop = Gtk.DropDown(model=cat_model)
+            self.cat_drop.connect("notify::selected", self.on_category_changed)
+            filters_box.append(self.cat_drop)
+
+        self.carousel = Adw.Carousel()
+        self.carousel.set_spacing(4)
+        self.carousel.set_allow_scroll_wheel(True)
+        self.carousel.set_vexpand(True)
+        self.carousel.connect("notify::position", self.on_position_changed)
+        vbox.append(self.carousel)
+
+        self.dots = Adw.CarouselIndicatorDots()
+        self.dots.set_carousel(self.carousel)
+        vbox.append(self.dots)
+
+        self.build_carousel()
+
+        key_ctrl = Gtk.EventControllerKey()
+        key_ctrl.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        key_ctrl.connect("key-pressed", self.on_key)
+        self.add_controller(key_ctrl)
+
+    def update_current_label(self):
+        if self.current_wp_id:
+            title = next((t for i, t, *_ in self.all_wallpapers if i == self.current_wp_id), self.current_wp_id)
+            self.current_label.set_text(f"▶  {title}")
+        else:
+            self.current_label.set_text("Sin wallpaper activo")
+
+    def on_monitor_toggled(self, cb, mon):
+        if cb.get_active():
+            self.selected_monitors.add(mon)
+        else:
+            self.selected_monitors.discard(mon)
+
+    def on_autostart_toggled(self, cb):
+        flag = os.path.join(DATA_DIR, "no-autostart")
+        if cb.get_active():
+            try:
+                os.remove(flag)
+            except FileNotFoundError:
+                pass
+        else:
+            open(flag, "w").close()
+
+    def on_stop(self, *_):
+        subprocess.run(["pkill", "-f", "linux-wallpaperengine"], stderr=subprocess.DEVNULL)
+        self.current_wp_id = None
+        self.update_current_label()
+        self.close()
+
+    def on_random(self, *_):
+        if not self.visible_wallpapers:
+            return
+        idx = rnd.randint(0, len(self.visible_wallpapers) - 1)
+        page = self.carousel.get_nth_page(idx)
+        if page:
+            self.carousel.scroll_to(page, True)
+
+    def on_filter_toggled(self, btn, key):
+        if not btn.get_active():
+            return
+        for k, b in self.filter_btns.items():
+            if k != key:
+                b.set_active(False)
+        self.active_filter = key
+        self.apply_filters()
+
+    def on_category_changed(self, drop, _):
+        idx = drop.get_selected()
+        self.active_category = self.categories[idx - 1] if idx > 0 else None
+        self.apply_filters()
+
+    def on_search(self, entry):
+        self.search_query = entry.get_text().lower()
+        self.apply_filters()
+
+    def apply_filters(self):
+        result = self.all_wallpapers
+
+        if self.active_filter == "favs":
+            result = [w for w in result if w[0] in self.favorites]
+        elif self.active_filter == "history":
+            hist_order = {wp_id: i for i, wp_id in enumerate(self.history)}
+            result = sorted([w for w in result if w[0] in hist_order], key=lambda w: hist_order[w[0]])
+
+        if self.active_category:
+            result = [w for w in result if w[3] == self.active_category]
+
+        if self.search_query:
+            q = self.search_query
+            result = [w for w in result if q in w[1].lower() or q in w[5].lower() or any(q in t for t in w[4])]
+
+        self.visible_wallpapers = result
+        self.build_carousel()
+
+    def build_carousel(self):
+        for outer, pic, lbl, fav_btn, preview in self.cards:
+            self.carousel.remove(outer)
+        self.cards.clear()
+
+        self.dots.set_visible(len(self.visible_wallpapers) <= 25)
+
+        for wp_id, title, preview, wp_type, tags, resolution in self.visible_wallpapers:
+            outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+            outer.set_halign(Gtk.Align.CENTER)
+            outer.set_valign(Gtk.Align.CENTER)
+            outer.add_css_class("wp-outer")
+
+            overlay = Gtk.Overlay()
+            overlay.set_size_request(IMG_W, IMG_H)
+            overlay.set_overflow(Gtk.Overflow.HIDDEN)
+
+            pic = Gtk.Picture()
+            pic.set_content_fit(Gtk.ContentFit.COVER)
+            pic.set_can_shrink(True)
+            pic.set_size_request(IMG_W, IMG_H)
+            pic.set_halign(Gtk.Align.FILL)
+            pic.set_valign(Gtk.Align.FILL)
+            pic.set_overflow(Gtk.Overflow.HIDDEN)
+            pic.add_css_class("wp-card")
+            overlay.set_child(pic)
+
+            fav_btn = Gtk.Button(label="⭐" if wp_id in self.favorites else "☆")
+            fav_btn.add_css_class("fav-btn")
+            if wp_id in self.favorites:
+                fav_btn.add_css_class("active")
+            fav_btn.set_halign(Gtk.Align.END)
+            fav_btn.set_valign(Gtk.Align.START)
+            fav_btn.set_margin_top(5)
+            fav_btn.set_margin_end(5)
+            fav_btn.connect("clicked", self.on_fav_toggle, wp_id, fav_btn)
+            overlay.add_overlay(fav_btn)
+
+            if resolution:
+                res_lbl = Gtk.Label(label=resolution)
+                res_lbl.add_css_class("res-badge")
+                if resolution == "4K":
+                    res_lbl.add_css_class("r4k")
+                elif resolution == "1440p":
+                    res_lbl.add_css_class("r1440p")
+                res_lbl.set_halign(Gtk.Align.START)
+                res_lbl.set_valign(Gtk.Align.END)
+                res_lbl.set_margin_start(6)
+                res_lbl.set_margin_bottom(6)
+                overlay.add_overlay(res_lbl)
+
+            lbl = Gtk.Label(label=title[:36] + ("…" if len(title) > 36 else ""))
+            lbl.add_css_class("wp-label")
+            lbl.set_halign(Gtk.Align.CENTER)
+
+            outer.append(overlay)
+            outer.append(lbl)
+            self.carousel.append(outer)
+            self.cards.append((outer, pic, lbl, fav_btn, preview))
+
+        self._stop_animation()
+        self._video_frames = {}
+        self._video_loading = set()
+        self._video_center = None
+        self._video_timer = None
+        self._prev_center = -1
+        self._load_gen = getattr(self, "_load_gen", 0) + 1
+        self.update_highlights()
+        GLib.idle_add(self._scroll_to_current)
+        self._start_loading(self._load_gen)
+
+    def on_fav_toggle(self, btn, wp_id, fav_btn):
+        if wp_id in self.favorites:
+            self.favorites.discard(wp_id)
+            fav_btn.set_label("☆")
+            fav_btn.remove_css_class("active")
+        else:
+            self.favorites.add(wp_id)
+            fav_btn.set_label("⭐")
+            fav_btn.add_css_class("active")
+        save_json(FAVORITES_FILE, list(self.favorites))
+
+    def _scroll_to_current(self):
+        if not self.current_wp_id:
+            return False
+        for i, (wp_id, *_) in enumerate(self.visible_wallpapers):
+            if wp_id == self.current_wp_id:
+                page = self.carousel.get_nth_page(i)
+                if page:
+                    self.carousel.scroll_to(page, False)
+                break
+        return False
+
+    def _load_cover(self, path, thumb_path):
+        if os.path.exists(thumb_path):
+            try:
+                return GdkPixbuf.Pixbuf.new_from_file(thumb_path)
+            except Exception:
+                pass
+        fmt, src_w, src_h = GdkPixbuf.Pixbuf.get_file_info(path)
+        if not fmt or src_w == 0 or src_h == 0:
+            return None
+        scale = max(IMG_W / src_w, IMG_H / src_h)
+        sw = max(int(src_w * scale), IMG_W)
+        sh = max(int(src_h * scale), IMG_H)
+        scaled = GdkPixbuf.Pixbuf.new_from_file_at_scale(path, sw, sh, False)
+        x = (sw - IMG_W) // 2
+        y = (sh - IMG_H) // 2
+        pixbuf = scaled.new_subpixbuf(x, y, IMG_W, IMG_H)
+        try:
+            pixbuf.savev(thumb_path, "jpeg", ["quality"], ["88"])
+        except Exception:
+            pass
+        return pixbuf
+
+    def _start_loading(self, gen):
+        n = len(self.cards)
+        if n == 0:
+            return
+        # Centro: wallpaper actual o índice 0
+        center = 0
+        for i, (wp_id, *_) in enumerate(self.visible_wallpapers):
+            if wp_id == self.current_wp_id:
+                center = i
+                break
+        # Prioridad: centro ± 4
+        priority = list(range(max(0, center - 4), min(n, center + 5)))
+        rest = [i for i in range(n) if i not in set(priority)]
+        # Hilo prioritario primero
+        threading.Thread(target=self._load_indices, args=(priority, gen, rest), daemon=True).start()
+
+    def _load_indices(self, indices, gen, after=None):
+        results = []
+        for i in indices:
+            if gen != self._load_gen:
+                return
+            wp_id = self.visible_wallpapers[i][0]
+            _, _, _, _, preview = self.cards[i]
+            thumb = os.path.join(THUMB_DIR, f"{wp_id}_{IMG_W}x{IMG_H}.jpg")
+            try:
+                pixbuf = self._load_cover(preview, thumb)
+            except Exception:
+                pixbuf = None
+            results.append((i, pixbuf))
+        GLib.idle_add(self._apply_results, results, gen, after)
+
+    def _apply_results(self, results, gen, after=None):
+        if gen != self._load_gen:
+            return False
+        for i, pixbuf in results:
+            if i < len(self.cards) and pixbuf:
+                _, pic, _, _, _ = self.cards[i]
+                pic.set_paintable(Gdk.Texture.new_for_pixbuf(pixbuf))
+        if after:
+            CHUNK = len(after) // 4 or 1
+            chunks = [after[j:j + CHUNK] for j in range(0, len(after), CHUNK)]
+            for chunk in chunks:
+                threading.Thread(target=self._load_indices, args=(chunk, gen), daemon=True).start()
+        return False
+
+    def current_center(self):
+        return round(self.carousel.get_position())
+
+    def current_center_exact(self):
+        return self.carousel.get_position()
+
+    def update_highlights(self):
+        pos = self.carousel.get_position()
+        center = round(pos)
+        for i, (outer, pic, lbl, fav_btn, preview) in enumerate(self.cards):
+            dist = abs(i - pos)
+            outer.remove_css_class("center")
+            outer.remove_css_class("near")
+            if dist < 0.6:
+                outer.add_css_class("center")
+                pic.add_css_class("active")
+                lbl.add_css_class("active")
+            elif dist < 1.6:
+                outer.add_css_class("near")
+                pic.remove_css_class("active")
+                lbl.remove_css_class("active")
+            else:
+                pic.remove_css_class("active")
+                lbl.remove_css_class("active")
+        if center != self._prev_center:
+            self._prev_center = center
+            if hasattr(self, "_video_debounce") and self._video_debounce:
+                GLib.source_remove(self._video_debounce)
+            self._video_debounce = GLib.timeout_add(280, self._settle_video, center)
+
+    def _settle_video(self, idx):
+        self._video_debounce = None
+        if round(self.carousel.get_position()) == idx:
+            self._maybe_start_video(idx)
+        return False
+
+    def _maybe_start_video(self, idx):
+        self._stop_animation()
+        if idx >= len(self.visible_wallpapers):
+            return
+        wp_id, _, _, wp_type, *_ = self.visible_wallpapers[idx]
+        if wp_type != "video":
+            return
+        if idx in self._video_frames:
+            self._start_animation(idx)
+        elif idx not in self._video_loading:
+            self._video_loading.add(idx)
+            threading.Thread(
+                target=self._extract_frames,
+                args=(idx, wp_id, self._load_gen),
+                daemon=True
+            ).start()
+
+    def _extract_frames(self, idx, wp_id, gen):
+        frame_dir = os.path.join(THUMB_DIR, f"frames_{wp_id}_{IMG_W}x{IMG_H}_hq")
+        os.makedirs(frame_dir, exist_ok=True)
+        existing = sorted(glob.glob(os.path.join(frame_dir, "f*.jpg")))
+        if not existing:
+            video_file = find_video_file(os.path.join(STEAM_WE, wp_id))
+            if not video_file:
+                self._video_loading.discard(idx)
+                return
+            try:
+                subprocess.run([
+                    "ffmpeg", "-i", video_file,
+                    "-vf", (f"fps=10,scale={IMG_W}:{IMG_H}:"
+                            f"force_original_aspect_ratio=increase:"
+                            f"flags=lanczos,"
+                            f"crop={IMG_W}:{IMG_H}"),
+                    "-t", "3", "-frames:v", "30",
+                    "-qscale:v", "2",
+                    os.path.join(frame_dir, "f%03d.jpg"),
+                    "-y", "-loglevel", "quiet"
+                ], timeout=20)
+                existing = sorted(glob.glob(os.path.join(frame_dir, "f*.jpg")))
+            except Exception:
+                self._video_loading.discard(idx)
+                return
+        pixbufs = []
+        for fp in existing:
+            try:
+                pixbufs.append(GdkPixbuf.Pixbuf.new_from_file(fp))
+            except Exception:
+                pass
+        self._video_loading.discard(idx)
+        if pixbufs:
+            GLib.idle_add(self._on_frames_ready, idx, pixbufs, gen)
+
+    def _on_frames_ready(self, idx, pixbufs, gen):
+        if gen != self._load_gen:
+            return False
+        self._video_frames[idx] = [Gdk.Texture.new_for_pixbuf(pb) for pb in pixbufs]
+        if round(self.carousel.get_position()) == idx:
+            self._start_animation(idx)
+        return False
+
+    def _start_animation(self, idx):
+        self._stop_animation()
+        frames = self._video_frames.get(idx, [])
+        if not frames or idx >= len(self.cards):
+            return
+        self._video_center = idx
+        self._frame_idx = 0
+        _, pic, _, _, _ = self.cards[idx]
+        pic.set_paintable(frames[0])
+
+        def next_frame():
+            if self._video_center != idx:
+                return False
+            self._frame_idx = (self._frame_idx + 1) % len(frames)
+            pic.set_paintable(frames[self._frame_idx])
+            return True
+
+        self._video_timer = GLib.timeout_add(100, next_frame)
+
+    def _stop_animation(self):
+        timer = getattr(self, "_video_timer", None)
+        if timer:
+            GLib.source_remove(timer)
+            self._video_timer = None
+        prev = getattr(self, "_video_center", None)
+        self._video_center = None
+        if prev is not None and prev < len(self.cards):
+            wp_id = self.visible_wallpapers[prev][0]
+            thumb = os.path.join(THUMB_DIR, f"{wp_id}_{IMG_W}x{IMG_H}.jpg")
+            _, pic, _, _, _ = self.cards[prev]
+            try:
+                pb = GdkPixbuf.Pixbuf.new_from_file(thumb)
+                pic.set_paintable(Gdk.Texture.new_for_pixbuf(pb))
+            except Exception:
+                pass
+
+    def on_position_changed(self, carousel, _):
+        self.update_highlights()
+
+    def move(self, delta):
+        n = len(self.visible_wallpapers)
+        if n == 0:
+            return
+        idx = max(0, min(self.current_center() + delta, n - 1))
+        page = self.carousel.get_nth_page(idx)
+        if page:
+            self.carousel.scroll_to(page, True)
+
+    def select_current(self):
+        idx = self.current_center()
+        if 0 <= idx < len(self.visible_wallpapers):
+            wp_id = self.visible_wallpapers[idx][0]
+            screens = list(self.selected_monitors) or self.monitors
+            apply_wallpaper(wp_id, screens)
+            self.current_wp_id = wp_id
+            self.update_current_label()
+
+            if wp_id in self.history:
+                self.history.remove(wp_id)
+            self.history.insert(0, wp_id)
+            self.history = self.history[:MAX_HISTORY]
+            save_json(HISTORY_FILE, self.history)
+
+            GLib.timeout_add(400, self.close)
+
+    def on_key(self, ctrl, keyval, keycode, state):
+        if self.search.has_focus():
+            return False
+        if keyval in (Gdk.KEY_Left, Gdk.KEY_h):
+            self.move(-1); return True
+        if keyval in (Gdk.KEY_Right, Gdk.KEY_l):
+            self.move(1); return True
+        if keyval == Gdk.KEY_Return:
+            self.select_current(); return True
+        if keyval == Gdk.KEY_Escape:
+            self.close(); return True
+        return False
+
+
+class App(Adw.Application):
+    def __init__(self):
+        super().__init__(application_id="com.wallpaper.picker")
+
+    def do_activate(self):
+        win = WallpaperPicker(self)
+        win.present()
+
+
+App().run()

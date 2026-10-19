@@ -1,0 +1,18 @@
+{
+  "HDMI-A-1|eDP-2": [
+    {
+      "name": "eDP-2",
+      "disabled": true
+    },
+    {
+      "name": "HDMI-A-1",
+      "res": "1920x1080",
+      "hz": "165",
+      "x": 0,
+      "y": 0,
+      "scale": 1,
+      "transform": 0,
+      "disabled": false
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+# Perfiles de monitor automáticos: al conectar/desconectar pantallas aplica el perfil guardado
+# para esa combinación (p. ej. HDMI conectado -> apagar la pantalla interna).
+# Lo lanza lua/autostart.lua; log en /tmp/monitor-autodetect.log.
+#
+# Perfiles: ~/.config/salchipapa-shell/display-profiles.json, con la clave = nombres de los monitores
+# ordenados y unidos con "|":
+#   { "HDMI-A-1|eDP-2": [ { "name": "eDP-2", "disabled": true },
+#                         { "name": "HDMI-A-1", "res": "1920x1080", "hz": "60", "x": 0, "y": 0,
+#                           "scale": 1, "transform": 0 } ] }
+# Con un solo monitor se recarga Hyprland (vuelve a lua/monitors.lua). Sin perfil, todos en auto.
+#
+# OJO: con la config en Lua `hyprctl keyword` no vale; los monitores se aplican con
+# `hyprctl eval 'hl.monitor({...})'`.
+set -uo pipefail
+
+profiles="${XDG_CONFIG_HOME:-$HOME/.config}/salchipapa-shell/display-profiles.json"
+log_file=/tmp/monitor-autodetect.log
+
+# Una sola instancia (Hyprland puede relanzar el autostart)
+exec 9>"${XDG_RUNTIME_DIR:-/tmp}/salchipapa-monitor-autodetect.lock"
+flock -n 9 || exit 0
+
+log() { echo "[$(date '+%H:%M:%S')] $*" >>"$log_file"; }
+
+current_key() {
+    hyprctl monitors all -j 2>/dev/null | jq -r '[.[].name | select(. != null and . != "")] | sort | join("|")'
+}
+
+wake() { hyprctl dispatch 'hl.dsp.dpms({ action = "on" })' >/dev/null 2>&1 || true; }
+
+enable_all() {
+    local name
+    for name in ${1//|/ }; do
+        hyprctl eval "hl.monitor({ output = \"$name\", mode = \"preferred\", position = \"auto\", scale = 1 })" >>"$log_file" 2>&1
+    done
+    log "sin perfil: todos en automático ($1)"
+    wake
+}
+
+apply_profile() {
+    local key="$1" lua
+    log "monitores: '$key'"
+
+    if [[ "$key" != *"|"* ]]; then
+        hyprctl reload >>"$log_file" 2>&1
+        log "un solo monitor: config recargada"
+        return
+    fi
+
+    lua=$(jq -r --arg k "$key" '
+        .[$k] // empty | .[] | select(.name) |
+        if .disabled then "hl.monitor({ output = \"\(.name)\", disabled = true })"
+        else "hl.monitor({ output = \"\(.name)\", mode = \"\(.res)@\(.hz)\", position = \"\(.x)x\(.y)\", scale = \(.scale // 1), transform = \(.transform // 0) })"
+        end' "$profiles" 2>/dev/null)
+
+    if [ -z "$lua" ]; then
+        enable_all "$key"
+        return
+    fi
+    while IFS= read -r line; do
+        log "  $line"
+        hyprctl eval "$line" >>"$log_file" 2>&1
+    done <<<"$lua"
+    log "perfil aplicado"
+    notify-send -i display -t 3000 "Display" "Perfil de monitores aplicado" 2>/dev/null || true
+    sleep 0.5
+    wake
+}
+
+log "=== monitor-autodetect iniciado ==="
+sleep 2
+last=$(current_key)
+apply_profile "$last"
+while sleep 3; do
+    key=$(current_key)
+    [ -n "$key" ] || continue
+    if [ "$key" != "$last" ]; then
+        last=$key
+        apply_profile "$key"
+    fi
+done

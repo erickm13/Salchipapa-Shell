@@ -1,0 +1,402 @@
+#!/usr/bin/env python3
+
+import os
+os.environ.setdefault("GST_PLUGIN_FEATURE_RANK", "nvh264dec:NONE,nvav1dec:NONE,nvvp9dec:NONE,nvvp8dec:NONE")
+
+import gi
+gi.require_version("Gtk", "4.0")
+gi.require_version("Adw", "1")
+from gi.repository import Gtk, Adw, GLib, Gdk
+import subprocess, os, glob, threading, sys
+
+SDDM_DIR = "/usr/share/sddm/themes"
+GRUB_DIR = "/boot/grub/themes"
+SDDM_CONF = "/etc/sddm.conf.d/theme.conf"
+GRUB_CONF = "/etc/default/grub"
+IMG_W, IMG_H = 300, 169
+
+CSS = b"""
+window { background-color: alpha(@window_bg_color, 0.92); }
+.theme-outer {
+    transition: transform 240ms ease, opacity 200ms ease;
+    transform: scale(0.65);
+    opacity: 0.32;
+}
+.theme-outer.near {
+    transform: scale(0.72);
+    opacity: 0.55;
+}
+.theme-outer.center {
+    transition: transform 320ms cubic-bezier(0.22, 1.8, 0.36, 1), opacity 200ms ease;
+    transform: scale(1.0);
+    opacity: 1.0;
+}
+.theme-card {
+    border-radius: 12px;
+    background: alpha(@window_fg_color, 0.05);
+}
+.theme-card.active { box-shadow: 0 8px 32px alpha(black, 0.65); }
+.theme-label { font-size: 12px; margin-top: 5px; color: alpha(@window_fg_color, 0.45); }
+.theme-label.active { font-weight: bold; color: @window_fg_color; }
+.current-label { font-size: 12px; color: alpha(@window_fg_color, 0.65); }
+.mode-chip { border-radius: 20px; padding: 3px 14px; font-size: 12px; }
+.active-badge {
+    border-radius: 6px;
+    padding: 1px 6px;
+    font-size: 10px;
+    font-weight: bold;
+    background: alpha(@accent_color, 0.85);
+    color: white;
+}
+searchentry { border-radius: 10px; font-size: 13px; }
+"""
+
+
+def find_video(theme_path):
+    for ext in ("*.mp4", "*.webm"):
+        files = glob.glob(os.path.join(theme_path, ext))
+        if files:
+            return sorted(files)[0]
+    return None
+
+
+def find_preview(theme_path, theme_name):
+    candidates = [
+        "preview.png", "preview.jpg", "Preview.png",
+        "screenshot.png", "bg.png", "bg.jpg",
+        "background.png", "background.jpg",
+        f"{theme_name}.png", f"{theme_name}.jpg",
+        f"{theme_name.lower()}.png", f"{theme_name.lower()}.jpg",
+    ]
+    for name in candidates:
+        if os.path.exists(os.path.join(theme_path, name)):
+            return os.path.join(theme_path, name)
+    for subdir in ("screenshots", "preview", "background", "images", "assets"):
+        for ext in ("*.png", "*.jpg", "*.jpeg"):
+            files = glob.glob(os.path.join(theme_path, subdir, ext))
+            if files:
+                return sorted(files)[0]
+    for ext in ("*.png", "*.jpg", "*.jpeg"):
+        files = glob.glob(os.path.join(theme_path, ext))
+        if files:
+            return sorted(files)[0]
+    return None
+
+
+def get_sddm_themes():
+    if not os.path.isdir(SDDM_DIR):
+        return []
+    result = []
+    for name in sorted(os.listdir(SDDM_DIR)):
+        path = os.path.join(SDDM_DIR, name)
+        if os.path.isdir(path):
+            video = find_video(path)
+            image = find_preview(path, name)
+            result.append((name, image, video))
+    return result
+
+
+def get_grub_themes():
+    if not os.path.isdir(GRUB_DIR):
+        return []
+    result = []
+    for name in sorted(os.listdir(GRUB_DIR)):
+        path = os.path.join(GRUB_DIR, name)
+        if os.path.isdir(path) and os.path.exists(os.path.join(path, "theme.txt")):
+            result.append((name, find_preview(path, name), None))
+    return result
+
+
+def get_current_sddm():
+    try:
+        with open(SDDM_CONF) as f:
+            for line in f:
+                if line.strip().startswith("Current="):
+                    return line.strip().split("=", 1)[1]
+    except Exception:
+        pass
+    return None
+
+
+def get_current_grub():
+    try:
+        with open(GRUB_CONF) as f:
+            for line in f:
+                if line.strip().startswith("GRUB_THEME="):
+                    val = line.strip().split("=", 1)[1].strip().strip('"')
+                    parts = val.split("/")
+                    for i, part in enumerate(parts):
+                        if part == "themes" and i + 1 < len(parts):
+                            return parts[i + 1]
+    except Exception:
+        pass
+    return None
+
+
+class ThemePicker(Adw.ApplicationWindow):
+    def __init__(self, app):
+        super().__init__(application=app, title="Theme Picker")
+        self.set_default_size(1500, 400)
+        self.set_resizable(False)
+
+        provider = Gtk.CssProvider()
+        provider.load_from_data(CSS)
+        Gtk.StyleContext.add_provider_for_display(
+            Gdk.Display.get_default(), provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
+
+        self.mode = "grub" if "--grub" in sys.argv else "sddm"
+        self.sddm_themes = get_sddm_themes()
+        self.grub_themes = get_grub_themes()
+        self.current_sddm = get_current_sddm()
+        self.current_grub = get_current_grub()
+        self.visible_themes = []
+        self.cards = []
+        self.search_query = ""
+
+        vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        vbox.set_margin_top(10)
+        vbox.set_margin_bottom(10)
+        vbox.set_margin_start(12)
+        vbox.set_margin_end(12)
+        self.set_content(vbox)
+
+        header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        vbox.append(header)
+
+        self.status_label = Gtk.Label()
+        self.status_label.add_css_class("current-label")
+        self.status_label.set_halign(Gtk.Align.START)
+        self.status_label.set_hexpand(True)
+        header.append(self.status_label)
+
+        self.mode_btns = {}
+        for label, key in [("SDDM", "sddm"), ("GRUB", "grub")]:
+            btn = Gtk.ToggleButton(label=label)
+            btn.add_css_class("mode-chip")
+            btn.set_active(key == self.mode)
+            btn.connect("toggled", self.on_mode_toggled, key)
+            header.append(btn)
+            self.mode_btns[key] = btn
+
+        self.search = Gtk.SearchEntry()
+        self.search.set_placeholder_text("Buscar tema...")
+        self.search.set_hexpand(True)
+        self.search.connect("search-changed", self.on_search)
+        self.search.connect("activate", lambda e: self.select_current())
+        vbox.append(self.search)
+
+        self.carousel = Adw.Carousel()
+        self.carousel.set_spacing(4)
+        self.carousel.set_allow_scroll_wheel(True)
+        self.carousel.set_vexpand(True)
+        self.carousel.connect("notify::position", self.on_position_changed)
+        vbox.append(self.carousel)
+
+        self.dots = Adw.CarouselIndicatorDots()
+        self.dots.set_carousel(self.carousel)
+        vbox.append(self.dots)
+
+        self.load_mode()
+
+        key_ctrl = Gtk.EventControllerKey()
+        key_ctrl.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        key_ctrl.connect("key-pressed", self.on_key)
+        self.add_controller(key_ctrl)
+
+    def load_mode(self):
+        themes = self.sddm_themes if self.mode == "sddm" else self.grub_themes
+        current = self.current_sddm if self.mode == "sddm" else self.current_grub
+        q = self.search_query
+        self.visible_themes = [(n, img, vid) for n, img, vid in themes if not q or q in n.lower()]
+        self.status_label.set_text(f"▶  {current}" if current else "Sin tema activo")
+        self.build_carousel()
+
+    def on_mode_toggled(self, btn, key):
+        if not btn.get_active():
+            return
+        for k, b in self.mode_btns.items():
+            if k != key:
+                b.set_active(False)
+        self.mode = key
+        self.search.set_text("")
+        self.search_query = ""
+        self.load_mode()
+
+    def on_search(self, entry):
+        self.search_query = entry.get_text().lower()
+        self.load_mode()
+
+    def build_carousel(self):
+        for outer, media, lbl in self.cards:
+            self.carousel.remove(outer)
+        self.cards.clear()
+
+        current = self.current_sddm if self.mode == "sddm" else self.current_grub
+        self.dots.set_visible(len(self.visible_themes) <= 25)
+
+        for name, image, video in self.visible_themes:
+            outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+            outer.set_halign(Gtk.Align.CENTER)
+            outer.set_valign(Gtk.Align.CENTER)
+            outer.add_css_class("theme-outer")
+
+            overlay = Gtk.Overlay()
+
+            media = Gtk.Picture()
+            media.set_content_fit(Gtk.ContentFit.COVER)
+            media.set_can_shrink(True)
+
+            media.set_size_request(IMG_W, IMG_H)
+            media.set_overflow(Gtk.Overflow.HIDDEN)
+            media.add_css_class("theme-card")
+            overlay.set_child(media)
+
+            if not image and not video:
+                ph = Gtk.Label(label=name)
+                ph.set_halign(Gtk.Align.CENTER)
+                ph.set_valign(Gtk.Align.CENTER)
+                ph.add_css_class("theme-label")
+                overlay.add_overlay(ph)
+
+            if name == current:
+                badge = Gtk.Label(label="✓ Activo")
+                badge.add_css_class("active-badge")
+                badge.set_halign(Gtk.Align.START)
+                badge.set_valign(Gtk.Align.END)
+                badge.set_margin_start(6)
+                badge.set_margin_bottom(6)
+                overlay.add_overlay(badge)
+
+            outer.append(overlay)
+            self.carousel.append(outer)
+            self.cards.append((outer, media, None))
+
+        self.update_highlights()
+        GLib.idle_add(self._scroll_to_current)
+        GLib.idle_add(self._lazy_load, 0)
+
+    def _scroll_to_current(self):
+        current = self.current_sddm if self.mode == "sddm" else self.current_grub
+        if not current:
+            return False
+        for i, (name, *_) in enumerate(self.visible_themes):
+            if name == current:
+                page = self.carousel.get_nth_page(i)
+                if page:
+                    self.carousel.scroll_to(page, False)
+                break
+        return False
+
+    def _lazy_load(self, idx):
+        BATCH = 8
+        center = self.current_center()
+        for i in range(idx, min(idx + BATCH, len(self.cards))):
+            outer, media, lbl = self.cards[i]
+            _, image, video = self.visible_themes[i]
+            if video:
+                mf = Gtk.MediaFile.new_for_filename(video)
+                mf.set_muted(True)
+                mf.set_loop(True)
+                media.set_paintable(mf)
+                if i == center:
+                    mf.play()
+            elif image:
+                media.set_filename(image)
+        nxt = idx + BATCH
+        if nxt < len(self.cards):
+            GLib.idle_add(self._lazy_load, nxt)
+        return False
+
+    def current_center(self):
+        return round(self.carousel.get_position())
+
+    def update_highlights(self):
+        pos = self.carousel.get_position()
+        for i, (outer, media, _) in enumerate(self.cards):
+            dist = abs(i - pos)
+            outer.remove_css_class("center")
+            outer.remove_css_class("near")
+            active = dist < 0.6
+            if active:
+                outer.add_css_class("center")
+                media.add_css_class("active")
+            elif dist < 1.6:
+                outer.add_css_class("near")
+                media.remove_css_class("active")
+            else:
+                media.remove_css_class("active")
+            _, image, video = self.visible_themes[i]
+            if video:
+                mf = media.get_paintable()
+                if mf and isinstance(mf, Gtk.MediaFile):
+                    if active:
+                        mf.play()
+                    else:
+                        mf.pause()
+
+    def on_position_changed(self, *_):
+        self.update_highlights()
+
+    def move(self, delta):
+        n = len(self.visible_themes)
+        if n == 0:
+            return
+        idx = max(0, min(self.current_center() + delta, n - 1))
+        page = self.carousel.get_nth_page(idx)
+        if page:
+            self.carousel.scroll_to(page, True)
+
+    def select_current(self):
+        idx = self.current_center()
+        if 0 <= idx < len(self.visible_themes):
+            name, *_ = self.visible_themes[idx]
+            mode = self.mode
+            label = "SDDM" if mode == "sddm" else "GRUB (regenerando config...)"
+            self.status_label.set_text(f"⏳ Aplicando {name} — {label}")
+            self.set_sensitive(False)
+
+            def worker():
+                if mode == "sddm":
+                    subprocess.run(["sudo", "/usr/local/bin/sddm-theme-apply", name])
+                else:
+                    subprocess.run(["sudo", "/usr/local/bin/grub-theme-apply", name])
+                GLib.idle_add(self._on_applied, mode, name)
+
+            threading.Thread(target=worker, daemon=True).start()
+
+    def _on_applied(self, mode, name):
+        if mode == "sddm":
+            self.current_sddm = name
+        else:
+            self.current_grub = name
+        self.set_sensitive(True)
+        self.load_mode()
+        GLib.timeout_add(300, self.close)
+        return False
+
+    def on_key(self, ctrl, keyval, keycode, state):
+        if self.search.has_focus():
+            return False
+        if keyval in (Gdk.KEY_Left, Gdk.KEY_h):
+            self.move(-1); return True
+        if keyval in (Gdk.KEY_Right, Gdk.KEY_l):
+            self.move(1); return True
+        if keyval == Gdk.KEY_Return:
+            self.select_current(); return True
+        if keyval == Gdk.KEY_Escape:
+            self.close(); return True
+        return False
+
+
+class App(Adw.Application):
+    def __init__(self):
+        super().__init__(application_id="com.theme.picker")
+
+    def do_activate(self):
+        win = ThemePicker(self)
+        win.present()
+
+
+App().run()
