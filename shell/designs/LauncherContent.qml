@@ -21,7 +21,11 @@ Item {
     function launch(): void {
         const app = results[sel];
         if (app) {
-            app.execute();
+            // Con uwsm, la app va en su propia unidad de la sesión (se cierra al salir); ver scripts/app.sh
+            if (Quickshell.env("UWSM_FINALIZE_VARNAMES") && app.id)
+                Quickshell.execDetached([Quickshell.shellDir + "/../scripts/app.sh", app.id + ".desktop"]);
+            else
+                app.execute();
             Overlay.close();
         }
     }

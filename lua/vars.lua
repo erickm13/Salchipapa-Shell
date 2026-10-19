@@ -27,6 +27,11 @@ end)
 repo = repo or ((os.getenv("HOME") or "") .. "/.config/hypr")
 local scripts = repo .. "/scripts"
 
+-- Lanzar apps dentro de la sesión gráfica (uwsm app; ver scripts/app.sh)
+local function app(cmd)
+	return hl.dsp.exec_cmd(scripts .. "/app.sh " .. cmd)
+end
+
 return {
 	-- Programas
 	mod = "SUPER",
@@ -36,6 +41,7 @@ return {
 	fileManager = "kitty -e yazi",
 	-- Scripts
 	repo = repo,
+	app = app,
 	scripts = scripts,
 	screenshot = scripts .. "/screenshot.sh",
 	scratch = scripts .. "/scratch.sh",

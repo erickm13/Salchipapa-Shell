@@ -69,6 +69,8 @@ Desde una TTY libre (`Ctrl+Alt+F3`): `Hyprland -c <repo>/hyprland.lua`. `Super +
 | `scripts/boot-themes.sh` | Temas de SDDM y GRUB (Ajustes > *Login & Boot*) |
 | `scripts/animated-wallpaper.sh` | Fondos animados de Wallpaper Engine (pestaña *Animados* de `Super+W`) |
 | `grub/themes/` | Temas de GRUB (el activo: `minegrub-world-selection`) → `/boot/grub/themes` |
+| `scripts/app.sh` | Lanza apps dentro de la sesión (`uwsm app`): se cierran al salir |
+| `systemd/salchipapa-session-cleanup.service` | Al salir de la sesión cierra las apps de Chromium/Electron (se escapan de la sesión) |
 | `scripts/monitor-autodetect` | Perfil de monitores al conectar/desconectar (`~/.config/salchipapa-shell/display-profiles.json`) |
 | `shell/services/LockScreen.qml` | Pantalla de bloqueo segura vía sesión Wayland y autenticación PAM |
 | `shell/` | La shell de Quickshell (isla, launcher, temas, picker) |

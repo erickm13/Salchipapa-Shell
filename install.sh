@@ -271,6 +271,14 @@ install_bin() {
     done
 }
 
+# Al cerrar sesión, cerrar también las apps de Chromium/Electron (se salen solas de la sesión)
+install_session_cleanup() {
+    install -Dm644 "$REPO/systemd/salchipapa-session-cleanup.service" \
+        "$HOME/.config/systemd/user/salchipapa-session-cleanup.service"
+    systemctl --user daemon-reload
+    systemctl --user enable salchipapa-session-cleanup.service
+}
+
 set_gsettings() {
     local s=org.gnome.desktop.interface
     dbus-run-session -- sh -ec "
@@ -428,6 +436,7 @@ step "Fuentes (Google Sans Flex, Material Symbols)" install_fonts
 step "Fondos de pantalla y avatar" install_wallpapers
 step "Configs: Hyprland, uwsm, shell, monitores, GTK, Qt, btop, cursor" install_configs
 step "Scripts de bin/ en ~/.local/bin" install_bin
+step "Cerrar las apps de Chromium al salir de la sesión (systemd)" install_session_cleanup
 step "Tema GTK, iconos y cursor (gsettings)" set_gsettings
 
 section "Sistema"

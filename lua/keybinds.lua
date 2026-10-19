@@ -30,14 +30,14 @@ local function bindWorkspaceGroup(key, index, action)
 end
 
 -- Apps y shell
-hl.bind(mod .. " + Return", hl.dsp.exec_cmd(v.terminal))
+hl.bind(mod .. " + Return", v.app(v.terminal))
 hl.bind(mod .. " + Space", hl.dsp.global("salchipapa:launcher"))
 hl.bind(mod .. " + T", hl.dsp.global("salchipapa:themes"))
 hl.bind(mod .. " + N", hl.dsp.global("salchipapa:control")) -- centro de control (en la isla)
 hl.bind(mod .. " + ALT + P", hl.dsp.global("salchipapa:power")) -- menú de energía (en la isla)
 hl.bind(mod .. " + I", hl.dsp.global("salchipapa:settings")) -- panel de ajustes
-hl.bind(mod .. " + B", hl.dsp.exec_cmd(v.browser))
-hl.bind(mod .. " + E", hl.dsp.exec_cmd(v.fileManager))
+hl.bind(mod .. " + B", v.app(v.browser))
+hl.bind(mod .. " + E", v.app(v.fileManager))
 hl.bind(mod .. " + Q", hl.dsp.window.close())
 hl.bind(mod .. " + SHIFT + Q", hl.dsp.exit())
 
@@ -142,7 +142,7 @@ hl.bind(mod .. " + D", hl.dsp.exec_cmd(v.scratch .. " comms 'vesktop|discord' ve
 hl.bind("CTRL + SHIFT + Escape", hl.dsp.exec_cmd(v.scratch .. " sysmon btop 'foot --class btop -e btop'")) -- monitor (btop)
 
 -- Apps y utilidades
-hl.bind(mod .. " + C", hl.dsp.exec_cmd("code")) -- editor (VS Code)
+hl.bind(mod .. " + C", v.app("code")) -- editor (VS Code)
 hl.bind(mod .. " + SHIFT + C", hl.dsp.exec_cmd("hyprpicker -a")) -- selector de color
 hl.bind(mod .. " + BackSpace", hl.dsp.exec_cmd(v.scripts .. "/lock-screen.sh")) -- bloquear
 hl.bind(mod .. " + W", hl.dsp.global("salchipapa:wallpaper")) -- selector de fondos (en la isla)
@@ -189,17 +189,17 @@ hl.bind("CTRL + " .. mod .. " + EQUAL", hl.dsp.global("salchipapa:mediaNext"))
 hl.bind("CTRL + " .. mod .. " + MINUS", hl.dsp.global("salchipapa:mediaPrev"))
 
 -- Atajos traídos de caelestia
-hl.bind(mod .. " + SHIFT + Return", hl.dsp.exec_cmd(v.terminal .. " -e herdr")) -- terminal con herdr
-hl.bind(mod .. " + ALT + E", hl.dsp.exec_cmd("nemo"))
-hl.bind("CTRL + ALT + Escape", hl.dsp.exec_cmd("qps")) -- procesos
-hl.bind("CTRL + ALT + V", hl.dsp.exec_cmd("pavucontrol"))
+hl.bind(mod .. " + SHIFT + Return", v.app(v.terminal .. " -e herdr")) -- terminal con herdr
+hl.bind(mod .. " + ALT + E", v.app("nemo"))
+hl.bind("CTRL + ALT + Escape", v.app("qps")) -- procesos
+hl.bind("CTRL + ALT + V", v.app("pavucontrol"))
 hl.bind(mod .. " + SHIFT + M", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"))
 hl.bind("CTRL + ALT + C", hl.dsp.global("salchipapa:clearNotifs")) -- borrar notificaciones
 hl.bind("CTRL + ALT + Delete", hl.dsp.global("salchipapa:power")) -- menú de energía (como Super+Alt+P)
 hl.bind(mod .. " + ALT + F", hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" })) -- maximizar (con bordes)
 hl.bind(mod .. " + SHIFT + P", hl.dsp.window.pin({ action = "toggle" })) -- fijar en todos los workspaces (flotantes)
 hl.bind(mod .. " + ALT + SHIFT + K", hl.dsp.exec_cmd("pkill -x showmethekey-gtk || showmethekey-gtk -k -A")) -- mostrar teclas (Super+Alt+K ya redimensiona)
-hl.bind(mod .. " + ALT + I", hl.dsp.exec_cmd(v.terminal .. " --working-directory=$HOME -e fish -i -c opencode")) -- opencode
+hl.bind(mod .. " + ALT + I", v.app(v.terminal .. " --working-directory=$HOME -e fish -i -c opencode")) -- opencode
 -- Pegado alternativo: escribe lo último copiado (para campos que no aceptan pegar)
 hl.bind("CTRL + SHIFT + ALT + V", hl.dsp.exec_cmd("sleep 0.5; wtype -- \"$(cliphist list | head -1 | cliphist decode)\""))
 

@@ -1,0 +1,17 @@
+# Las apps de Chromium/Electron (Spotify, Vesktop, VS Code…) se mueven solas a su propio grupo
+# (app-org.chromium.Chromium-<pid>.scope), fuera de la sesión gráfica, y sobreviven al cerrar sesión
+# sin ventana. Este servicio va ligado a la sesión: al terminar, los para.
+# Lo instala y activa install.sh en ~/.config/systemd/user/.
+[Unit]
+Description=Salchipapa: cierra las apps de Chromium/Electron al salir de la sesión gráfica
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/true
+ExecStop=/usr/bin/systemctl --user --no-block stop app-org.chromium.Chromium-*.scope
+
+[Install]
+WantedBy=graphical-session.target

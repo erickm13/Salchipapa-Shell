@@ -16,7 +16,8 @@ count=$(hyprctl clients -j | jq --arg c "$class" '[.[] | select((.class // "") |
 
 if [ "${count:-0}" -eq 0 ]; then
     # Lanzar la app (la windowrule la envía a special:$name)
-    setsid -f sh -c "$*" >/dev/null 2>&1 || true
+    # Dentro de la sesión (app.sh -> uwsm app). $* sin comillas: el comando llega en un solo argumento
+    "$(dirname "$(readlink -f "$0")")/app.sh" $* >/dev/null 2>&1 || true
 fi
 
 # Mostrar/ocultar el workspace especial (sintaxis Lua)
