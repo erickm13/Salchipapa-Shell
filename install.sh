@@ -196,7 +196,8 @@ mark_explicit() {
     for p in "${PKGS[@]}" "${AUR_PKGS[@]}"; do
         # el nombre exacto o su variante -git/-bin (quickshell-git cubre quickshell)
         for q in "$p" "${p%-bin}" "$p-git" "$p-bin"; do
-            if pacman -Qq "$q" >/dev/null 2>&1; then
+            # pacman -Qq devuelve el nombre real del que lo provee (quickshell -> quickshell-git)
+            if q=$(pacman -Qq "$q" 2>/dev/null); then
                 names+=("$q")
                 break
             fi
