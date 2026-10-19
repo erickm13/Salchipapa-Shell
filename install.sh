@@ -182,6 +182,20 @@ install_pacman() {
     sudo pacman -Syu --noconfirm ${missing[@]+"${missing[@]}"}
 }
 
+# Arch trae `debug` en las OPTIONS de makepkg: cada paquete de AUR genera e instala además su
+# -debug (llegaron a ocupar 2 GB). Se desactiva solo para el usuario, sin tocar /etc/makepkg.conf.
+disable_makepkg_debug() {
+    local f="$HOME/.config/pacman/makepkg.conf" opts
+    opts=$(grep -E '^OPTIONS=' /etc/makepkg.conf | tail -1 | sed -E 's/([( ])debug([ )])/\1!debug\2/')
+    [ -n "$opts" ] || return 0
+    mkdir -p "$(dirname "$f")"
+    if grep -q '^OPTIONS=' "$f" 2>/dev/null; then
+        sed -i "s|^OPTIONS=.*|$opts|" "$f"
+    else
+        printf '# Sin paquetes -debug al compilar de AUR (Salchipapa-Shell install.sh)\n%s\n' "$opts" >>"$f"
+    fi
+}
+
 install_aur_helper() {
     if command -v paru >/dev/null || command -v yay >/dev/null; then return 0; fi
     # sin `local`: el trap EXIT del paso (subshell) se ejecuta cuando la función ya terminó
@@ -425,6 +439,7 @@ step "Paquetes oficiales (${#PKGS[@]})" install_pacman
 if [[ " ${GPUS[*]} " == *" nvidia "* ]]; then
     step "NVIDIA: módulos en el arranque (mkinitcpio)" setup_nvidia_initramfs
 fi
+step "AUR sin paquetes -debug (makepkg del usuario)" disable_makepkg_debug
 step "Ayudante de AUR" install_aur_helper
 for p in "${AUR_PKGS[@]}"; do
     step "AUR: $p" aur_install "$p"
