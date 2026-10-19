@@ -71,6 +71,11 @@ FloatingWindow {
             desc: "Monitores: posición, resolución, frecuencia, orientación y perfiles automáticos."
         },
         {
+            name: "Login & Boot",
+            icon: "login",
+            desc: "Temas de la pantalla de login (SDDM) y del arranque (GRUB)."
+        },
+        {
             name: "System",
             icon: "settings",
             desc: "Espacios de trabajo e información de la shell."
@@ -617,8 +622,13 @@ FloatingWindow {
                         width: parent.width
                         height: visible ? implicitHeight : 0
                     }
-                    SystemSettings {
+                    BootThemesSettings {
                         visible: win.category === 10
+                        width: parent.width
+                        height: visible ? implicitHeight : 0
+                    }
+                    SystemSettings {
+                        visible: win.category === 11
                         width: parent.width
                         height: visible ? implicitHeight : 0
                     }

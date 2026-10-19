@@ -320,6 +320,20 @@ install_sddm_theme() {
     printf '[Theme]\nCurrent=%s\n' "$SDDM_THEME" | sudo tee /etc/sddm.conf.d/theme.conf >/dev/null
 }
 
+# Ajustes > Login & Boot: los helpers que cambian el tema de SDDM/GRUB van a /usr/local/bin
+# (root) con una regla sudoers acotada a ellos, validada con visudo antes de instalarla.
+install_theme_helpers() {
+    local f rule=/etc/sudoers.d/salchipapa-boot-themes tmp
+    for f in sddm-theme-apply grub-theme-apply; do
+        sudo install -m755 -o root -g root "$REPO/bin/$f" "/usr/local/bin/$f"
+    done
+    tmp="$(mktemp)"
+    printf '%s ALL=(root) NOPASSWD: /usr/local/bin/sddm-theme-apply, /usr/local/bin/grub-theme-apply\n' "$USER" >"$tmp"
+    sudo visudo -cf "$tmp"
+    sudo install -m440 -o root -g root "$tmp" "$rule"
+    rm -f "$tmp"
+}
+
 # GRUB: temas de grub/themes/, el activo y los otros sistemas (Windows…) en el menú.
 # Solo si el equipo arranca con GRUB (con systemd-boot se omite).
 install_grub_theme() {
@@ -418,6 +432,7 @@ if [ "$IS_ASUS" -eq 1 ]; then
 fi
 step "Tema de SDDM ($SDDM_THEME)" install_sddm_theme
 step "Tema de GRUB ($GRUB_THEME_NAME) y otros sistemas en el menú" install_grub_theme
+step "Cambiar temas de SDDM/GRUB desde Ajustes (helpers + sudoers)" install_theme_helpers
 step "Sesión por defecto en SDDM: Hyprland (uwsm)" set_sddm_session
 step "Servicios: NetworkManager, bluetooth, power-profiles, sddm" enable_services
 
