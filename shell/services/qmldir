@@ -11,3 +11,4 @@ singleton LockScreen LockScreen.qml
 singleton PolicyAuth PolicyAuth.qml
 singleton WindowBlur WindowBlur.qml
 singleton PowerProfiles PowerProfiles.qml
+singleton Idle Idle.qml

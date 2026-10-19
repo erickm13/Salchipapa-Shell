@@ -99,6 +99,10 @@ Singleton {
     readonly property bool lockShowMusic: settings.lockShowMusic
     readonly property int lockBackgroundBlur: settings.lockBackgroundBlur
     readonly property int lockBackgroundDim: settings.lockBackgroundDim
+    readonly property bool idleLockEnabled: settings.idleLockEnabled
+    readonly property int idleLockMinutes: settings.idleLockMinutes
+    readonly property bool idleSuspendEnabled: settings.idleSuspendEnabled
+    readonly property int idleSuspendMinutes: settings.idleSuspendMinutes
     // Hyprland window blur
     readonly property bool windowBlurEnabled: settings.windowBlurEnabled
     readonly property int windowBlurSize: settings.windowBlurSize
@@ -210,6 +214,10 @@ Singleton {
             property bool lockShowMusic: true
             property int lockBackgroundBlur: 100
             property int lockBackgroundDim: 40
+            property bool idleLockEnabled: true
+            property int idleLockMinutes: 5
+            property bool idleSuspendEnabled: true
+            property int idleSuspendMinutes: 15
 
             // Hyprland window blur
             property bool windowBlurEnabled: true

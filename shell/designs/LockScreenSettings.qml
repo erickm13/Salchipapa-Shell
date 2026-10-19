@@ -35,9 +35,29 @@ Item {
             }
         }
 
+        SettingsGroup {
+            width: parent.width
+            ToggleRow { label: "Lock when idle"; checked: Config.idleLockEnabled; onToggled: Config.opt.idleLockEnabled = !Config.idleLockEnabled }
+            SliderRow {
+                visible: Config.idleLockEnabled
+                label: "Lock after"
+                value: Config.idleLockMinutes
+                from: 1; to: 60; unit: " min"
+                onMoved: v => Config.opt.idleLockMinutes = v
+            }
+            ToggleRow { label: "Suspend when idle"; checked: Config.idleSuspendEnabled; onToggled: Config.opt.idleSuspendEnabled = !Config.idleSuspendEnabled }
+            SliderRow {
+                visible: Config.idleSuspendEnabled
+                label: "Suspend after"
+                value: Config.idleSuspendMinutes
+                from: 5; to: 120; unit: " min"
+                onMoved: v => Config.opt.idleSuspendMinutes = v
+            }
+        }
+
         Text {
             width: parent.width
-            text: "Authentication is handled by PAM. Power actions remain available on the lock screen."
+            text: "Authentication is handled by PAM. Power actions remain available on the lock screen. Idle timers pause while an app inhibits idle (video, fullscreen)."
             color: Theme.tertiaryText
             wrapMode: Text.Wrap
             font.family: Theme.bodyFontFamily

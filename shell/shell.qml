@@ -96,6 +96,7 @@ ShellRoot {
     Component.onCompleted: {
         Overlay.mode;
         LockScreen.locked;
+        Idle.objectName; // bloqueo/suspensión automáticos
         LockScreen.mediaService = Media;
         WindowBlur.apply();
         WindowShadowSync.sync();
