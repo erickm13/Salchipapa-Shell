@@ -1,7 +1,8 @@
 pragma ComponentBehavior: Bound
-// Editor visual del centro de control para incrustar en la sección de Settings.
-// Persistencia compartida: Config.opt.controlCenterSlots (int) y
-// Config.opt.controlCenterLayout (string JSON con [{"id":"sound","size":1}]).
+// Editor del centro de control (Ajustes > Control Center). Vista previa a escala con la misma
+// estructura y medidas que ControlContent.qml: interruptores en 2 columnas + botones redondos,
+// Power mode, cards y notificaciones abajo. Clic en un control -> moverlo (entre los de su tipo),
+// cambiar su tamaño o quitarlo. Se guarda en Config.opt.controlCenterLayout ([{"id","size"}]).
 import QtQuick
 import "../common"
 
@@ -11,14 +12,14 @@ Item {
     implicitHeight: editorColumn.implicitHeight
 
     readonly property var controlCatalog: [
-        { id: "wifi", label: "Wi-Fi", icon: "wifi" },
-        { id: "bluetooth", label: "Bluetooth", icon: "bluetooth" },
-        { id: "focus", label: "Focus", icon: "do_not_disturb_on" },
-        { id: "gameMode", label: "Game Mode", icon: "sports_esports" },
-        { id: "sound", label: "Sound", icon: "volume_up" },
-        { id: "display", label: "Display", icon: "brightness_6" },
-        { id: "record", label: "Screen recording", icon: "screen_record" },
-        { id: "notifications", label: "Notifications", icon: "notifications" }
+        { id: "wifi", label: "Wi-Fi", icon: "wifi", kind: "toggle" },
+        { id: "focus", label: "Focus", icon: "do_not_disturb_on", kind: "toggle" },
+        { id: "bluetooth", label: "Bluetooth", icon: "bluetooth", kind: "toggle" },
+        { id: "gameMode", label: "Game Mode", icon: "sports_esports", kind: "toggle" },
+        { id: "sound", label: "Sound", icon: "volume_up", kind: "card" },
+        { id: "display", label: "Display", icon: "brightness_6", kind: "card" },
+        { id: "record", label: "Screen recording", icon: "screen_record", kind: "card" },
+        { id: "notifications", label: "Notifications", icon: "notifications", kind: "notifications" }
     ]
 
     readonly property var defaultLayout: [
@@ -28,7 +29,6 @@ Item {
         { id: "record", size: 1 }, { id: "notifications", size: 2 }
     ]
 
-    property int slotCount: Config.opt.controlCenterSlots || 8
     property var layout: {
         try {
             const parsed = JSON.parse(Config.opt.controlCenterLayout || "");
@@ -38,72 +38,72 @@ Item {
         }
     }
     property var undoStack: []
+    property string selected: ""
 
-    function saveSnapshot(): void {
+    // Escala de la vista previa respecto al panel real (440 px de ancho, 16 de margen)
+    readonly property real k: 0.8
+    readonly property real realW: 408
+
+    function info(id: string): var {
+        return controlCatalog.find(c => c.id === id) ?? { id: id, label: id, icon: "widgets", kind: "card" };
+    }
+    function kindOf(id: string): string { return info(id).kind; }
+    readonly property var toggles: layout.filter(x => kindOf(x.id) === "toggle")
+    readonly property var cards: layout.filter(x => kindOf(x.id) === "card")
+    readonly property var notif: layout.find(x => x.id === "notifications") ?? null
+    readonly property var selectedEntry: layout.find(x => x.id === selected) ?? null
+
+    function commit(next: var): void {
         const snapshots = undoStack.slice();
         snapshots.push(JSON.stringify(layout));
-        if (snapshots.length > 20)
+        if (snapshots.length > 30)
             snapshots.shift();
         undoStack = snapshots;
+        layout = next;
+        Config.opt.controlCenterLayout = JSON.stringify(next);
     }
 
-    function persist(): void {
-        Config.opt.controlCenterSlots = slotCount;
-        Config.opt.controlCenterLayout = JSON.stringify(layout);
-    }
-
-    function itemInfo(id: string): var {
-        for (let i = 0; i < controlCatalog.length; ++i)
-            if (controlCatalog[i].id === id)
-                return controlCatalog[i];
-        return { id: id, label: id, icon: "widgets" };
-    }
-
-    function moveItem(from: int, to: int): void {
-        if (to < 0 || to >= layout.length || from === to)
+    // Mover entre los del mismo tipo (en la lista hay interruptores y cards mezclados)
+    function move(id: string, dir: int): void {
+        const kind = kindOf(id);
+        const same = layout.map((x, i) => ({ x: x, i: i })).filter(o => kindOf(o.x.id) === kind);
+        const pos = same.findIndex(o => o.x.id === id);
+        const other = same[pos + dir];
+        if (!other)
             return;
-        saveSnapshot();
         const next = layout.slice();
-        const moved = next.splice(from, 1)[0];
-        next.splice(to, 0, moved);
-        layout = next;
-        persist();
+        const a = same[pos].i, b = other.i;
+        [next[a], next[b]] = [next[b], next[a]];
+        commit(next);
     }
-
-    function moveId(id: string, direction: int): void {
-        for (let i = 0; i < layout.length; ++i) {
-            if (layout[i].id === id) {
-                moveItem(i, i + direction);
-                return;
-            }
+    function canMove(id: string, dir: int): bool {
+        const same = layout.filter(x => kindOf(x.id) === kindOf(id));
+        const pos = same.findIndex(x => x.id === id);
+        return pos + dir >= 0 && pos + dir < same.length;
+    }
+    function resize(id: string): void {
+        commit(layout.map(x => x.id === id ? Object.assign({}, x, { size: x.size >= 2 ? 1 : 2 }) : x));
+    }
+    function remove(id: string): void {
+        commit(layout.filter(x => x.id !== id));
+        selected = "";
+    }
+    function add(id: string): void {
+        if (layout.some(x => x.id === id))
+            return;
+        // Cada uno con los de su tipo: interruptores y cards antes de las notificaciones
+        const next = layout.slice();
+        const kind = kindOf(id);
+        let at = next.length;
+        if (kind !== "notifications") {
+            const lastSame = next.map(x => kindOf(x.id)).lastIndexOf(kind);
+            at = lastSame >= 0 ? lastSame + 1 : next.findIndex(x => kindOf(x.id) === "notifications");
+            if (at < 0)
+                at = next.length;
         }
-    }
-
-    function removeItem(index: int): void {
-        saveSnapshot();
-        const next = layout.slice();
-        next.splice(index, 1);
-        layout = next;
-        persist();
-    }
-
-    function addItem(id: string): void {
-        for (let i = 0; i < layout.length; ++i)
-            if (layout[i].id === id)
-                return;
-        saveSnapshot();
-        layout = layout.concat([{ id: id, size: 1 }]);
-        persist();
-    }
-
-    function resizeItem(index: int): void {
-        saveSnapshot();
-        const next = layout.slice();
-        const entry = Object.assign({}, next[index]);
-        entry.size = entry.size >= 2 ? 1 : 2;
-        next[index] = entry;
-        layout = next;
-        persist();
+        next.splice(at, 0, { id: id, size: kind === "toggle" ? 1 : 2 });
+        commit(next);
+        selected = id;
     }
 
     Column {
@@ -111,245 +111,243 @@ Item {
         width: parent.width
         spacing: Theme.space(3)
 
-        // Toolbar
-        Row {
+        // ---- Barra: deshacer / restablecer ----
+        Item {
             width: parent.width
-            height: 34
-            spacing: 6
-
+            height: 28
             Row {
-                height: parent.height
-                spacing: 3
-                Repeater {
-                    model: [5, 6, 7, 8, 9]
-                    delegate: Rectangle {
-                        id: slotChip
-                        required property int modelData
-                        width: 27
-                        height: 24
-                        anchors.verticalCenter: parent.verticalCenter
-                        radius: 9
-                        color: root.slotCount === modelData ? Theme.green : Theme.panelCard
-                        Text {
-                            anchors.centerIn: parent
-                            text: slotChip.modelData
-                            color: root.slotCount === slotChip.modelData ? Theme.panelBg : Theme.text
-                            font.family: Theme.bodyFontFamily
-                            font.pixelSize: Theme.fontPx(10)
-                            font.bold: true
-                        }
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                root.saveSnapshot();
-                                root.slotCount = slotChip.modelData;
-                                root.persist();
-                            }
-                        }
-                    }
-                }
-            }
-
-            Item { width: 1; height: 1 }
-
-            Repeater {
-                model: ["Tidy", "Undo", "Reset"]
-                delegate: Rectangle {
-                    id: actionChip
-                    required property string modelData
-                    width: actionText.implicitWidth + 18
-                    height: 24
-                    anchors.verticalCenter: parent.verticalCenter
-                    radius: 9
-                    color: Theme.panelCard
-                    Text {
-                        id: actionText
-                        anchors.centerIn: parent
-                        text: actionChip.modelData
-                        color: Theme.text
-                        font.family: Theme.bodyFontFamily
-                        font.pixelSize: Theme.fontPx(10)
-                    }
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            if (actionChip.modelData === "Undo") {
-                                if (root.undoStack.length > 0) {
-                                    const stack = root.undoStack.slice();
-                                    root.layout = JSON.parse(stack.pop());
-                                    root.undoStack = stack;
-                                    root.persist();
-                                }
-                            } else {
-                                root.saveSnapshot();
-                                if (actionChip.modelData === "Reset") {
-                                    root.slotCount = 7;
-                                    root.layout = root.defaultLayout;
-                                } else {
-                                    const compact = root.layout.slice();
-                                    compact.sort((a, b) => (a.size || 1) - (b.size || 1));
-                                    root.layout = compact;
-                                }
-                                root.persist();
-                            }
-                        }
-                    }
-                }
-            }
-
-            Item { width: Math.max(0, parent.width - 480); height: 1 }
-            Text {
+                anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
-                text: "Drag to move · corner to resize · right-click for sizes"
+                spacing: 6
+                Chip {
+                    icon: "undo"
+                    label: "Undo"
+                    enabled: root.undoStack.length > 0
+                    onClicked: {
+                        const stack = root.undoStack.slice();
+                        root.layout = JSON.parse(stack.pop());
+                        root.undoStack = stack;
+                        Config.opt.controlCenterLayout = JSON.stringify(root.layout);
+                    }
+                }
+                Chip {
+                    icon: "restart_alt"
+                    label: "Reset"
+                    onClicked: {
+                        root.commit(root.defaultLayout);
+                        root.selected = "";
+                    }
+                }
+            }
+        }
+
+        // ---- Acciones del control seleccionado ----
+        Rectangle {
+            width: parent.width
+            height: 44
+            radius: Theme.radiusMedium
+            color: Theme.panelCard
+
+            Text {
+                visible: root.selectedEntry === null
+                anchors.centerIn: parent
+                text: "Select a control in the preview to move, resize or remove it"
                 color: Theme.secondaryText
                 font.family: Theme.bodyFontFamily
-                font.pixelSize: Theme.fontPx(9)
+                font.pixelSize: Theme.fontPx(11)
             }
-        }
-
-        // Preview: la disposición editable se serializa; el consumidor de ControlContent
-        // debe aplicar esos mismos IDs y tamaños para reflejarla en el panel real.
-        Item {
-            id: preview
-            width: parent.width
-            height: previewColumn.implicitHeight
-
-            Column {
-                id: previewColumn
-                anchors.horizontalCenter: parent.horizontalCenter
-                width: Math.min(parent.width, 360)
+            Row {
+                visible: root.selectedEntry !== null
+                anchors.left: parent.left
+                anchors.leftMargin: 12
+                anchors.verticalCenter: parent.verticalCenter
                 spacing: 8
-
-                Grid {
-                    width: parent.width
-                    columns: 3
-                    rowSpacing: 8
-                    columnSpacing: 8
-                    Repeater {
-                        model: root.layout.filter(x => ["wifi", "focus", "bluetooth", "gameMode", "lock", "nightLight"].includes(x.id)).slice(0, root.slotCount)
-                        delegate: Rectangle {
-                            id: quickPreviewItem
-                            required property var modelData
-                            width: (previewColumn.width - 16) / 3
-                            height: quickPreviewItem.modelData.size >= 2 ? 54 : 42
-                            radius: 18
-                            color: Theme.panelCard
-                            Text {
-                                anchors.centerIn: parent
-                                text: root.itemInfo(quickPreviewItem.modelData.id).icon
-                                color: Theme.secondaryText
-                                font.family: "Material Symbols Rounded"
-                                font.pixelSize: Theme.iconPx(18)
-                            }
-                        }
-                    }
+                Text {
+                    text: root.selectedEntry ? root.info(root.selected).icon : ""
+                    font.family: "Material Symbols Rounded"
+                    font.pixelSize: 18
+                    color: Theme.green
+                    anchors.verticalCenter: parent.verticalCenter
                 }
-
-                Repeater {
-                    model: root.layout.filter(x => ["sound", "display", "notifications", "nowPlaying"].includes(x.id))
-                    delegate: Rectangle {
-                        id: cardPreviewItem
-                        required property var modelData
-                        required property int index
-                        property real dragStartY: 0
-                        width: previewColumn.width
-                        height: cardPreviewItem.modelData.id === "notifications" ? (cardPreviewItem.modelData.size >= 2 ? 66 : 48) : (cardPreviewItem.modelData.size >= 2 ? 36 : 28)
-                        radius: 14
-                        color: Theme.panelCard
-                        border.width: 1
-                        border.color: Theme.green
-
-                        Text {
-                            anchors.left: parent.left
-                            anchors.leftMargin: 10
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: root.itemInfo(cardPreviewItem.modelData.id).label
-                            color: Theme.text
-                            font.family: Theme.bodyFontFamily
-                            font.pixelSize: Theme.fontPx(10)
-                        }
-                        Text {
-                            id: removeGlyph
-                            anchors.right: parent.right
-                            anchors.rightMargin: 8
-                            anchors.top: parent.top
-                            text: "remove"
-                            color: Theme.secondaryText
-                            font.family: "Material Symbols Rounded"
-                            font.pixelSize: Theme.iconPx(14)
-                            MouseArea {
-                                anchors.fill: parent
-                                anchors.margins: -5
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: root.removeItem(cardPreviewItem.index)
-                            }
-                        }
-                        MouseArea {
-                            anchors.fill: parent
-                            acceptedButtons: Qt.LeftButton | Qt.RightButton
-                            drag.target: cardPreviewItem
-                            onPressed: mouse => {
-                                cardPreviewItem.dragStartY = mouse.y;
-                            }
-                            onClicked: mouse => {
-                                if (mouse.button === Qt.RightButton)
-                                    root.resizeItem(root.layout.findIndex(x => x.id === cardPreviewItem.modelData.id));
-                            }
-                            onReleased: {
-                                if (Math.abs(cardPreviewItem.y) > 24)
-                                    root.moveId(cardPreviewItem.modelData.id, cardPreviewItem.y < 0 ? -1 : 1);
-                                cardPreviewItem.x = 0;
-                                cardPreviewItem.y = 0;
-                            }
-                        }
-                    }
+                Text {
+                    text: root.selectedEntry ? root.info(root.selected).label : ""
+                    color: Theme.text
+                    font.family: Theme.bodyFontFamily
+                    font.pixelSize: Theme.fontPx(12)
+                    font.bold: true
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+            }
+            Row {
+                visible: root.selectedEntry !== null
+                anchors.right: parent.right
+                anchors.rightMargin: 8
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 6
+                readonly property bool isToggle: root.selectedEntry !== null && root.kindOf(root.selected) === "toggle"
+                readonly property bool isNotif: root.selected === "notifications"
+                Chip {
+                    visible: !parent.isNotif
+                    icon: parent.isToggle ? "arrow_back" : "arrow_upward"
+                    label: parent.isToggle ? "Before" : "Up"
+                    enabled: root.selectedEntry !== null && root.canMove(root.selected, -1)
+                    onClicked: root.move(root.selected, -1)
+                }
+                Chip {
+                    visible: !parent.isNotif
+                    icon: parent.isToggle ? "arrow_forward" : "arrow_downward"
+                    label: parent.isToggle ? "After" : "Down"
+                    enabled: root.selectedEntry !== null && root.canMove(root.selected, 1)
+                    onClicked: root.move(root.selected, 1)
+                }
+                Chip {
+                    icon: "aspect_ratio"
+                    label: root.selectedEntry && root.selectedEntry.size >= 2 ? (parent.isNotif ? "Make short" : "Make compact") : (parent.isNotif ? "Show full history" : "Make large")
+                    onClicked: root.resize(root.selected)
+                }
+                Chip {
+                    icon: "delete"
+                    label: "Remove"
+                    danger: true
+                    onClicked: root.remove(root.selected)
                 }
             }
         }
 
+        // ---- Añadir ----
         Text {
-            text: "Add a control"
+            visible: addFlow.children.length > 1
+            text: "ADD A CONTROL"
             color: Theme.secondaryText
             font.family: Theme.bodyFontFamily
             font.pixelSize: Theme.fontPx(10)
         }
-
         Flow {
+            id: addFlow
             width: parent.width
             spacing: 6
             Repeater {
                 model: root.controlCatalog.filter(c => !root.layout.some(x => x.id === c.id))
-                delegate: Rectangle {
-                    id: addChip
+                delegate: Chip {
                     required property var modelData
-                    width: addText.implicitWidth + 24
-                    height: 26
-                    radius: 13
+                    icon: modelData.icon
+                    label: modelData.label
+                    onClicked: root.add(modelData.id)
+                }
+            }
+        }
+
+        // ---- Vista previa (misma geometría que el panel real, escalada) ----
+        Rectangle {
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: root.realW * root.k + 24
+            height: previewBody.height + 24
+            radius: 22
+            color: Theme.islandBg
+            border.width: 1
+            border.color: Theme.divider
+
+            Item {
+                id: previewBody
+                x: 12
+                y: 12
+                width: root.realW * root.k
+                height: notifBox.visible ? notifBox.y + notifBox.height : cardsCol.y + cardsCol.height
+
+                // Interruptores: 2 columnas (fila grande si alguno es grande)
+                Grid {
+                    id: toggleGrid
+                    width: parent.width - (56 + 10) * root.k
+                    columns: 2
+                    rowSpacing: 8 * root.k
+                    columnSpacing: 8 * root.k
+                    Repeater {
+                        model: root.toggles
+                        delegate: Block {
+                            required property var modelData
+                            required property int index
+                            readonly property var mate: root.toggles[index % 2 === 0 ? index + 1 : index - 1]
+                            entry: modelData
+                            width: (toggleGrid.width - toggleGrid.columnSpacing) / 2
+                            height: (modelData.size >= 2 || (mate && mate.size >= 2) ? 72 : 56) * root.k
+                            radius: height / 2
+                            showLabel: true
+                        }
+                    }
+                }
+                // Botones redondos fijos (bloquear, luz nocturna): no se editan
+                Column {
+                    anchors.right: parent.right
+                    spacing: 8 * root.k
+                    Repeater {
+                        model: ["lock", "dark_mode"]
+                        delegate: Rectangle {
+                            required property string modelData
+                            width: 56 * root.k
+                            height: width
+                            radius: width / 2
+                            color: Theme.panelCard
+                            opacity: 0.55
+                            Text {
+                                anchors.centerIn: parent
+                                text: parent.modelData
+                                font.family: "Material Symbols Rounded"
+                                font.pixelSize: 17
+                                color: Theme.secondaryText
+                            }
+                        }
+                    }
+                }
+
+                // Power mode (fijo)
+                Rectangle {
+                    id: powerBox
+                    y: Math.max(toggleGrid.height, 120 * root.k) + 12 * root.k
+                    width: parent.width
+                    height: 74 * root.k
+                    radius: 16 * root.k
                     color: Theme.panelCard
-                    Row {
-                        id: addText
+                    opacity: 0.55
+                    Text {
                         anchors.centerIn: parent
-                        spacing: 5
-                        Text {
-                            text: addChip.modelData.icon
-                            color: Theme.text
-                            font.family: "Material Symbols Rounded"
-                            font.pixelSize: Theme.iconPx(14)
-                        }
-                        Text {
-                            text: addChip.modelData.label
-                            color: Theme.text
-                            font.family: Theme.bodyFontFamily
-                            font.pixelSize: Theme.fontPx(10)
+                        text: "Power mode"
+                        color: Theme.secondaryText
+                        font.family: Theme.bodyFontFamily
+                        font.pixelSize: Theme.fontPx(10)
+                    }
+                }
+
+                // Cards en su orden
+                Column {
+                    id: cardsCol
+                    y: powerBox.y + powerBox.height + 10 * root.k
+                    width: parent.width
+                    spacing: 10 * root.k
+                    Repeater {
+                        model: root.cards
+                        delegate: Block {
+                            required property var modelData
+                            entry: modelData
+                            width: cardsCol.width
+                            height: (modelData.size >= 2 ? 82 : 60) * root.k
+                            radius: Theme.radiusLarge * root.k
+                            showLabel: true
+                            sizeHint: modelData.size >= 2 ? "Large" : "Compact"
                         }
                     }
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.addItem(addChip.modelData.id)
-                    }
+                }
+
+                // Notificaciones: siempre abajo
+                Block {
+                    id: notifBox
+                    visible: root.notif !== null
+                    entry: root.notif ?? ({ id: "notifications", size: 2 })
+                    y: cardsCol.y + cardsCol.height + (root.cards.length > 0 ? 2 : 12) * root.k
+                    width: parent.width
+                    height: (root.notif && root.notif.size >= 2 ? Math.min(Config.notificationHistoryHeight, 220) : Math.min(100, Config.notificationHistoryHeight)) * root.k
+                    radius: 18 * root.k
+                    showLabel: true
+                    sizeHint: root.notif && root.notif.size >= 2 ? "Full history" : "Short"
                 }
             }
         }
@@ -357,10 +355,105 @@ Item {
         Text {
             width: parent.width
             wrapMode: Text.Wrap
-            text: "Drag a control to move it, use the right mouse button to switch sizes, or remove it with the corner button. Changes are saved automatically."
+            text: "The preview has the same layout as the real control center. Switches can be compact or large, cards compact or large, and notifications short or with the full history. The lock and night light buttons and Power mode are always shown. Changes are saved automatically."
+            color: Theme.tertiaryText
+            font.family: Theme.bodyFontFamily
+            font.pixelSize: Theme.fontPx(10)
+        }
+    }
+
+    // Control editable de la vista previa: clic = seleccionar, clic derecho = cambiar tamaño
+    component Block: Rectangle {
+        id: block
+        property var entry: ({ id: "", size: 1 })
+        property bool showLabel: true
+        property string sizeHint: ""
+        readonly property bool isSelected: root.selected === entry.id
+        color: isSelected ? Theme.selectedFill : (blockMouse.containsMouse ? Theme.panelCardHi : Theme.panelCard)
+        border.width: isSelected ? 2 : 0
+        border.color: Theme.green
+        Row {
+            anchors.left: parent.left
+            anchors.leftMargin: 10
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 6
+            Text {
+                text: root.info(block.entry.id).icon
+                font.family: "Material Symbols Rounded"
+                font.pixelSize: 16
+                color: block.isSelected ? Theme.green : Theme.secondaryText
+                anchors.verticalCenter: parent.verticalCenter
+            }
+            Text {
+                visible: block.showLabel
+                text: root.info(block.entry.id).label
+                color: Theme.text
+                font.family: Theme.bodyFontFamily
+                font.pixelSize: Theme.fontPx(10)
+                anchors.verticalCenter: parent.verticalCenter
+            }
+        }
+        Text {
+            visible: block.sizeHint !== ""
+            anchors.right: parent.right
+            anchors.rightMargin: 10
+            anchors.verticalCenter: parent.verticalCenter
+            text: block.sizeHint
             color: Theme.tertiaryText
             font.family: Theme.bodyFontFamily
             font.pixelSize: Theme.fontPx(9)
+        }
+        MouseArea {
+            id: blockMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
+            cursorShape: Qt.PointingHandCursor
+            onClicked: mouse => {
+                if (mouse.button === Qt.RightButton)
+                    root.resize(block.entry.id);
+                root.selected = block.entry.id;
+            }
+        }
+    }
+
+    component Chip: Rectangle {
+        id: chip
+        property string icon: ""
+        property string label: ""
+        property bool danger: false
+        signal clicked
+        width: chipRow.implicitWidth + 18
+        height: 28
+        radius: 14
+        opacity: enabled ? 1 : 0.4
+        color: danger ? (chipMouse.containsMouse ? Theme.red : Theme.panelCardHi) : (chipMouse.containsMouse && enabled ? Theme.panelCardHi : Theme.panelCard)
+        Row {
+            id: chipRow
+            anchors.centerIn: parent
+            spacing: 5
+            Text {
+                text: chip.icon
+                font.family: "Material Symbols Rounded"
+                font.pixelSize: 15
+                color: chip.danger && chipMouse.containsMouse ? Theme.crust : (chip.danger ? Theme.red : Theme.text)
+                anchors.verticalCenter: parent.verticalCenter
+            }
+            Text {
+                text: chip.label
+                font.family: Theme.bodyFontFamily
+                font.pixelSize: Theme.fontPx(10)
+                color: chip.danger && chipMouse.containsMouse ? Theme.crust : Theme.text
+                anchors.verticalCenter: parent.verticalCenter
+            }
+        }
+        MouseArea {
+            id: chipMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            enabled: chip.enabled
+            cursorShape: Qt.PointingHandCursor
+            onClicked: chip.clicked()
         }
     }
 }

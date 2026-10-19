@@ -26,7 +26,26 @@ PanelWindow {
         left: true
         right: true
     }
-    implicitHeight: 620
+    // Alto de la ventana: 620 bastan casi siempre; si la isla mide más (centro de control con
+    // cards grandes + historial completo) crece, hasta el alto de la pantalla. Se ajusta UNA vez
+    // al alto final (no en cada fotograma de la animación: redimensionar la superficie parpadea):
+    // crece antes de que la isla se abra y encoge cuando termina de cerrarse.
+    readonly property real neededHeight: Math.min(win.screen?.height ?? 1080, Math.max(620, island.y + island.targetHeight + 60))
+    property real windowHeight: 620
+    implicitHeight: windowHeight
+    onNeededHeightChanged: {
+        if (neededHeight >= windowHeight) {
+            shrinkTimer.stop();
+            windowHeight = neededHeight;
+        } else {
+            shrinkTimer.restart();
+        }
+    }
+    Timer {
+        id: shrinkTimer
+        interval: Theme.movementDuration + 100
+        onTriggered: win.windowHeight = win.neededHeight
+    }
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.keyboardFocus: (Overlay.mode !== "" || island.showPolkit) ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
     // -10: Hyprland ya deja 10 px de gaps_out arriba (lua/general.lua)
@@ -119,7 +138,9 @@ PanelWindow {
 
         // Tamaños por modo
         width: mode === "power" ? 370 : mode === "polkit" ? 370 : mode === "control" ? 440 : mode === "display" ? 460 : mode === "sound" ? 420 : mode === "launcher" || mode === "clipboard" ? Config.launcherWidth : mode === "emoji" ? 600 : mode === "themes" ? 720 : mode === "wallpaper" ? 760 : mode === "calendar" ? 300 : mode === "expanded" ? 680 : mode === "notif" ? Config.notificationWidth : mode === "media" ? 370 : mode === "volume" || mode === "brightness" ? 300 : Math.max(Config.collapsedWidth, idleRow.implicitWidth + Config.innerPadding * 2)
-        height: mode === "power" ? (powerMenu.confirmAction === "" ? 84 : 176) : mode === "polkit" ? 250 : mode === "control" ? Math.max(470, 350 + Config.notificationHistoryHeight) + controlContent.recordExtraHeight : mode === "display" ? (142 + (Hyprland.monitors?.values?.length ?? 1) * 206) : mode === "sound" ? (213 + Math.min(Audio.sinks?.length ?? 1, 5) * 42 + Math.min(Audio.sources?.length ?? 1, 4) * 42 + Math.max(1, Math.min(Audio.apps?.length ?? 0, 4)) * 62) : mode === "launcher" ? (85 + Config.launcherRowsBeforeScrolling * Config.launcherRowHeight + (Config.launcherRowsBeforeScrolling - 1) * 2) : mode === "clipboard" ? 470 : mode === "emoji" ? 440 : mode === "themes" ? 210 : mode === "wallpaper" ? 250 : mode === "calendar" ? 250 : mode === "expanded" ? 142 : mode === "notif" ? 74 : mode === "media" ? 58 : mode === "volume" || mode === "brightness" ? 42 : Config.barHeight
+        // Alto final del modo (sin animar): la ventana se ajusta a él una sola vez
+        readonly property real targetHeight: mode === "power" ? (powerMenu.confirmAction === "" ? 84 : 176) : mode === "polkit" ? 250 : mode === "control" ? Math.min(controlContent.preferredHeight + 32, (win.screen?.height ?? 1080) - Config.topMargin - 60) : mode === "display" ? (142 + (Hyprland.monitors?.values?.length ?? 1) * 206) : mode === "sound" ? (213 + Math.min(Audio.sinks?.length ?? 1, 5) * 42 + Math.min(Audio.sources?.length ?? 1, 4) * 42 + Math.max(1, Math.min(Audio.apps?.length ?? 0, 4)) * 62) : mode === "launcher" ? (85 + Config.launcherRowsBeforeScrolling * Config.launcherRowHeight + (Config.launcherRowsBeforeScrolling - 1) * 2) : mode === "clipboard" ? 470 : mode === "emoji" ? 440 : mode === "themes" ? 210 : mode === "wallpaper" ? 250 : mode === "calendar" ? 250 : mode === "expanded" ? 142 : mode === "notif" ? 74 : mode === "media" ? 58 : mode === "volume" || mode === "brightness" ? 42 : Config.barHeight
+        height: targetHeight
 
         Behavior on width {
             NumberAnimation {
@@ -1141,6 +1162,7 @@ PanelWindow {
             PowerMenu {
                 id: powerMenu
                 anchors.fill: parent
+                active: island.mode === "power"
                 opacity: island.mode === "power" ? 1 : 0
                 visible: opacity > 0
                 Behavior on opacity {
