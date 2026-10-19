@@ -97,7 +97,7 @@ Singleton {
     readonly property color panelCardHi: Qt.lighter(Config.appearanceColorBurst ? col("surfaceContainerHigh", "#22211f") : "#22211f", 1 + Config.appearanceSurfaceLift / 100)
     readonly property color divider: alpha(panelCardHi, Config.appearanceDividerStrength)
     readonly property color secondaryText: alpha(subtext, Config.appearanceSecondaryText)
-    readonly property color tertiaryText: alpha(overlay0, Config.appearanceTertiaryText)
+    readonly property color tertiaryText: alpha(subtext, Config.appearanceTertiaryText) // grey0 puede ser casi negro (p. ej. #3a1a35)
     readonly property color hoverFill: alpha(green, Config.appearanceHoverFill)
     readonly property color selectedFill: alpha(green, Config.appearanceSelectedFill)
     readonly property color modalDim: alpha("#000000", Config.appearanceModalDim)
