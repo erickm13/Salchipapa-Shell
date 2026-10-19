@@ -288,10 +288,13 @@ install_bin() {
 
 # Al cerrar sesión, cerrar también las apps de Chromium/Electron (se salen solas de la sesión)
 install_session_cleanup() {
-    install -Dm644 "$REPO/systemd/salchipapa-session-cleanup.service" \
-        "$HOME/.config/systemd/user/salchipapa-session-cleanup.service"
-    systemctl --user daemon-reload
-    systemctl --user enable salchipapa-session-cleanup.service
+    local dir="$HOME/.config/systemd/user"
+    install -Dm644 "$REPO/systemd/salchipapa-session-cleanup.service" "$dir/salchipapa-session-cleanup.service"
+    # Activarlo = el enlace que crearía `systemctl --user enable`; así funciona aunque aún no haya
+    # systemd de usuario (instalación sin la sesión iniciada, contenedor)
+    mkdir -p "$dir/graphical-session.target.wants"
+    ln -sf ../salchipapa-session-cleanup.service "$dir/graphical-session.target.wants/salchipapa-session-cleanup.service"
+    systemctl --user daemon-reload 2>/dev/null || true
 }
 
 set_gsettings() {
@@ -330,7 +333,8 @@ install_asusd_config() {
     else
         echo "otra placa: se omiten curvas de ventilador y RGB"
     fi
-    sudo systemctl try-restart asusd.service
+    # No crítico: si asusd no está corriendo (o no hay systemd), lee los ajustes al arrancar
+    sudo systemctl try-restart asusd.service || echo "asusd no se reinició: tomará los ajustes al arrancar"
 }
 
 install_papirus_rule() {
