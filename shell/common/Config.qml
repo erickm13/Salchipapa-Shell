@@ -108,6 +108,7 @@ Singleton {
     // Hyprland window blur
     readonly property bool windowBlurEnabled: settings.windowBlurEnabled
     readonly property bool touchpadEnabled: settings.touchpadEnabled
+    readonly property bool recordSound: settings.recordSound
     readonly property int windowBlurSize: settings.windowBlurSize
     readonly property int windowBlurPasses: settings.windowBlurPasses
 
@@ -209,7 +210,7 @@ Singleton {
             property int osdLevelBarThickness: 6
 
             // Control Center
-            property int controlCenterSlots: 7
+            property int controlCenterSlots: 8
             property string controlCenterLayout: ""
 
             // Lock Screen
@@ -227,6 +228,7 @@ Singleton {
             // Hyprland window blur
             property bool windowBlurEnabled: true
             property bool touchpadEnabled: true
+            property bool recordSound: true // grabación de pantalla con sonido (card del centro de control)
             property int windowBlurSize: 5
             property int windowBlurPasses: 2
         }

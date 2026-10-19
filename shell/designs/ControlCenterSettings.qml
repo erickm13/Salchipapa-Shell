@@ -17,6 +17,7 @@ Item {
         { id: "gameMode", label: "Game Mode", icon: "sports_esports" },
         { id: "sound", label: "Sound", icon: "volume_up" },
         { id: "display", label: "Display", icon: "brightness_6" },
+        { id: "record", label: "Screen recording", icon: "screen_record" },
         { id: "notifications", label: "Notifications", icon: "notifications" }
     ]
 
@@ -24,10 +25,10 @@ Item {
         { id: "wifi", size: 1 }, { id: "focus", size: 1 },
         { id: "bluetooth", size: 1 }, { id: "gameMode", size: 1 },
         { id: "sound", size: 2 }, { id: "display", size: 2 },
-        { id: "notifications", size: 2 }
+        { id: "record", size: 1 }, { id: "notifications", size: 2 }
     ]
 
-    property int slotCount: Config.opt.controlCenterSlots || 7
+    property int slotCount: Config.opt.controlCenterSlots || 8
     property var layout: {
         try {
             const parsed = JSON.parse(Config.opt.controlCenterLayout || "");

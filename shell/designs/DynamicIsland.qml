@@ -119,7 +119,7 @@ PanelWindow {
 
         // Tamaños por modo
         width: mode === "power" ? 370 : mode === "polkit" ? 370 : mode === "control" ? 440 : mode === "display" ? 460 : mode === "sound" ? 420 : mode === "launcher" ? Config.launcherWidth : mode === "themes" ? 720 : mode === "wallpaper" ? 760 : mode === "calendar" ? 300 : mode === "expanded" ? 680 : mode === "notif" ? Config.notificationWidth : mode === "media" ? 370 : mode === "volume" || mode === "brightness" ? 300 : Math.max(Config.collapsedWidth, idleRow.implicitWidth + Config.innerPadding * 2)
-        height: mode === "power" ? (powerMenu.confirmAction === "" ? 84 : 176) : mode === "polkit" ? 250 : mode === "control" ? Math.max(470, 350 + Config.notificationHistoryHeight) : mode === "display" ? (142 + (Hyprland.monitors?.values?.length ?? 1) * 206) : mode === "sound" ? (213 + Math.min(Audio.sinks?.length ?? 1, 5) * 42 + Math.min(Audio.sources?.length ?? 1, 4) * 42 + Math.max(1, Math.min(Audio.apps?.length ?? 0, 4)) * 62) : mode === "launcher" ? (85 + Config.launcherRowsBeforeScrolling * Config.launcherRowHeight + (Config.launcherRowsBeforeScrolling - 1) * 2) : mode === "themes" ? 210 : mode === "wallpaper" ? 250 : mode === "calendar" ? 250 : mode === "expanded" ? 142 : mode === "notif" ? 74 : mode === "media" ? 58 : mode === "volume" || mode === "brightness" ? 42 : Config.barHeight
+        height: mode === "power" ? (powerMenu.confirmAction === "" ? 84 : 176) : mode === "polkit" ? 250 : mode === "control" ? Math.max(470, 350 + Config.notificationHistoryHeight) + controlContent.recordExtraHeight : mode === "display" ? (142 + (Hyprland.monitors?.values?.length ?? 1) * 206) : mode === "sound" ? (213 + Math.min(Audio.sinks?.length ?? 1, 5) * 42 + Math.min(Audio.sources?.length ?? 1, 4) * 42 + Math.max(1, Math.min(Audio.apps?.length ?? 0, 4)) * 62) : mode === "launcher" ? (85 + Config.launcherRowsBeforeScrolling * Config.launcherRowHeight + (Config.launcherRowsBeforeScrolling - 1) * 2) : mode === "themes" ? 210 : mode === "wallpaper" ? 250 : mode === "calendar" ? 250 : mode === "expanded" ? 142 : mode === "notif" ? 74 : mode === "media" ? 58 : mode === "volume" || mode === "brightness" ? 42 : Config.barHeight
 
         Behavior on width {
             NumberAnimation {
@@ -314,6 +314,36 @@ PanelWindow {
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 4
                         visible: !Quick.gameMode
+
+                        // Grabando (scripts/record.sh): punto rojo que late + tiempo
+                        Row {
+                            visible: Recorder.recording
+                            spacing: 4
+                            anchors.verticalCenter: parent.verticalCenter
+                            Rectangle {
+                                id: recDot
+                                width: 8
+                                height: 8
+                                radius: 4
+                                anchors.verticalCenter: parent.verticalCenter
+                                color: Recorder.paused ? Theme.yellow : Theme.red
+                                SequentialAnimation on opacity {
+                                    running: Recorder.recording && !Recorder.paused && !Theme.reduceMotion
+                                    loops: Animation.Infinite
+                                    onRunningChanged: if (!running) recDot.opacity = 1
+                                    NumberAnimation { to: 0.25; duration: 700; easing.type: Easing.InOutSine }
+                                    NumberAnimation { to: 1; duration: 700; easing.type: Easing.InOutSine }
+                                }
+                            }
+                            Text {
+                                text: Recorder.elapsedText
+                                color: Recorder.paused ? Theme.yellow : Theme.red
+                                font.family: Theme.bodyFontFamily
+                                font.pixelSize: Theme.fontPx(11)
+                                font.bold: true
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                        }
 
                         WsRow {
                             barWidth: 7
@@ -1071,6 +1101,7 @@ PanelWindow {
 
             // ---------- control (centro de control dentro de la isla) ----------
             ControlContent {
+                id: controlContent
                 anchors.fill: parent
                 anchors.margins: 16
                 opacity: island.mode === "control" ? 1 : 0

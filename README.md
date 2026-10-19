@@ -96,6 +96,10 @@ Desde una TTY libre (`Ctrl+Alt+F3`): `Hyprland -c <repo>/hyprland.lua`. `Super +
 | `Super + Shift + Alt + S` | Captura de región |
 | `Print` | Captura de pantalla completa |
 | `Super + Shift + Print` | Captura del monitor activo |
+| `Super + Alt + R` | Grabar el monitor enfocado con sonido (otra vez = parar) |
+| `Ctrl + Alt + R` | Grabar el monitor enfocado sin sonido |
+| `Super + Shift + Alt + R` | Grabar una región con sonido |
+| `Super + Shift + Alt + P` | Pausar/reanudar la grabación |
 | `Super + Shift + Q` | Salir de Hyprland |
 
 ## Shell (Quickshell) — modular, con diseños intercambiables

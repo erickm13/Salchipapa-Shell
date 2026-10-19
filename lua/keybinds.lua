@@ -169,6 +169,12 @@ hl.bind(
 	hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"),
 	{ locked = true, repeating = true }
 )
+-- Grabar pantalla (scripts/record.sh): la misma tecla para; la isla muestra el tiempo
+hl.bind(mod .. " + ALT + R", hl.dsp.exec_cmd(v.scripts .. "/record.sh screen sound")) -- monitor + sonido
+hl.bind("CTRL + ALT + R", hl.dsp.exec_cmd(v.scripts .. "/record.sh screen nosound")) -- monitor, sin sonido
+hl.bind(mod .. " + SHIFT + ALT + R", hl.dsp.exec_cmd(v.scripts .. "/record.sh region sound")) -- región + sonido
+hl.bind(mod .. " + SHIFT + ALT + P", hl.dsp.exec_cmd(v.scripts .. "/record.sh pause")) -- pausar/reanudar
+
 -- Tecla del touchpad (keycode 199 = XF86TouchpadToggle): la shell lo activa/desactiva y guarda el estado
 hl.bind("XF86TouchpadToggle", hl.dsp.global("salchipapa:touchpad"), { locked = true })
 hl.bind("XF86AudioMute", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"), { locked = true })

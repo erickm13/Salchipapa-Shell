@@ -40,6 +40,7 @@ PKGS=(
     fish # varios scripts de bin/ son de fish
     # Apps de los atajos
     foot kitty fuzzel yazi btop firefox pavucontrol thunar nemo
+    gpu-screen-recorder # grabar pantalla (scripts/record.sh)
     # Thunar: miniaturas, montaje de USB/móvil (MTP, iPhone) y discos NTFS
     tumbler ffmpegthumbnailer thunar-volman gvfs gvfs-mtp gvfs-afc ntfs-3g xdg-utils
     # Temas e iconos

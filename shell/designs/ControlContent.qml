@@ -18,7 +18,7 @@ Item {
         { id: "wifi", size: 1 }, { id: "focus", size: 1 },
         { id: "bluetooth", size: 1 }, { id: "gameMode", size: 1 },
         { id: "sound", size: 2 }, { id: "display", size: 2 },
-        { id: "notifications", size: 2 }
+        { id: "record", size: 1 }, { id: "notifications", size: 2 }
     ]
     readonly property var activeControls: {
         try {
@@ -40,7 +40,7 @@ Item {
         for (let i = 0; i < activeControls.length; ++i) {
             const item = activeControls[i];
             if (item.id === id) return offset;
-            if (item.id === "sound" || item.id === "display")
+            if (item.id === "sound" || item.id === "display" || item.id === "record")
                 offset += (item.size >= 2 ? 82 : 60) + 10;
         }
         return offset;
@@ -49,11 +49,13 @@ Item {
         let height = 0;
         for (let i = 0; i < activeControls.length; ++i) {
             const item = activeControls[i];
-            if (item.id === "sound" || item.id === "display")
+            if (item.id === "sound" || item.id === "display" || item.id === "record")
                 height += (item.size >= 2 ? 82 : 60) + 10;
         }
         return height > 0 ? height - 10 : 0;
     }
+    // Alto extra de la card de grabación: la isla crece para que no recorte las notificaciones
+    readonly property real recordExtraHeight: hasControl("record") ? (controlSize("record") >= 2 ? 82 : 60) + 10 : 0
     readonly property real notificationTop: (wifiDetailsOpen || bluetoothDetailsOpen) ? 344 : cardsTop + cardsHeight + 12
     readonly property int notificationControlHeight: controlSize("notifications") >= 2 ? Config.notificationHistoryHeight : Math.min(100, Config.notificationHistoryHeight)
 
@@ -257,6 +259,14 @@ Item {
         sliderEnabled: Brightness.available
         onSliderMoved: v => Brightness.setValue(v)
         onOpened: Overlay.mode = "display"
+    }
+
+    RecordCard {
+        y: root.cardsTop + root.cardOffset("record")
+        anchors.left: parent.left
+        anchors.right: parent.right
+        visible: root.hasControl("record") && !root.wifiDetailsOpen && !root.bluetoothDetailsOpen
+        rowSize: root.controlSize("record")
     }
 
     WifiContent {
