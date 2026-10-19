@@ -17,6 +17,7 @@ Singleton {
     property var passwordField: null
     property var mediaService: null
     property string powerAction: ""
+    property bool suspending: false
 
     function lock(): void {
         if (sessionLock.locked)
@@ -48,14 +49,31 @@ Singleton {
         }
     }
 
+    // La sesión queda protegida antes de pedir a logind que suspenda el equipo.
+    // WlSessionLock permanece activo al reanudar, así PAM vuelve a pedir la clave.
+    function suspend(): void {
+        suspending = false;
+        suspending = true;
+        suspendLockTimer.restart();
+    }
+
     Process {
         id: powerProc
+    }
+
+    Process {
+        id: suspendProc
+        onExited: root.suspending = false
     }
 
     IpcHandler {
         target: "salchipapa-lock"
         function activate(): void {
             root.lock();
+        }
+        function reveal(): void {
+            // Recuperación visual: conserva el bloqueo PAM y solo quita la capa negra.
+            root.suspending = false;
         }
     }
 
@@ -441,6 +459,21 @@ Singleton {
                         }
                     }
                 }
+
+                // Fundir a negro antes de suspender evita el corte brusco del wallpaper.
+                Rectangle {
+                    anchors.fill: parent
+                    z: 100
+                    color: "black"
+                    opacity: root.suspending ? 1 : 0
+                    visible: opacity > 0
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 550
+                            easing.type: Easing.InOutCubic
+                        }
+                    }
+                }
             }
         }
     }
@@ -481,6 +514,30 @@ Singleton {
             if (sessionLock.locked) {
                 if (!pam.start())
                     root.errorText = "No se pudo reiniciar la autenticación";
+            }
+        }
+    }
+
+    Timer {
+        id: suspendLockTimer
+        interval: 120
+        repeat: false
+        onTriggered: {
+            if (!sessionLock.locked)
+                root.lock();
+            if (sessionLock.locked)
+                suspendCommandTimer.restart();
+        }
+    }
+
+    Timer {
+        id: suspendCommandTimer
+        interval: 700
+        repeat: false
+        onTriggered: {
+            if (root.suspending && sessionLock.locked) {
+                suspendProc.command = ["systemctl", "suspend"];
+                suspendProc.running = true;
             }
         }
     }

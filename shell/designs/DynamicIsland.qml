@@ -57,6 +57,10 @@ PanelWindow {
         property bool hovered: false
         property string peek: "" // "", "media", "volume", "notif"
         readonly property bool showPolkit: PolicyAuth.active && (Hyprland.focusedMonitor?.name ? Hyprland.focusedMonitor.name === win.screen?.name : Quickshell.screens[0] === win.screen)
+        readonly property string focusedApp: {
+            const appId = ToplevelManager.activeToplevel?.appId || Hyprland.activeToplevel?.wayland?.appId || Hyprland.activeToplevel?.lastIpcObject?.["class"] || "";
+            return String(appId).split(".").filter(Boolean).pop() || "";
+        }
 
         // Una notificación nueva también debe verse si el dashboard está abierto.
         // El resto de overlays conserva prioridad sobre los peeks normales.
@@ -113,8 +117,8 @@ PanelWindow {
         }
 
         // Tamaños por modo
-        width: mode === "polkit" ? 370 : mode === "control" ? 440 : mode === "display" ? 460 : mode === "sound" ? 420 : mode === "launcher" ? Config.launcherWidth : mode === "themes" ? 720 : mode === "wallpaper" ? 760 : mode === "calendar" ? 300 : mode === "expanded" ? 500 : mode === "notif" ? Config.notificationWidth : mode === "media" ? 370 : mode === "volume" || mode === "brightness" ? 300 : Math.max(Config.collapsedWidth, idleRow.implicitWidth + Config.innerPadding * 2)
-        height: mode === "polkit" ? 250 : mode === "control" ? Math.max(470, 350 + Config.notificationHistoryHeight) : mode === "display" ? (142 + (Hyprland.monitors?.values?.length ?? 1) * 206) : mode === "sound" ? (213 + Math.min(Audio.sinks?.length ?? 1, 5) * 42 + Math.min(Audio.sources?.length ?? 1, 4) * 42 + Math.max(1, Math.min(Audio.apps?.length ?? 0, 4)) * 62) : mode === "launcher" ? (85 + Config.launcherRowsBeforeScrolling * Config.launcherRowHeight + (Config.launcherRowsBeforeScrolling - 1) * 2) : mode === "themes" ? 210 : mode === "wallpaper" ? 250 : mode === "calendar" ? 250 : mode === "expanded" ? 116 : mode === "notif" ? 74 : mode === "media" ? 58 : mode === "volume" || mode === "brightness" ? 42 : Config.barHeight
+        width: mode === "power" ? 370 : mode === "polkit" ? 370 : mode === "control" ? 440 : mode === "display" ? 460 : mode === "sound" ? 420 : mode === "launcher" ? Config.launcherWidth : mode === "themes" ? 720 : mode === "wallpaper" ? 760 : mode === "calendar" ? 300 : mode === "expanded" ? 680 : mode === "notif" ? Config.notificationWidth : mode === "media" ? 370 : mode === "volume" || mode === "brightness" ? 300 : Math.max(Config.collapsedWidth, idleRow.implicitWidth + Config.innerPadding * 2)
+        height: mode === "power" ? (powerMenu.confirmAction === "" ? 84 : 176) : mode === "polkit" ? 250 : mode === "control" ? Math.max(470, 350 + Config.notificationHistoryHeight) : mode === "display" ? (142 + (Hyprland.monitors?.values?.length ?? 1) * 206) : mode === "sound" ? (213 + Math.min(Audio.sinks?.length ?? 1, 5) * 42 + Math.min(Audio.sources?.length ?? 1, 4) * 42 + Math.max(1, Math.min(Audio.apps?.length ?? 0, 4)) * 62) : mode === "launcher" ? (85 + Config.launcherRowsBeforeScrolling * Config.launcherRowHeight + (Config.launcherRowsBeforeScrolling - 1) * 2) : mode === "themes" ? 210 : mode === "wallpaper" ? 250 : mode === "calendar" ? 250 : mode === "expanded" ? 142 : mode === "notif" ? 74 : mode === "media" ? 58 : mode === "volume" || mode === "brightness" ? 42 : Config.barHeight
 
         Behavior on width {
             NumberAnimation {
@@ -201,7 +205,7 @@ PanelWindow {
                 y: pillShadow.pad
                 width: pillShadow.width - pillShadow.pad * 2
                 height: pillShadow.height - pillShadow.pad * 2
-                readonly property real uni: (island.mode === "polkit" || island.mode === "expanded" || island.mode === "calendar" || island.mode === "launcher" || island.mode === "themes" || island.mode === "wallpaper" || island.mode === "control" || island.mode === "display" || island.mode === "sound") ? Theme.radiusLarge : (Config.notchMode ? Theme.radiusMedium : height / 2)
+                readonly property real uni: (island.mode === "power" || island.mode === "polkit" || island.mode === "expanded" || island.mode === "calendar" || island.mode === "launcher" || island.mode === "themes" || island.mode === "wallpaper" || island.mode === "control" || island.mode === "display" || island.mode === "sound") ? Theme.radiusLarge : (Config.notchMode ? Theme.radiusMedium : height / 2)
                 topLeftRadius: Config.notchMode ? 0 : uni
                 topRightRadius: Config.notchMode ? 0 : uni
                 bottomLeftRadius: uni
@@ -230,7 +234,7 @@ PanelWindow {
             id: pill
             anchors.fill: parent
             // Radio base (uniforme). En notch, las esquinas superiores van rectas (pegadas al borde).
-            readonly property real uni: (island.mode === "polkit" || island.mode === "expanded" || island.mode === "calendar" || island.mode === "launcher" || island.mode === "themes" || island.mode === "wallpaper" || island.mode === "control" || island.mode === "display" || island.mode === "sound") ? Theme.radiusLarge : (Config.notchMode ? Theme.radiusMedium : height / 2)
+                readonly property real uni: (island.mode === "power" || island.mode === "polkit" || island.mode === "expanded" || island.mode === "calendar" || island.mode === "launcher" || island.mode === "themes" || island.mode === "wallpaper" || island.mode === "control" || island.mode === "display" || island.mode === "sound") ? Theme.radiusLarge : (Config.notchMode ? Theme.radiusMedium : height / 2)
             topLeftRadius: Config.notchMode ? 0 : uni
             topRightRadius: Config.notchMode ? 0 : uni
             bottomLeftRadius: uni
@@ -293,47 +297,43 @@ PanelWindow {
                     }
                 }
 
-                // Fila centrada: la píldora se ajusta a su ancho (ver island.width)
-                Row {
+                // En reposo, los laterales se anclan por separado y el reloj queda centrado.
+                Item {
                     id: idleRow
-                    anchors.centerIn: parent
-                    spacing: 14
+                    anchors.fill: parent
+                    // Reserva espacio simétrico según el lateral más ancho para que los
+                    // scratchpads (p. ej. Spotify) no queden debajo del reloj centrado.
+                    implicitWidth: Math.max(leftStatus.implicitWidth, rightStatus.implicitWidth) * 2 + idleClock.contentWidth + 100 - Config.innerPadding * 2
 
                     // Izquierda: workspaces + estado
                     Row {
+                        id: leftStatus
+                        anchors.left: parent.left
+                        anchors.leftMargin: 16
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 4
                         visible: !Quick.gameMode
-
-                        // Glow en el color principal sobre los indicadores (solo en notch)
-                        layer.enabled: Config.notchMode && !Config.gameMode
-                        layer.effect: MultiEffect {
-                            shadowEnabled: !Config.gameMode
-                            shadowColor: Theme.green
-                            shadowBlur: 1.0
-                            blurMax: 18
-                            shadowOpacity: 0.8
-                            autoPaddingEnabled: true
-                        }
 
                         WsRow {
                             barWidth: 7
                             baseLen: 7
                             anchors.verticalCenter: parent.verticalCenter
                             visible: Config.clockShowWorkspaceDots && !island.inSpecial // ocultar ws normales si estás en un scratchpad
+                            layer.enabled: Config.notchMode && !Config.gameMode
+                            layer.effect: MultiEffect {
+                                shadowEnabled: !Config.gameMode
+                                shadowColor: Theme.green
+                                shadowBlur: 1.0
+                                blurMax: 18
+                                shadowOpacity: 0.8
+                                autoPaddingEnabled: true
+                            }
                         }
-                        // Scratchpads activos (música/comms/sysmon…)
+                        // Scratchpads con ventanas; el activo se resalta al mostrarse.
                         SpecialRow {
-                            cell: 16
+                            cell: 22
                             anchors.verticalCenter: parent.verticalCenter
-                        }
-                        Rectangle {
-                            width: 7
-                            height: 7
-                            radius: 4
-                            anchors.verticalCenter: parent.verticalCenter
-                            color: Theme.green
-                            visible: Media.isPlaying
+                            visible: island.inSpecial
                         }
                         Rectangle {
                             width: 7
@@ -342,24 +342,37 @@ PanelWindow {
                             anchors.verticalCenter: parent.verticalCenter
                             color: Theme.red
                             visible: Audio.micMuted
+                            layer.enabled: Config.notchMode && !Config.gameMode
+                            layer.effect: MultiEffect {
+                                shadowEnabled: !Config.gameMode
+                                shadowColor: Theme.green
+                                shadowBlur: 1.0
+                                blurMax: 18
+                                shadowOpacity: 0.8
+                                autoPaddingEnabled: true
+                            }
                         }
                     }
 
-                    // Hora
+                    // Hora estática centrada en la cápsula, independientemente de los laterales.
                     Text {
-                            font.family: Theme.displayFontFamily
-                        anchors.verticalCenter: parent.verticalCenter
+                        id: idleClock
+                        font.family: Theme.displayFontFamily
+                        anchors.fill: parent
                         text: Qt.formatDateTime(clock.date, Config.clock24Hour ? (Config.clockShowSeconds ? "HH:mm:ss" : "HH:mm") : (Config.clockShowSeconds ? "h:mm:ss AP" : "h:mm AP"))
                         color: "#ffffff"
                         font.pixelSize: Theme.fontPx(16)
                         font.bold: true
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
                         visible: !Quick.gameMode
                     }
 
                     // Indicador persistente para que Game Mode siga visible
                     // cuando la isla vuelve a su estado compacto.
                     Row {
-                        anchors.verticalCenter: parent.verticalCenter
+                        id: gameModeStatus
+                        anchors.centerIn: parent
                         spacing: 4
                         visible: Quick.gameMode
 
@@ -381,6 +394,9 @@ PanelWindow {
 
                     // Derecha: wifi + batería
                     Row {
+                        id: rightStatus
+                        anchors.right: parent.right
+                        anchors.rightMargin: 32
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 8
                         visible: Config.clockShowBatteryWifi && !Quick.gameMode
@@ -445,64 +461,73 @@ PanelWindow {
                 Column {
                     anchors.left: parent.left
                     anchors.verticalCenter: parent.verticalCenter
-                    spacing: 5
-                    visible: Config.clockExpandedWorkspaces
+                    width: 150
+                    spacing: 8
 
                     Row {
-                        spacing: 5
+                        width: parent.width
+                        spacing: 6
                         Icon {
-                            text: "terminal"
-                            px: 13
+                            text: "window"
+                            px: 17
                             color: Theme.green
                             anchors.verticalCenter: parent.verticalCenter
                         }
                         Text {
                             font.family: Theme.bodyFontFamily
-                            text: "Quickshell"
+                            width: parent.width - 25
+                            text: island.focusedApp
                             color: "#ffffff"
-                            font.pixelSize: Theme.fontPx(12)
+                            font.pixelSize: Theme.fontPx(13)
                             font.bold: true
+                            elide: Text.ElideRight
                             anchors.verticalCenter: parent.verticalCenter
                         }
                     }
                     WsRow {
                         barWidth: 7
                         baseLen: 8
-                        visible: Config.clockShowWorkspaceDots && !island.inSpecial
+                        visible: Config.clockExpandedWorkspaces && Config.clockShowWorkspaceDots && !island.inSpecial
                     }
                     SpecialRow {
-                        cell: 13
+                        cell: 16
+                        visible: Config.clockExpandedWorkspaces
                     }
                 }
 
-                // Hora y fecha centradas, con el reproductor debajo.
+                // Hora y fecha apiladas en el centro, con el reproductor debajo.
                 Column {
                     anchors.centerIn: parent
-                    spacing: 7
+                    spacing: 6
+                    width: 310
 
                     Item {
                         id: clockDateTarget
-                        width: clockDateRow.implicitWidth
-                        height: clockDateRow.implicitHeight
+                        width: parent.width
+                        height: clockDateColumn.implicitHeight
 
-                        Row {
-                            id: clockDateRow
-                            anchors.centerIn: parent
-                            spacing: 6
+                        Column {
+                            id: clockDateColumn
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            width: parent.width
+                            y: 0
+                            spacing: 1
                             Text {
                                 font.family: Theme.displayFontFamily
+                                width: parent.width
                                 text: Qt.formatDateTime(clock.date, Config.clock24Hour ? (Config.clockShowSeconds ? "HH:mm:ss" : "HH:mm") : (Config.clockShowSeconds ? "h:mm:ss AP" : "h:mm AP"))
                                 color: "#ffffff"
-                                font.pixelSize: Theme.fontPx(18)
+                                font.pixelSize: Theme.fontPx(23)
                                 font.bold: true
-                                anchors.verticalCenter: parent.verticalCenter
+                                horizontalAlignment: Text.AlignHCenter
                             }
                             Text {
                                 font.family: Theme.bodyFontFamily
+                                width: parent.width
                                 text: Qt.formatDateTime(clock.date, "ddd, MMM d")
                                 color: Theme.secondaryText
-                                font.pixelSize: Theme.fontPx(11)
-                                anchors.verticalCenter: parent.verticalCenter
+                                font.pixelSize: Theme.fontPx(13)
+                                horizontalAlignment: Text.AlignHCenter
                             }
                         }
                         MouseArea {
@@ -517,8 +542,8 @@ PanelWindow {
                     }
 
                     Rectangle {
-                        width: 194
-                        height: 39
+                        width: parent.width
+                        height: 43
                         radius: 13
                         color: Theme.surface0
                         visible: Config.clockExpandedMedia
@@ -530,8 +555,8 @@ PanelWindow {
                             spacing: 7
 
                             Rectangle {
-                                width: 27
-                                height: 27
+                                width: 31
+                                height: 31
                                 radius: 8
                                 color: Theme.surface1
                                 anchors.verticalCenter: parent.verticalCenter
@@ -552,14 +577,14 @@ PanelWindow {
                             }
                             Column {
                                 anchors.verticalCenter: parent.verticalCenter
-                                width: 92
-                                spacing: 1
+                                width: parent.width - 31 - 60 - 14
+                                spacing: 2
                                 Text {
                                     font.family: Theme.bodyFontFamily
                                     width: parent.width
                                     text: Media.title || "Sin reproducción"
                                     color: "#ffffff"
-                                    font.pixelSize: Theme.fontPx(12)
+                                    font.pixelSize: Theme.fontPx(13)
                                     font.bold: true
                                     elide: Text.ElideRight
                                 }
@@ -568,32 +593,46 @@ PanelWindow {
                                     width: parent.width
                                     text: Media.artist || Media.album
                                     color: Theme.secondaryText
-                                    font.pixelSize: Theme.fontPx(10)
+                                    font.pixelSize: Theme.fontPx(11)
                                     elide: Text.ElideRight
                                 }
                             }
                             Item {
-                                width: 43
+                                width: 60
                                 height: parent.height
                                 anchors.verticalCenter: parent.verticalCenter
                                 Row {
                                     anchors.centerIn: parent
-                                    spacing: 3
+                                    spacing: 2
                                     Repeater {
-                                        model: 7
-                                        Rectangle {
+                                        model: ["skip_previous", Media.isPlaying ? "pause" : "play_arrow", "skip_next"]
+                                        delegate: Item {
                                             required property int index
-                                            width: 2
-                                            height: 2
-                                            radius: 1
-                                            color: Theme.green
-                                            opacity: Media.isPlaying ? 0.35 + ((index % 3) * 0.2) : 0.3
+                                            required property string modelData
+                                            width: 18
+                                            height: 24
+                                            Icon {
+                                                anchors.centerIn: parent
+                                                text: modelData
+                                                px: 17
+                                                color: Theme.text
+                                            }
+                                            MouseArea {
+                                                anchors.fill: parent
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: {
+                                                    if (index === 0) Media.prev();
+                                                    else if (index === 1) Media.toggle();
+                                                    else Media.next();
+                                                }
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
                         MouseArea {
+                            z: -1
                             anchors.fill: parent
                             onClicked: Media.toggle()
                             cursorShape: Qt.PointingHandCursor
@@ -614,22 +653,22 @@ PanelWindow {
                 Column {
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
-                    spacing: 8
+                    spacing: 10
                     visible: Config.clockExpandedStatus
 
                     Row {
                         anchors.right: parent.right
-                        spacing: 5
+                        spacing: 6
                         Text {
                             font.family: Theme.bodyFontFamily
                             text: Notifs.count > 0 ? (Notifs.count + " notifications") : "All caught up"
                             color: "#ffffff"
-                            font.pixelSize: Theme.fontPx(11)
+                            font.pixelSize: Theme.fontPx(12)
                             anchors.verticalCenter: parent.verticalCenter
                         }
                         Icon {
                             text: "notifications"
-                            px: 12
+                            px: 15
                             color: Notifs.count > 0 ? Theme.green : Theme.secondaryText
                             anchors.verticalCenter: parent.verticalCenter
                         }
@@ -640,14 +679,14 @@ PanelWindow {
                         Icon {
                             text: island.networkGlyph
                             iconFontFamily: batterySymbols.name !== "" ? batterySymbols.name : "Material Symbols Outlined"
-                            px: 18
+                            px: 20
                             color: Net.online ? Theme.green : Theme.tertiaryText
                             anchors.verticalCenter: parent.verticalCenter
                         }
                         Icon {
                             text: island.batteryGlyph
                             iconFontFamily: batterySymbols.name !== "" ? batterySymbols.name : "Material Symbols Outlined"
-                            px: 19
+                            px: 21
                             color: Battery.percent <= 20 && !Battery.charging ? Theme.red : Theme.green
                             anchors.verticalCenter: parent.verticalCenter
                         }
@@ -853,12 +892,13 @@ PanelWindow {
                 }
 
                 Text {
-                    font.family: Theme.bodyFontFamily
                     id: volIcon
                     anchors.left: parent.left
                     anchors.verticalCenter: parent.verticalCenter
-                    text: Audio.muted ? "🔇" : "🔊"
-                    font.pixelSize: Theme.fontPx(14)
+                    text: Audio.muted ? "volume_off" : Audio.volume < 0.35 ? "volume_down" : "volume_up"
+                    font.family: "Material Symbols Rounded"
+                    font.pixelSize: Theme.fontPx(17)
+                    color: Audio.muted ? Theme.tertiaryText : Theme.sapphire
                 }
                 Rectangle {
                     anchors.left: volIcon.right
@@ -904,7 +944,7 @@ PanelWindow {
                     id: brightnessIcon
                     anchors.left: parent.left
                     anchors.verticalCenter: parent.verticalCenter
-                    text: "brightness_6"
+                    text: Brightness.value < 0.34 ? "brightness_low" : Brightness.value < 0.67 ? "brightness_6" : "brightness_7"
                     font.family: "Material Symbols Rounded"
                     font.pixelSize: Theme.fontPx(16)
                     color: Theme.peach
@@ -1041,6 +1081,17 @@ PanelWindow {
                 }
             }
 
+            // ---------- menú de energía ----------
+            PowerMenu {
+                id: powerMenu
+                anchors.fill: parent
+                opacity: island.mode === "power" ? 1 : 0
+                visible: opacity > 0
+                Behavior on opacity {
+                    NumberAnimation { duration: Theme.fadeDuration }
+                }
+            }
+
             // ---------- display (ajustes de pantalla) ----------
             DisplayContent {
                 anchors.fill: parent
@@ -1139,11 +1190,12 @@ PanelWindow {
     // Scratchpads activos (workspaces especiales con ventanas): icono por cada uno,
     // resaltado si está mostrándose; clic = mostrar/ocultar (como caelestia).
     component SpecialRow: Row {
-        property int cell: 18
+        property int cell: 16
+        property bool onlyActive: false
         spacing: 4
 
         Repeater {
-            model: Hyprland.workspaces.values.filter(w => w.name.startsWith("special:"))
+            model: Hyprland.workspaces.values.filter(w => w.name.startsWith("special:") && (!onlyActive || w.name === (Hyprland.focusedMonitor?.lastIpcObject?.specialWorkspace?.name ?? "")))
             delegate: Rectangle {
                 id: sp
                 required property var modelData
@@ -1160,8 +1212,8 @@ PanelWindow {
                         return "#5865f2"; // azul Discord
                     case "sysmon":
                         return "#fab387"; // melocotón
-                    case "magic":
-                        return "#cba6f7"; // malva
+                    case "agents":
+                        return "#DE7356"; // Claude Code
                     default:
                         return "#89b4fa";
                     }
@@ -1170,29 +1222,46 @@ PanelWindow {
                 width: cell + 6
                 height: cell
                 radius: height / 2
-                color: sp.shown ? sp.accent : Qt.rgba(sp.accent.r, sp.accent.g, sp.accent.b, 0.22)
+                color: "transparent"
 
-                Behavior on color {
-                    ColorAnimation {
-                        duration: Theme.fadeDuration
+                Image {
+                    id: brandIcon
+                    anchors.centerIn: parent
+                    width: Math.round(cell * (sp.sname === "music" ? 0.72 : 0.92) * (sp.shown ? 1.18 : 1))
+                    height: width
+                    visible: ["music", "comms", "communication", "agents"].includes(sp.sname)
+                    source: {
+                        switch (sp.sname) {
+                        case "music":
+                            return Qt.resolvedUrl("../assets/icons/spotify.svg");
+                        case "comms":
+                        case "communication":
+                            return Qt.resolvedUrl("../assets/icons/discord.svg");
+                        case "agents":
+                            return Qt.resolvedUrl("../assets/icons/claudecode.svg");
+                        default:
+                            return "";
+                        }
+                    }
+                    fillMode: Image.PreserveAspectFit
+                    smooth: true
+                    layer.enabled: visible
+                    layer.effect: MultiEffect {
+                        colorization: 1
+                        colorizationColor: sp.shown ? sp.accent : "#858585"
                     }
                 }
 
                 Text {
                     anchors.centerIn: parent
                     font.family: "Material Symbols Rounded"
-                    font.pixelSize: Math.round(cell * 0.72)
-                    color: sp.shown ? Theme.islandBg : sp.accent
+                    font.pixelSize: Math.round(cell * 0.92 * (sp.shown ? 1.18 : 1))
+                    color: sp.shown ? sp.accent : "#858585"
+                    visible: !brandIcon.visible
                     text: {
                         switch (sp.sname) {
-                        case "music":
-                            return "music_note";
-                        case "comms":
-                            return "forum";
                         case "sysmon":
                             return "monitoring";
-                        case "magic":
-                            return "filter_drama";
                         default:
                             return "star";
                         }

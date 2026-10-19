@@ -6,6 +6,7 @@
 
 import Quickshell
 import Quickshell.Hyprland
+import Quickshell.Wayland
 import QtQuick
 import "common"
 import "designs"
@@ -17,6 +18,32 @@ ShellRoot {
     // Sincroniza la sombra nativa de Hyprland con los controles de Appearance.
     // Fondo de pantalla (capa Background, por monitor)
     Background {}
+
+    // Empieza el fundido antes de que WlSessionLock cubra el escritorio.
+    // LockScreen mantiene además su propia capa negra encima de la pantalla bloqueada.
+    Variants {
+        model: Quickshell.screens
+
+        PanelWindow {
+            required property var modelData
+            screen: modelData
+            visible: LockScreen.suspending
+            color: "transparent"
+            anchors { top: true; bottom: true; left: true; right: true }
+            WlrLayershell.layer: WlrLayer.Overlay
+            WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+            exclusiveZone: -1
+
+            Rectangle {
+                anchors.fill: parent
+                color: "black"
+                opacity: LockScreen.suspending ? 1 : 0
+                Behavior on opacity {
+                    NumberAnimation { duration: 550; easing.type: Easing.InOutCubic }
+                }
+            }
+        }
+    }
 
     // Quickshell no refresca monitores/workspaces en todos los eventos; forzamos el
     // refresco en los que importan (p.ej. activespecial) para que la isla reaccione.

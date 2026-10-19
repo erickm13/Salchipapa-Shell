@@ -60,6 +60,7 @@ Para volver atrás: borra el symlink y restaura `~/.config/hypr.bak`.
 | `Super + E` | Archivos (yazi) |
 | `Super + Q` | Cerrar ventana |
 | `Super + Backspace` | Bloquear pantalla (Quickshell + PAM) |
+| `Super + Alt + P` | Menú de energía de la isla |
 | `Super + V` / `F` | Flotar / pantalla completa |
 | `Super + [1-0]` | Workspace |
 | `Super + Shift + [1-0]` | Mover ventana a workspace |

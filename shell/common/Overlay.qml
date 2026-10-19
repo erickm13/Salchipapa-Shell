@@ -7,7 +7,7 @@ import Quickshell.Hyprland
 Singleton {
     id: root
 
-    // "" = nada; "launcher" | "themes" | "wallpaper" | "control" | "display" | "sound" = la isla muestra ese modo
+    // "" = nada; el resto son overlays que se muestran dentro de la isla.
     property string mode: ""
 
     // Panel de ajustes (ventana propia, no es un modo de la isla)
@@ -46,5 +46,12 @@ Singleton {
         name: "settings"
         description: "Abrir/cerrar el panel de ajustes"
         onPressed: root.settings = !root.settings
+    }
+
+    GlobalShortcut {
+        appid: "salchipapa"
+        name: "power"
+        description: "Abrir/cerrar el menú de energía dentro de la isla"
+        onPressed: root.mode = root.mode === "power" ? "" : "power"
     }
 }

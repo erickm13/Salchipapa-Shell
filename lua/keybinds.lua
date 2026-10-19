@@ -34,6 +34,7 @@ hl.bind(mod .. " + Return", hl.dsp.exec_cmd(v.terminal))
 hl.bind(mod .. " + Space", hl.dsp.global("salchipapa:launcher"))
 hl.bind(mod .. " + T", hl.dsp.global("salchipapa:themes"))
 hl.bind(mod .. " + N", hl.dsp.global("salchipapa:control")) -- centro de control (en la isla)
+hl.bind(mod .. " + ALT + P", hl.dsp.global("salchipapa:power")) -- menú de energía (en la isla)
 hl.bind(mod .. " + I", hl.dsp.global("salchipapa:settings")) -- panel de ajustes
 hl.bind(mod .. " + B", hl.dsp.exec_cmd(v.browser))
 hl.bind(mod .. " + E", hl.dsp.exec_cmd(v.fileManager))
@@ -96,12 +97,12 @@ hl.bind(mod .. " + ALT + mouse_down", hl.dsp.window.move({ workspace = "-1" }))
 hl.bind(mod .. " + ALT + mouse_up", hl.dsp.window.move({ workspace = "+1" }))
 
 -- Mover la ventana al scratchpad y devolverla al workspace visible
-hl.bind("CTRL + " .. mod .. " + SHIFT + k", hl.dsp.window.move({ workspace = "special:magic" }))
+hl.bind("CTRL + " .. mod .. " + SHIFT + k", hl.dsp.window.move({ workspace = "special:agents" }))
 hl.bind("CTRL + " .. mod .. " + SHIFT + j", hl.dsp.window.move({ workspace = "e+0" }))
 
--- Scratchpad propio (magic)
-hl.bind(mod .. " + S", hl.dsp.workspace.toggle_special("magic"))
-hl.bind(mod .. " + ALT + S", hl.dsp.window.move({ workspace = "special:magic" }))
+-- Scratchpad propio para agentes
+hl.bind(mod .. " + S", hl.dsp.workspace.toggle_special("agents"))
+hl.bind(mod .. " + ALT + S", hl.dsp.window.move({ workspace = "special:agents" }))
 
 -- Grupos de ventanas (pestañas)
 hl.bind("ALT + Tab", hl.dsp.window.cycle_next(), { repeating = true })
