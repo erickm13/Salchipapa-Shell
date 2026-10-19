@@ -5,7 +5,7 @@
 #   wallpaper.sh random   [nocolors]    -> aleatorio de ~/Pictures/Wallpapers
 set -euo pipefail
 
-repo="${SALCHIPAPA_SHELL_DIR:-$HOME/proyects/Salchipapa-Shell}"
+repo="${SALCHIPAPA_SHELL_DIR:-$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)}"
 state="$HOME/.local/state/salchipapa-shell"
 dir="${XDG_PICTURES_DIR:-$HOME/Pictures}/Wallpapers"
 mkdir -p "$state"

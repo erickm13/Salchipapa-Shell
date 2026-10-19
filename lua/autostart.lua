@@ -1,4 +1,5 @@
 -- Arranque automático
+local v = require("lua.vars")
 -- Notificaciones: las gestiona la barra (Quickshell es el servidor). NO lanzar dunst.
 -- Fondo de pantalla: lo renderiza la shell (Background.qml) desde el estado; sin hyprpaper.
 hl.on("hyprland.start", function()
@@ -12,6 +13,8 @@ hl.on("hyprland.start", function()
     -- Controles multimedia por bluetooth (MPRIS) y vaciar papelera de +30 días
     hl.exec_cmd("mpris-proxy")
     hl.exec_cmd("trash-empty 30")
+    -- Tras install.sh: aplica el fondo y el tema guardados (solo la primera vez)
+    hl.exec_cmd(v.scripts .. "/first-run.sh")
     -- La shell (isla / barra / fondo)
-    hl.exec_cmd("qs -p ~/proyects/Salchipapa-Shell/shell/shell.qml")
+    hl.exec_cmd("qs -p " .. v.repo .. "/shell/shell.qml")
 end)

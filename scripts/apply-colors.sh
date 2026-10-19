@@ -10,7 +10,7 @@
 # se recarga Hyprland.
 set -euo pipefail
 
-repo="${SALCHIPAPA_SHELL_DIR:-$HOME/proyects/Salchipapa-Shell}"
+repo="${SALCHIPAPA_SHELL_DIR:-$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)}"
 schemes="$repo/shell/themes/schemes.json"
 state="$HOME/.local/state/salchipapa-shell"
 mkdir -p "$state"

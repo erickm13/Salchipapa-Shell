@@ -36,7 +36,7 @@ Item {
             // Cambia el fondo, pone el esquema en 'dynamic' (sigue al wallpaper) y recarga
             // Hyprland (para que el glow de ventanas también tome los colores nuevos).
             // wallpaper.sh cambia el fondo y (si el switch está activo) genera los colores con matugen
-            applyProc.command = ["sh", "-c", "\"$HOME/proyects/Salchipapa-Shell/scripts/wallpaper.sh\" \"$1\" \"$2\"", "sh", f, root.applyColors ? "colors" : "nocolors"];
+            applyProc.command = [Quickshell.shellDir + "/../scripts/wallpaper.sh", f, root.applyColors ? "colors" : "nocolors"];
             applyProc.running = true;
             Overlay.close();
         }

@@ -41,9 +41,9 @@ Item {
             return;
         if (s.dynamic)
             // Dynamic: regenera los colores del wallpaper actual con matugen (-> scheme=dynamic)
-            applyProc.command = ["sh", "-c", "\"$HOME/proyects/Salchipapa-Shell/scripts/wallpaper.sh\" \"$1\" colors", "sh", Wallpaper.current];
+            applyProc.command = [Quickshell.shellDir + "/../scripts/wallpaper.sh", Wallpaper.current, "colors"];
         else
-            applyProc.command = ["sh", "-c", "\"$HOME/proyects/Salchipapa-Shell/scripts/apply-colors.sh\" scheme \"$1\"", "sh", s.name];
+            applyProc.command = [Quickshell.shellDir + "/../scripts/apply-colors.sh", "scheme", s.name];
         applyProc.running = true;
         Overlay.close();
     }
@@ -64,7 +64,7 @@ Item {
     Process {
         id: listProc
         // Temas GUARDADOS en el repo (ya no depende de caelestia)
-        command: ["sh", "-c", "cat \"$HOME/proyects/Salchipapa-Shell/shell/themes/schemes.json\""]
+        command: ["cat", Quickshell.shellDir + "/themes/schemes.json"]
         stdout: StdioCollector {
             id: listOut
             onStreamFinished: {

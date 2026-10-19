@@ -19,7 +19,13 @@ local function read_scheme()
 end
 
 local scheme = read_scheme()
-local scripts = "~/proyects/Salchipapa-Shell/scripts"
+-- Carpeta del repo (padre de lua/), esté donde esté clonado o enlazado
+local repo
+pcall(function()
+	repo = debug.getinfo(1, "S").source:match("^@(.*)/lua/[^/]*$")
+end)
+repo = repo or ((os.getenv("HOME") or "") .. "/.config/hypr")
+local scripts = repo .. "/scripts"
 
 return {
 	-- Programas
@@ -29,6 +35,7 @@ return {
 	browser = "firefox",
 	fileManager = "kitty -e yazi",
 	-- Scripts
+	repo = repo,
 	scripts = scripts,
 	screenshot = scripts .. "/screenshot.sh",
 	scratch = scripts .. "/scratch.sh",
