@@ -169,6 +169,21 @@ detect_gpu() {
     fi
 }
 
+# VirtualBox con sus módulos en DKMS: necesitan los headers de cada kernel instalado
+add_virtualbox() {
+    local k
+    PKGS+=(virtualbox virtualbox-host-dkms virtualbox-guest-iso)
+    for k in $( (pacman -Qq linux linux-lts linux-zen linux-hardened 2>/dev/null || true)); do PKGS+=("$k-headers"); done
+}
+
+# KVM se adueña de VT-x al cargar y VirtualBox no puede arrancar VMs (VERR_VMX_IN_VMX_ROOT_MODE):
+# que KVM solo lo active cuando una VM suya lo use. Y el usuario en vboxusers (USB en la VM).
+setup_virtualbox() {
+    echo -e '# VirtualBox necesita VT-x libre: KVM solo lo activa cuando una VM de KVM lo usa\noptions kvm enable_virt_at_load=0' |
+        sudo tee /etc/modprobe.d/kvm-virtualbox.conf >/dev/null
+    sudo usermod -aG vboxusers "$USER"
+}
+
 # NVIDIA: cargar sus módulos al arrancar (KMS temprano, evita pantalla negra al iniciar Hyprland)
 setup_nvidia_initramfs() {
     local conf=/etc/mkinitcpio.conf.d/nvidia.conf
@@ -441,6 +456,7 @@ if grep -qi "asus" /sys/class/dmi/id/sys_vendor 2>/dev/null; then
     IS_ASUS=1
     PKGS+=(asusctl) # perfiles Turbo/Silencioso del centro de control, carga, ventiladores, RGB
 fi
+add_virtualbox
 step "Paquetes oficiales (${#PKGS[@]})" install_pacman
 if [[ " ${GPUS[*]} " == *" nvidia "* ]]; then
     step "NVIDIA: módulos en el arranque (mkinitcpio)" setup_nvidia_initramfs
@@ -469,6 +485,7 @@ fi
 step "Tema de SDDM ($SDDM_THEME)" install_sddm_theme
 step "Tema de GRUB ($GRUB_THEME_NAME) y otros sistemas en el menú" install_grub_theme
 step "Cambiar temas de SDDM/GRUB desde Ajustes (helpers + sudoers)" install_theme_helpers
+step "VirtualBox: VT-x libre de KVM y usuario en vboxusers" setup_virtualbox
 step "Sesión por defecto en SDDM: Hyprland (uwsm)" set_sddm_session
 step "Servicios: NetworkManager, bluetooth, power-profiles, sddm" enable_services
 

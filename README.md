@@ -14,7 +14,7 @@ git clone https://github.com/erickm13/Salchipapa-Shell ~/proyects/Salchipapa-She
 El instalador deja el escritorio igual que en el equipo original:
 
 - **Paquetes**: Hyprland, uwsm, SDDM, Quickshell y todo lo que usan la isla y los scripts
-  (oficiales + AUR: qtengine, Bibata, papirus-folders, Geist, Spotify, Vesktop, VS Code; `asusctl`
+  (oficiales + AUR: qtengine, Bibata, papirus-folders, Geist, Spotify, Vesktop, VS Code, VirtualBox; `asusctl`
   solo en equipos ASUS). Instala `yay` si no hay ayudante de AUR.
 - **Archivos**: fuentes de `assets/fonts/`, fondos de `wallpapers/` → `~/Pictures/Wallpapers`, avatar
   `~/.face`, ajustes de la shell (`defaults/config.json`), GTK, Qt (`qtengine`), cursor y gsettings.
