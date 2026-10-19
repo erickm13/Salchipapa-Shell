@@ -37,6 +37,12 @@ Singleton {
     }
     GlobalShortcut {
         appid: "salchipapa"
+        name: "clipboard"
+        description: "Abrir/cerrar el historial del portapapeles (dentro de la isla)"
+        onPressed: root.mode = root.mode === "clipboard" ? "" : "clipboard"
+    }
+    GlobalShortcut {
+        appid: "salchipapa"
         name: "control"
         description: "Abrir/cerrar el centro de control (dentro de la isla)"
         onPressed: root.mode = root.mode === "control" ? "" : "control"

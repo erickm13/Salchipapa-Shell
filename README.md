@@ -83,7 +83,8 @@ Desde una TTY libre (`Ctrl+Alt+F3`): `Hyprland -c <repo>/hyprland.lua`. `Super +
 | `Super + Q` | Cerrar ventana |
 | `Super + Backspace` | Bloquear pantalla (Quickshell + PAM) |
 | `Super + Alt + P` | Menú de energía de la isla |
-| `Super + V` / `F` | Flotar / pantalla completa |
+| `Super + V` | Historial del portapapeles (en la isla; Enter copia, Supr borra) |
+| `Super + Alt + Space` / `Super + F` | Flotar / pantalla completa |
 | `Super + [1-0]` | Workspace |
 | `Super + Shift + [1-0]` | Mover ventana a workspace |
 | `Super + Alt + [1-0]` | Mover ventana al índice indicado del grupo actual de diez |

@@ -42,7 +42,8 @@ hl.bind(mod .. " + Q", hl.dsp.window.close())
 hl.bind(mod .. " + SHIFT + Q", hl.dsp.exit())
 
 -- Estado de ventana
-hl.bind(mod .. " + V", hl.dsp.window.float({ action = "toggle" }))
+hl.bind(mod .. " + ALT + Space", hl.dsp.window.float({ action = "toggle" })) -- flotar (como en caelestia)
+hl.bind(mod .. " + V", hl.dsp.global("salchipapa:clipboard")) -- historial del portapapeles (en la isla)
 hl.bind(mod .. " + F", hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }))
 hl.bind(mod .. " + P", hl.dsp.window.pseudo())
 hl.bind(mod .. " + J", hl.dsp.layout("togglesplit"))
