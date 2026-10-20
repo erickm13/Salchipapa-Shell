@@ -14,9 +14,15 @@ Item {
     readonly property var results: {
         const all = DesktopEntries.applications.values;
         const q = query.trim().toLowerCase();
-        // También por el id del .desktop (p. ej. "nemo" encuentra "Files", que es como se llama en el menú)
+        // También por el id del .desktop (p. ej. "baobab" encuentra "Disk Usage Analyzer", que es como se llama en el menú)
         const list = q === "" ? all.slice() : all.filter(a => (a.name ?? "").toLowerCase().includes(q) || (a.genericName ?? "").toLowerCase().includes(q) || (a.comment ?? "").toLowerCase().includes(q) || (a.id ?? "").toLowerCase().includes(q));
-        return list.sort((x, y) => (x.name ?? "").localeCompare(y.name ?? ""));
+        // Primero las que EMPIEZAN por la búsqueda, luego las que la tienen en el nombre y al final
+        // las que solo coinciden por id/descripción ("thunar" → "Thunar File Manager" antes que "Bulk Rename")
+        const rank = a => {
+            const n = (a.name ?? "").toLowerCase();
+            return n.startsWith(q) ? 0 : n.includes(q) ? 1 : 2;
+        };
+        return list.sort((x, y) => rank(x) - rank(y) || (x.name ?? "").localeCompare(y.name ?? ""));
     }
 
     function launch(): void {

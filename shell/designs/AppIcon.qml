@@ -1,8 +1,10 @@
-// Icono de una app (el campo Icon= de su .desktop). Primero el del tema por Qt; si Qt no lo
-// encuentra, el archivo directamente en las carpetas de iconos.
+// Icono de una app (el campo Icon= de su .desktop). Primero el archivo de Papirus; luego el del
+// tema por Qt; si tampoco, el archivo directamente en las demás carpetas de iconos.
 // Por qué: Qt (con qtengine + Papirus) no resuelve algunos iconos que sí existen
-// (system-file-manager de Nemo, preferences-system-network…), y recuerda como "no existe" lo que
-// buscó antes de que una app se instalara. La búsqueda por archivo no tiene esos problemas.
+// (system-file-manager, preferences-system-network…), y recuerda como "no existe" lo que
+// buscó antes de que una app se instalara. Peor: si Papirus lo trae como enlace a uno de esos
+// (org.xfce.thunar → system-file-manager), Qt cae a hicolor y devuelve el icono original de la
+// app en vez del de Papirus. La búsqueda por archivo no tiene esos problemas.
 import QtQuick
 import Quickshell
 
@@ -21,10 +23,13 @@ Item {
             return [];
         if (icon.startsWith("/"))
             return ["file://" + icon];
+        const list = [];
+        for (const d of ["/usr/share/icons/Papirus-Dark/64x64/apps", "/usr/share/icons/Papirus-Dark/48x48/apps"])
+            list.push("file://" + d + "/" + icon + ".svg");
         const themed = Quickshell.iconPath(icon, true);
-        const list = themed !== "" ? [themed] : [];
+        if (themed !== "")
+            list.push(themed);
         const dirs = [
-            "/usr/share/icons/Papirus-Dark/64x64/apps", "/usr/share/icons/Papirus-Dark/48x48/apps",
             home + "/.local/share/icons/hicolor/scalable/apps", home + "/.local/share/icons/hicolor/256x256/apps",
             "/usr/share/icons/hicolor/scalable/apps", "/usr/share/icons/hicolor/256x256/apps",
             "/usr/share/icons/hicolor/128x128/apps", "/usr/share/icons/hicolor/64x64/apps",
