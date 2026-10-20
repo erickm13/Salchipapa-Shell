@@ -30,7 +30,10 @@ PanelWindow {
     // cards grandes + historial completo) crece, hasta el alto de la pantalla. Se ajusta UNA vez
     // al alto final (no en cada fotograma de la animación: redimensionar la superficie parpadea):
     // crece antes de que la isla se abra y encoge cuando termina de cerrarse.
-    readonly property real neededHeight: Math.min(win.screen?.height ?? 1080, Math.max(620, island.y + island.targetHeight + 60))
+    readonly property real neededHeight: catchOutside ? (win.screen?.height ?? 1080) : Math.min(win.screen?.height ?? 1080, Math.max(620, island.y + island.targetHeight + 60))
+    // Con un modo abierto (launcher, temas, centro de control…) la ventana cubre la pantalla y un
+    // clic fuera de la isla lo cierra (opción en Ajustes → Bar & Island)
+    readonly property bool catchOutside: Overlay.mode !== "" && Config.islandCloseOnClickOutside
     property real windowHeight: 620
     implicitHeight: windowHeight
     onNeededHeightChanged: {
@@ -51,12 +54,24 @@ PanelWindow {
     // -10: Hyprland ya deja 10 px de gaps_out arriba (lua/general.lua)
     exclusiveZone: Math.max(0, 34 + Config.topMargin - 10)
 
-    // Solo la píldora captura el ratón; el resto deja pasar los clics
+    // Solo la píldora captura el ratón; el resto deja pasar los clics (salvo con catchOutside)
     mask: Region {
-        x: island.x
-        y: island.y
-        width: island.width
-        height: island.height
+        x: win.catchOutside ? 0 : island.x
+        y: win.catchOutside ? 0 : island.y
+        width: win.catchOutside ? win.width : island.width
+        height: win.catchOutside ? win.height : island.height
+    }
+
+    // Clic fuera de la isla con un modo abierto → cerrarlo. Va antes que la isla (queda debajo), y
+    // un clic en un hueco vacío DENTRO de la isla también llega aquí: solo cuenta si cae fuera
+    MouseArea {
+        anchors.fill: parent
+        enabled: win.catchOutside
+        acceptedButtons: Qt.AllButtons
+        onPressed: mouse => {
+            if (mouse.x < island.x || mouse.x > island.x + island.width || mouse.y < island.y || mouse.y > island.y + island.height)
+                Overlay.close();
+        }
     }
 
     Item {

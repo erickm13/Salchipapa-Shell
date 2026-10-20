@@ -349,6 +349,13 @@ FloatingWindow {
                     ToggleRow {
                         visible: win.category === 0
                         width: parent.width
+                        label: "Close the island's panels (launcher, themes, control center…) when clicking outside"
+                        checked: Config.islandCloseOnClickOutside
+                        onToggled: Config.opt.islandCloseOnClickOutside = !Config.islandCloseOnClickOutside
+                    }
+                    ToggleRow {
+                        visible: win.category === 0
+                        width: parent.width
                         label: "Battery percentage in the island"
                         checked: Config.clockShowBatteryPercent
                         onToggled: Config.opt.clockShowBatteryPercent = !Config.clockShowBatteryPercent
