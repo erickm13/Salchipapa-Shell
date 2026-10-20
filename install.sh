@@ -25,6 +25,7 @@ PKGS=(
     base-devel git curl rsync
     # Compositor, sesión y shell
     hyprland uwsm sddm quickshell polkit xdg-desktop-portal-hyprland xdg-desktop-portal-gtk
+    xdg-terminal-exec # uwsm abre con él las apps de terminal del launcher (Yazi, btop…)
     qt6-wayland qt6-5compat qt6-svg qt6-imageformats qt6-multimedia qt6-multimedia-ffmpeg qt5-wayland
     # Vídeo del tema de SDDM
     gst-plugins-base gst-plugins-good gst-plugins-bad gst-plugins-ugly
@@ -286,6 +287,8 @@ install_configs() {
     # btop (Ctrl+Shift+Esc): si ~/.config/btop era un enlace a otro escritorio, se respalda entero
     [ -L "$HOME/.config/btop" ] && backup "$HOME/.config/btop"
     [ -f "$HOME/.config/btop/btop.conf" ] || install -Dm644 "$REPO/defaults/btop/btop.conf" "$HOME/.config/btop/btop.conf"
+    # Terminal para las apps con Terminal=true (xdg-terminal-exec): foot, como Super+Return
+    [ -f "$HOME/.config/xdg-terminals.list" ] || printf 'foot.desktop\n' >"$HOME/.config/xdg-terminals.list"
     # Cursor también para apps X11
     mkdir -p "$HOME/.icons/default"
     printf '[Icon Theme]\nName=Default\nInherits=Bibata-Modern-Classic\n' >"$HOME/.icons/default/index.theme"
