@@ -10,6 +10,8 @@ Item {
 
     property int sel: 0
     property string query: ""
+    // Última posición del ratón sobre el launcher (ver el MouseArea de cada fila)
+    property point mousePos: Qt.point(-1, -1)
 
     readonly property var results: {
         const all = DesktopEntries.applications.values;
@@ -123,6 +125,10 @@ Item {
         spacing: 2
         model: root.results
         currentIndex: root.sel
+        // Duración fija en vez de la velocidad por defecto (400 px/s): con la flecha mantenida
+        // la selección avanza más rápido que eso y la lista seguía desplazándose sola al soltar
+        highlightMoveVelocity: -1
+        highlightMoveDuration: 100
         boundsBehavior: Flickable.StopAtBounds
 
         delegate: Rectangle {
@@ -189,7 +195,15 @@ Item {
                 anchors.fill: parent
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-                onEntered: root.sel = item.index
+                // Solo si el ratón se movió de verdad: al bajar con las flechas la lista se desplaza
+                // y la fila que pasa bajo el cursor quieto también recibe hover, robando la selección
+                onPositionChanged: mouse => {
+                    const p = mapToItem(root, mouse.x, mouse.y);
+                    if (p.x === root.mousePos.x && p.y === root.mousePos.y)
+                        return;
+                    root.mousePos = p;
+                    root.sel = item.index;
+                }
                 onClicked: {
                     root.sel = item.index;
                     root.launch();
