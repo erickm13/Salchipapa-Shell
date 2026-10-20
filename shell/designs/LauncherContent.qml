@@ -130,6 +130,9 @@ Item {
             required property int index
             required property var modelData
 
+            // Icono y textos crecen con el alto de fila (Ajustes → Launcher); con 50 px, tamaños base
+            readonly property real rowScale: Config.launcherRowHeight / 50
+
             width: ListView.view.width
             height: Config.launcherRowHeight
             radius: 12
@@ -139,7 +142,7 @@ Item {
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
                 width: 3
-                height: 24
+                height: Math.round(24 * item.rowScale)
                 radius: 2
                 color: Theme.green
                 visible: index === root.sel
@@ -150,13 +153,13 @@ Item {
                 anchors.left: parent.left
                 anchors.leftMargin: 14
                 anchors.verticalCenter: parent.verticalCenter
-                size: 30
+                size: Math.round(30 * item.rowScale)
                 icon: item.modelData.icon ?? ""
             }
 
             Column {
                 anchors.left: appIcon.right
-                anchors.leftMargin: 12
+                anchors.leftMargin: Math.round(12 * item.rowScale)
                 anchors.right: parent.right
                 anchors.rightMargin: 12
                 anchors.verticalCenter: parent.verticalCenter
@@ -167,7 +170,7 @@ Item {
                     width: parent.width
                     text: item.modelData.name ?? ""
                     color: "#ffffff"
-                    font.pixelSize: Theme.fontPx(13)
+                    font.pixelSize: Theme.fontPx(13 * item.rowScale)
                     font.bold: true
                     elide: Text.ElideRight
                 }
@@ -176,7 +179,7 @@ Item {
                     width: parent.width
                     text: item.modelData.comment || item.modelData.genericName || ""
                     color: Theme.secondaryText
-                    font.pixelSize: Theme.fontPx(10)
+                    font.pixelSize: Theme.fontPx(10 * item.rowScale)
                     elide: Text.ElideRight
                     visible: text.length > 0
                 }
