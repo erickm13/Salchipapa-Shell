@@ -191,7 +191,7 @@ hl.bind("CTRL + " .. mod .. " + MINUS", hl.dsp.global("salchipapa:mediaPrev"))
 
 -- Atajos traídos de caelestia
 hl.bind(mod .. " + SHIFT + Return", v.app(v.terminal .. " -e herdr")) -- terminal con herdr
-hl.bind(mod .. " + ALT + E", v.app("nemo"))
+hl.bind(mod .. " + ALT + E", v.app("thunar"))
 hl.bind("CTRL + ALT + Escape", v.app("qps")) -- procesos
 hl.bind("CTRL + ALT + V", v.app("pavucontrol"))
 hl.bind(mod .. " + SHIFT + M", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"))

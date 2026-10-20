@@ -39,7 +39,7 @@ PKGS=(
     libnotify gnome-keyring trash-cli glib2 dconf
     fish # varios scripts de bin/ son de fish
     # Apps de los atajos
-    foot kitty fuzzel yazi btop firefox pavucontrol thunar nemo
+    foot kitty fuzzel yazi btop firefox pavucontrol thunar
     gpu-screen-recorder # grabar pantalla (scripts/record.sh)
     hyprsunset # luz nocturna del centro de control
     qps showmethekey # Ctrl+Alt+Esc, Super+Alt+Shift+K

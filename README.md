@@ -108,7 +108,7 @@ Desde una TTY libre (`Ctrl+Alt+F3`): `Hyprland -c <repo>/hyprland.lua`. `Super +
 | `Super + Shift + Alt + P` | Pausar/reanudar la grabación |
 | Teclas multimedia / `Ctrl + Super + Space`, `=`, `-` | Reproducir/pausar, siguiente, anterior (MPRIS, sin playerctl) |
 | `Super + Shift + Return` | Terminal con herdr |
-| `Super + Alt + E` | Archivos (Nemo) |
+| `Super + Alt + E` | Archivos (Thunar) |
 | `Ctrl + Alt + Escape` / `Ctrl + Alt + V` | qps (procesos) / pavucontrol |
 | `Super + Shift + M` | Silenciar el audio |
 | `Ctrl + Alt + C` | Borrar todas las notificaciones |
