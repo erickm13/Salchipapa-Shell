@@ -37,6 +37,7 @@ hl.bind(mod .. " + N", hl.dsp.global("salchipapa:control")) -- centro de control
 hl.bind(mod .. " + ALT + P", hl.dsp.global("salchipapa:power")) -- menú de energía (en la isla)
 hl.bind(mod .. " + I", hl.dsp.global("salchipapa:settings")) -- panel de ajustes
 hl.bind(mod .. " + A", hl.dsp.global("salchipapa:music")) -- panel de música (letra, visualizador)
+hl.bind(mod .. " + SHIFT + R", hl.dsp.exec_cmd(v.scripts .. "/restart-shell.sh")) -- reiniciar la shell (Quickshell)
 hl.bind(mod .. " + B", v.app(v.browser))
 hl.bind(mod .. " + E", v.app(v.fileManager))
 hl.bind(mod .. " + Q", hl.dsp.window.close())
