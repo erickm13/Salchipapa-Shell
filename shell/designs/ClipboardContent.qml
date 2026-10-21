@@ -1,6 +1,6 @@
 pragma ComponentBehavior: Bound
 // Historial del portapapeles, DENTRO de la isla (modo "clipboard", Super+V). Lee cliphist con
-// scripts/clipboard.sh. Enter/clic = copiar, Supr = borrar del historial, "Vaciar" = todo.
+// scripts/clipboard.sh. Enter/clic = copiar, Supr = borrar del historial, "Clear" = todo.
 // Las imágenes muestran una miniatura que se genera al verla (caché en ~/.cache).
 import QtQuick
 import Quickshell
@@ -103,7 +103,7 @@ Item {
             anchors.rightMargin: 12
             anchors.verticalCenter: parent.verticalCenter
             color: "#ffffff"
-            font.pixelSize: Theme.fontPx(16)
+            font.pixelSize: Theme.fontPx(15)
             clip: true
             focus: Overlay.mode === "clipboard"
             onTextChanged: {
@@ -113,7 +113,7 @@ Item {
 
             Text {
                 anchors.verticalCenter: parent.verticalCenter
-                text: "Buscar en el portapapeles (" + root.items.length + ")…"
+                text: "Search clipboard (" + root.items.length + ")…"
                 color: Theme.tertiaryText
                 font: parent.font
                 visible: parent.text.length === 0
@@ -150,7 +150,7 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                 }
                 Text {
-                    text: root.confirmWipe ? "¿Vaciar todo?" : "Vaciar"
+                    text: root.confirmWipe ? "Clear all?" : "Clear"
                     font.family: Theme.bodyFontFamily
                     font.pixelSize: Theme.fontPx(11)
                     font.bold: root.confirmWipe
@@ -263,7 +263,7 @@ Item {
                     if (!row.modelData.image)
                         return row.modelData.text;
                     const m = row.modelData.text.match(/binary data ([\d.]+ \w+) (\w+) (\d+x\d+)/);
-                    return m ? "Imagen " + m[2].toUpperCase() + " · " + m[3] + " · " + m[1] : "Imagen";
+                    return m ? "Image " + m[2].toUpperCase() + " · " + m[3] + " · " + m[1] : "Image";
                 }
                 color: row.modelData.image ? Theme.secondaryText : "#ffffff"
                 font.family: Theme.bodyFontFamily
@@ -287,7 +287,7 @@ Item {
         Text {
             anchors.centerIn: parent
             visible: root.results.length === 0
-            text: root.items.length === 0 ? "El portapapeles está vacío" : "Nada coincide (la búsqueda no incluye imágenes)"
+            text: root.items.length === 0 ? "Clipboard is empty" : "No matches (search skips images)"
             color: Theme.tertiaryText
             font.family: Theme.bodyFontFamily
             font.pixelSize: Theme.fontPx(11)
@@ -299,9 +299,9 @@ Item {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         anchors.margins: 10
-        text: "Enter: copiar · Supr: borrar"
+        text: "Enter: copy · Del: remove"
         color: Theme.overlay1
         font.family: Theme.bodyFontFamily
-        font.pixelSize: Theme.fontPx(11)
+        font.pixelSize: Theme.fontPx(10)
     }
 }

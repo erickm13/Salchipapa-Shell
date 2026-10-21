@@ -199,7 +199,7 @@ Singleton {
             property int motionBounce: 40
 
             // Launcher
-            property int launcherWidth: 550
+            property int launcherWidth: 600
             property int launcherRowHeight: 50
             property int launcherRowsBeforeScrolling: 6
 

@@ -12,16 +12,16 @@ Item {
 
     readonly property string recentPath: Quickshell.env("HOME") + "/.local/state/salchipapa-shell/emoji-recent.json"
     readonly property var tabs: [
-        { g: -1, icon: "history", name: "Recientes" },
-        { g: 0, icon: "sentiment_satisfied", name: "Caras y emociones" },
-        { g: 1, icon: "emoji_people", name: "Personas y cuerpo" },
-        { g: 3, icon: "pets", name: "Animales y naturaleza" },
-        { g: 4, icon: "restaurant", name: "Comida y bebida" },
-        { g: 5, icon: "flight", name: "Viajes y lugares" },
-        { g: 6, icon: "sports_soccer", name: "Actividades" },
-        { g: 7, icon: "lightbulb", name: "Objetos" },
-        { g: 8, icon: "emoji_symbols", name: "Símbolos" },
-        { g: 9, icon: "flag", name: "Banderas" },
+        { g: -1, icon: "history", name: "Recent" },
+        { g: 0, icon: "sentiment_satisfied", name: "Smileys & Emotion" },
+        { g: 1, icon: "emoji_people", name: "People & Body" },
+        { g: 3, icon: "pets", name: "Animals & Nature" },
+        { g: 4, icon: "restaurant", name: "Food & Drink" },
+        { g: 5, icon: "flight", name: "Travel & Places" },
+        { g: 6, icon: "sports_soccer", name: "Activities" },
+        { g: 7, icon: "lightbulb", name: "Objects" },
+        { g: 8, icon: "emoji_symbols", name: "Symbols" },
+        { g: 9, icon: "flag", name: "Flags" },
         { g: 10, icon: "terminal", name: "Nerd Font" }
     ]
 
@@ -119,7 +119,7 @@ Item {
             anchors.rightMargin: 20
             anchors.verticalCenter: parent.verticalCenter
             color: "#ffffff"
-            font.pixelSize: Theme.fontPx(16)
+            font.pixelSize: Theme.fontPx(15)
             clip: true
             focus: Overlay.mode === "emoji"
             onTextChanged: {
@@ -128,7 +128,7 @@ Item {
             }
             Text {
                 anchors.verticalCenter: parent.verticalCenter
-                text: "Buscar emoji (español o inglés)…"
+                text: "Search emoji (English or Spanish)…"
                 color: Theme.tertiaryText
                 font: parent.font
                 visible: parent.text.length === 0
@@ -251,7 +251,7 @@ Item {
         Text {
             anchors.centerIn: parent
             visible: root.results.length === 0
-            text: root.all.length === 0 ? "Cargando…" : root.query !== "" ? "Ningún emoji coincide" : "Aún no has usado ninguno"
+            text: root.all.length === 0 ? "Loading…" : root.query !== "" ? "No matching emoji" : "No recent emoji yet"
             color: Theme.tertiaryText
             font.family: Theme.bodyFontFamily
             font.pixelSize: Theme.fontPx(11)
@@ -282,10 +282,10 @@ Item {
             anchors.right: parent.right
             anchors.rightMargin: 14
             anchors.verticalCenter: parent.verticalCenter
-            text: "Enter: elegir · Tab: categoría"
+            text: "Enter: pick · Tab: category"
             color: Theme.overlay1
             font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(11)
+            font.pixelSize: Theme.fontPx(10)
         }
     }
 }

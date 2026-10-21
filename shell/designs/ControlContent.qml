@@ -146,7 +146,7 @@ Item {
                     height: modelData.size >= 2 ? 72 : 56
                     glyph: modelData.id === "wifi" ? (Net.wifiEnabled ? "wifi" : "wifi_off") : modelData.id === "focus" ? (Quick.dnd ? "do_not_disturb_on" : "do_not_disturb_off") : modelData.id === "bluetooth" ? "bluetooth" : "sports_esports"
                     title: modelData.id === "gameMode" ? "Game Mode" : modelData.id === "wifi" ? "Wi-Fi" : modelData.id === "bluetooth" ? "Bluetooth" : "Focus"
-                    subtitle: modelData.id === "wifi" ? (Net.type === "wifi" ? (Net.connectedSsid || Net.name || "On") : (Net.wifiEnabled ? (Net.type === "ethernet" ? "Ethernet" : "On") : "Off")) : modelData.id === "bluetooth" ? (Bluetooth.enabled ? (Bluetooth.connectedCount > 0 ? Bluetooth.connectedCount + " conectado" + (Bluetooth.connectedCount > 1 ? "s" : "") : "On") : "Off") : modelData.id === "focus" ? (Quick.dnd ? "On" : "Off") : (Quick.gameMode ? "On" : "Off")
+                    subtitle: modelData.id === "wifi" ? (Net.type === "wifi" ? (Net.connectedSsid || Net.name || "On") : (Net.wifiEnabled ? (Net.type === "ethernet" ? "Ethernet" : "On") : "Off")) : modelData.id === "bluetooth" ? (Bluetooth.enabled ? (Bluetooth.connectedCount > 0 ? Bluetooth.connectedCount + " connected" + (Bluetooth.connectedCount > 1 ? "s" : "") : "On") : "Off") : modelData.id === "focus" ? (Quick.dnd ? "On" : "Off") : (Quick.gameMode ? "On" : "Off")
                     accent: modelData.id === "focus" ? Theme.peach : modelData.id === "bluetooth" ? Theme.blue : modelData.id === "gameMode" ? Theme.yellow : Theme.green
                     on: modelData.id === "wifi" ? Net.wifiEnabled : modelData.id === "bluetooth" ? Bluetooth.enabled : modelData.id === "focus" ? Quick.dnd : Quick.gameMode
                     splitAction: modelData.id === "wifi" || modelData.id === "bluetooth"
@@ -201,8 +201,8 @@ Item {
             Repeater {
                 model: [
                     { id: "turbo", title: "Turbo", icon: "rocket_launch", accent: Theme.peach },
-                    { id: "balanced", title: "Rendimiento", icon: "speed", accent: Theme.green },
-                    { id: "silent", title: "Silencioso", icon: "volume_off", accent: Theme.blue }
+                    { id: "balanced", title: "Performance", icon: "speed", accent: Theme.green },
+                    { id: "silent", title: "Silent", icon: "volume_off", accent: Theme.blue }
                 ]
 
                 delegate: Rectangle {
@@ -412,9 +412,9 @@ Item {
                     Text {
                         font.family: Theme.bodyFontFamily
                         width: parent.width
-                        text: nItem.modelData.appName || "Notificación"
+                        text: nItem.modelData.appName || "Notification"
                         color: Theme.mauve
-                        font.pixelSize: Theme.fontPx(10)
+                        font.pixelSize: Theme.fontPx(11)
                         font.bold: true
                         elide: Text.ElideRight
                     }
@@ -431,7 +431,7 @@ Item {
                         width: parent.width
                         text: Config.notificationShowBody ? (nItem.modelData.body || "") : ""
                         color: Theme.secondaryText
-                        font.pixelSize: Theme.fontPx(10)
+                        font.pixelSize: Theme.fontPx(11)
                         elide: Text.ElideRight
                         visible: text.length > 0 && text !== nItem.modelData.summary
                     }
@@ -523,7 +523,7 @@ Item {
                 width: parent.width
                 text: bt.title
                 color: "#ffffff"
-                font.pixelSize: Theme.fontPx(13)
+                font.pixelSize: Theme.fontPx(12)
                 font.bold: true
                 elide: Text.ElideRight
             }
@@ -532,7 +532,7 @@ Item {
                 width: parent.width
                 text: bt.subtitle
                 color: Theme.secondaryText
-                font.pixelSize: Theme.fontPx(10)
+                font.pixelSize: Theme.fontPx(11)
                 elide: Text.ElideRight
             }
         }

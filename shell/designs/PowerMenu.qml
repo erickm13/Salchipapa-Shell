@@ -141,7 +141,7 @@ Item {
                     readonly property bool selected: root.selectedIndex === index
                     width: (actionsRow.width - actionsRow.spacing * (root.actions.length - 1)) / root.actions.length
                     height: actionsRow.height
-                    radius: 18
+                    radius: 22
                     color: selected ? Theme.green : Theme.panelCard
                     Behavior on color {
                         ColorAnimation { duration: Theme.hoverDuration }
@@ -149,21 +149,21 @@ Item {
 
                     Column {
                         anchors.centerIn: parent
-                        spacing: 4
+                        spacing: 6
 
                         Text {
                             anchors.horizontalCenter: parent.horizontalCenter
                             text: actionButton.modelData.glyph
                             color: actionButton.selected ? Theme.panelBg : Theme.text
                             font.family: "Material Symbols Rounded"
-                            font.pixelSize: Theme.iconPx(18)
+                            font.pixelSize: Theme.iconPx(32)
                         }
                         Text {
                             anchors.horizontalCenter: parent.horizontalCenter
                             text: actionButton.modelData.label
                             color: actionButton.selected ? Theme.panelBg : Theme.text
                             font.family: Theme.bodyFontFamily
-                            font.pixelSize: Theme.fontPx(9)
+                            font.pixelSize: Theme.fontPx(14)
                         }
                     }
 
@@ -228,7 +228,7 @@ Item {
                             text: "Cancel"
                             color: Theme.text
                             font.family: Theme.bodyFontFamily
-                            font.pixelSize: Theme.fontPx(10)
+                            font.pixelSize: Theme.fontPx(12)
                         }
                         MouseArea {
                             anchors.fill: parent
@@ -250,7 +250,7 @@ Item {
                             text: root.confirmAction === "reboot" ? "Reboot" : "Power Off"
                             color: Theme.panelBg
                             font.family: Theme.bodyFontFamily
-                            font.pixelSize: Theme.fontPx(10)
+                            font.pixelSize: Theme.fontPx(12)
                             font.bold: true
                         }
                         MouseArea {

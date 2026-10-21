@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Datos para la página "Rendimiento" de la isla (Super+Shift+Esc). Imprime un JSON:
+# Datos para la página "Performance" de la isla (Super+Shift+Esc). Imprime un JSON:
 #   cpu   {model, threads, temp}            temp en °C (coretemp/k10temp), o null
 #   mem   {total, avail, swapTotal, swapFree}  en bytes
 #   gpus  [{kind: nvidia|intel|amd, name, state, util, memUsed, memTotal, temp, power, freq, maxFreq}]
@@ -56,7 +56,7 @@ for d in /sys/bus/pci/devices/*; do
         cur=$(cat "$card/gt_cur_freq_mhz" 2>/dev/null || echo null)
         max=$(cat "$card/gt_max_freq_mhz" 2>/dev/null || echo null)
         g=$(jq -n --arg kind "$kind" --argjson cur "$cur" --argjson max "$max" \
-            '{kind: $kind, name: (if $kind == "intel" then "Intel (integrada)" else "AMD" end), state: "active", freq: $cur, maxFreq: $max}')
+            '{kind: $kind, name: (if $kind == "intel" then "Intel (integrated)" else "AMD" end), state: "active", freq: $cur, maxFreq: $max}')
         ;;
     *) continue ;;
     esac

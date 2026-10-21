@@ -79,7 +79,7 @@ Item {
             anchors.rightMargin: 20
             anchors.verticalCenter: parent.verticalCenter
             color: "#ffffff"
-            font.pixelSize: Theme.fontPx(16)
+            font.pixelSize: Theme.fontPx(15)
             clip: true
             focus: Overlay.mode === "launcher"
             onTextChanged: {
@@ -89,7 +89,7 @@ Item {
 
             Text {
                 anchors.verticalCenter: parent.verticalCenter
-                text: "Buscar aplicaciones…"
+                text: "Search apps…"
                 color: Theme.tertiaryText
                 font: parent.font
                 visible: parent.text.length === 0

@@ -67,10 +67,10 @@ Rectangle {
         }
         Text {
             width: parent.width
-            text: Recorder.recording ? (Recorder.paused ? "Pausado · " : "Grabando · ") + Recorder.elapsedText : (Config.recordSound ? "Con sonido" : "Sin sonido") + " · ~/Videos/Recordings"
+            text: Recorder.recording ? (Recorder.paused ? "Paused · " : "Recording · ") + Recorder.elapsedText : (Config.recordSound ? "With sound" : "No sound") + " · ~/Videos/Recordings"
             color: Recorder.recording ? (Recorder.paused ? Theme.yellow : Theme.red) : Theme.secondaryText
             font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(10)
+            font.pixelSize: Theme.fontPx(11)
             elide: Text.ElideRight
         }
     }
@@ -92,13 +92,13 @@ Rectangle {
         TextPill {
             visible: !Recorder.recording
             glyph: "desktop_windows"
-            label: "Pantalla"
+            label: "Screen"
             onClicked: card.start("screen")
         }
         TextPill {
             visible: !Recorder.recording
             glyph: "crop_free"
-            label: "Región"
+            label: "Region"
             onClicked: card.start("region")
         }
 

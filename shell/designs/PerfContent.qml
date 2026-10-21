@@ -1,5 +1,5 @@
 pragma ComponentBehavior: Bound
-// Página "Rendimiento", DENTRO de la isla (modo "perf", Super+Shift+Esc). Indicadores de CPU, GPU,
+// Página "Performance", DENTRO de la isla (modo "perf", Super+Shift+Esc). Indicadores de CPU, GPU,
 // RAM y disco, y el detalle de GPUs, memoria, discos, ventiladores y red. Los datos salen de
 // scripts/perf.sh (solo se consulta mientras la página está abierta); el % de CPU, de services/Sys.
 import QtQuick
@@ -84,7 +84,7 @@ Item {
             anchors.left: parent.left
             anchors.leftMargin: 16
             anchors.verticalCenter: parent.verticalCenter
-            text: "Rendimiento"
+            text: "Performance"
             color: Theme.text
             font.family: Theme.displayFontFamily
             font.pixelSize: Theme.fontPx(15)
@@ -94,10 +94,10 @@ Item {
             anchors.right: parent.right
             anchors.rightMargin: 16
             anchors.verticalCenter: parent.verticalCenter
-            text: root.d ? root.d.cpu.model.replace(/\(R\)|\(TM\)/g, "").replace(/\s+/g, " ") + " · " + root.d.cpu.threads + " hilos" : ""
+            text: root.d ? root.d.cpu.model.replace(/\(R\)|\(TM\)/g, "").replace(/\s+/g, " ") + " · " + root.d.cpu.threads + " threads" : ""
             color: Theme.secondaryText
             font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(10)
+            font.pixelSize: Theme.fontPx(11)
         }
     }
 
@@ -119,7 +119,7 @@ Item {
             readonly property bool sleeping: root.nvidia !== null && root.nvidia.state === "suspended"
             value: root.nvidia && root.nvidia.util !== undefined ? root.nvidia.util / 100 : 0
             big: sleeping ? "zzz" : (root.nvidia && root.nvidia.util !== undefined ? root.nvidia.util + "%" : "—")
-            sub: sleeping ? "En reposo" : (root.nvidia && root.nvidia.temp !== undefined ? root.nvidia.temp + " °C" : "")
+            sub: sleeping ? "Asleep" : (root.nvidia && root.nvidia.temp !== undefined ? root.nvidia.temp + " °C" : "")
             subColor: root.nvidia && root.nvidia.temp !== undefined ? root.heat(root.nvidia.temp) : Theme.secondaryText
         }
         Gauge {
@@ -129,10 +129,10 @@ Item {
             sub: root.d ? root.gb(root.memUsed) : ""
         }
         Gauge {
-            label: "Disco /"
+            label: "Disk /"
             value: root.rootDisk ? root.rootDisk.used / root.rootDisk.size : 0
             big: root.rootDisk ? Math.round(root.rootDisk.used / root.rootDisk.size * 100) + "%" : "—"
-            sub: root.rootDisk ? root.gb(root.rootDisk.size - root.rootDisk.used) + " libres" : ""
+            sub: root.rootDisk ? root.gb(root.rootDisk.size - root.rootDisk.used) + " free" : ""
         }
     }
 
@@ -156,7 +156,7 @@ Item {
             InfoLine {
                 visible: root.nvidia !== null
                 label: root.nvidia ? root.nvidia.name.replace("NVIDIA GeForce ", "").replace(" Laptop GPU", "") : ""
-                value: !root.nvidia ? "" : root.nvidia.state === "suspended" ? "En reposo (no se consulta para no despertarla)"
+                value: !root.nvidia ? "" : root.nvidia.state === "suspended" ? "Asleep (not polled so it stays asleep)"
                     : (root.nvidia.memUsed !== undefined ? root.gb(root.nvidia.memUsed) + " / " + root.gb(root.nvidia.memTotal) + " VRAM" : "")
                     + (root.nvidia.power ? " · " + Math.round(root.nvidia.power) + " W" : "")
             }
@@ -168,7 +168,7 @@ Item {
         }
         Card {
             width: parent.cellW
-            title: "Memoria"
+            title: "Memory"
             icon: "memory_alt"
             Bar {
                 label: "RAM"
@@ -184,7 +184,7 @@ Item {
         }
         Card {
             width: parent.cellW
-            title: "Discos"
+            title: "Disks"
             icon: "hard_drive"
             Repeater {
                 model: root.d ? root.d.disks : []
@@ -198,19 +198,19 @@ Item {
         }
         Card {
             width: parent.cellW
-            title: "Ventiladores y red"
+            title: "Fans & Network"
             icon: "mode_fan"
             Repeater {
                 model: root.d ? root.d.fans : []
                 delegate: InfoLine {
                     required property var modelData
-                    label: ({ cpu_fan: "Ventilador CPU", gpu_fan: "Ventilador GPU", mid_fan: "Ventilador central" })[modelData.label] ?? modelData.label
-                    value: modelData.rpm > 0 ? modelData.rpm + " rpm" : "Parado"
+                    label: ({ cpu_fan: "CPU fan", gpu_fan: "GPU fan", mid_fan: "Middle fan" })[modelData.label] ?? modelData.label
+                    value: modelData.rpm > 0 ? modelData.rpm + " rpm" : "Stopped"
                 }
             }
             InfoLine {
                 visible: root.d !== null && root.d.net.iface !== ""
-                label: root.d ? "Red (" + root.d.net.iface + ")" : ""
+                label: root.d ? "Network (" + root.d.net.iface + ")" : ""
                 value: "↓ " + root.rate(root.rxRate) + "   ↑ " + root.rate(root.txRate)
             }
         }
@@ -220,7 +220,7 @@ Item {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         anchors.margins: 10
-        text: "Se actualiza cada 2 s · Esc: cerrar"
+        text: "Updates every 2 s · Esc: close"
         color: Theme.overlay1
         font.family: Theme.bodyFontFamily
         font.pixelSize: Theme.fontPx(10)
@@ -285,7 +285,7 @@ Item {
                 text: g.sub
                 color: g.subColor
                 font.family: Theme.bodyFontFamily
-                font.pixelSize: Theme.fontPx(9)
+                font.pixelSize: Theme.fontPx(10)
             }
         }
         Text {
@@ -349,7 +349,7 @@ Item {
             text: il.label
             color: Theme.text
             font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(10)
+            font.pixelSize: Theme.fontPx(11)
             elide: Text.ElideRight
         }
         Text {
@@ -358,7 +358,7 @@ Item {
             text: il.value
             color: Theme.secondaryText
             font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(10)
+            font.pixelSize: Theme.fontPx(11)
             elide: Text.ElideLeft
             width: Math.min(implicitWidth, il.width * 0.68)
             horizontalAlignment: Text.AlignRight
@@ -377,14 +377,14 @@ Item {
             text: bar.label
             color: Theme.text
             font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(10)
+            font.pixelSize: Theme.fontPx(11)
         }
         Text {
             anchors.right: parent.right
             text: bar.detail
             color: Theme.secondaryText
             font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(10)
+            font.pixelSize: Theme.fontPx(11)
         }
         Rectangle {
             anchors.left: parent.left

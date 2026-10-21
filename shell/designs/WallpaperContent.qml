@@ -154,7 +154,7 @@ Item {
             }
             Text {
                 anchors.verticalCenter: parent.verticalCenter
-                text: root.animatedTab ? "Buscar fondos animados…" : "Buscar fondos…"
+                text: root.animatedTab ? "Search animated wallpapers…" : "Search wallpapers…"
                 color: Theme.tertiaryText
                 font: parent.font
                 visible: parent.text.length === 0
@@ -197,7 +197,7 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                     }
                     Text {
-                        text: "Quitar"
+                        text: "Remove"
                         font.family: Theme.bodyFontFamily
                         font.pixelSize: Theme.fontPx(11)
                         color: stopMouse.containsMouse ? Theme.islandBg : Theme.secondaryText
@@ -223,7 +223,7 @@ Item {
                     anchors.centerIn: parent
                     spacing: 2
                     Repeater {
-                        model: [{ label: "Estáticos", icon: "image", animated: false }, { label: "Animados", icon: "animated_images", animated: true }]
+                        model: [{ label: "Static", icon: "image", animated: false }, { label: "Animated", icon: "animated_images", animated: true }]
                         delegate: Rectangle {
                             id: tab
                             required property var modelData
@@ -301,7 +301,7 @@ Item {
                 }
                 Text {
                     font.family: Theme.bodyFontFamily
-                    text: "Colores"
+                    text: "Colors"
                     color: root.applyColors ? Theme.islandBg : Theme.secondaryText
                     font.pixelSize: Theme.fontPx(11)
                     font.bold: root.applyColors
@@ -323,7 +323,7 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             text: root.results.length > 0 ? (root.sel + 1) + "/" + root.results.length : "0/0"
             color: Theme.secondaryText
-            font.pixelSize: Theme.fontPx(12)
+            font.pixelSize: Theme.fontPx(11)
         }
     }
 
@@ -423,10 +423,10 @@ Item {
                         Text {
                             id: typeText
                             anchors.centerIn: parent
-                            text: typeof cell.modelData === "string" ? "" : ((cell.modelData.id === Wallpaper.animated ? "● " : "") + ({ scene: "Escena", video: "Vídeo", web: "Web" }[cell.modelData.type] ?? cell.modelData.type))
+                            text: typeof cell.modelData === "string" ? "" : ((cell.modelData.id === Wallpaper.animated ? "● " : "") + ({ scene: "Scene", video: "Video", web: "Web" }[cell.modelData.type] ?? cell.modelData.type))
                             color: typeof cell.modelData !== "string" && cell.modelData.id === Wallpaper.animated ? Theme.green : "#ffffff"
                             font.family: Theme.bodyFontFamily
-                            font.pixelSize: Theme.fontPx(9)
+                            font.pixelSize: Theme.fontPx(10)
                             font.bold: true
                         }
                     }
@@ -446,7 +446,7 @@ Item {
                             verticalAlignment: Text.AlignVCenter
                             text: root.titleOf(cell.modelData)
                             color: "#ffffff"
-                            font.pixelSize: Theme.fontPx(10)
+                            font.pixelSize: Theme.fontPx(11)
                             elide: Text.ElideRight
                         }
                     }
@@ -471,8 +471,8 @@ Item {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         anchors.margins: 12
-        text: "Enter para aplicar · Tab: estáticos/animados"
+        text: "Enter to apply · Tab: static/animated"
         color: Theme.overlay1
-        font.pixelSize: Theme.fontPx(11)
+        font.pixelSize: Theme.fontPx(10)
     }
 }

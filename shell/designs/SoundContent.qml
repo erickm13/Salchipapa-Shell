@@ -46,7 +46,7 @@ Item {
             text: "Sound"
             color: "#ffffff"
             font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(18)
+            font.pixelSize: Theme.fontPx(15)
             font.bold: true
         }
     }

@@ -138,7 +138,7 @@ Item {
 
             Text {
                 anchors.verticalCenter: parent.verticalCenter
-                text: "Buscar temas…"
+                text: "Search themes…"
                 color: Theme.tertiaryText
                 font: parent.font
                 visible: parent.text.length === 0
@@ -158,7 +158,7 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             text: root.results.length > 0 ? (root.sel + 1) + "/" + root.results.length : "0/0"
             color: Theme.secondaryText
-            font.pixelSize: Theme.fontPx(12)
+            font.pixelSize: Theme.fontPx(11)
         }
     }
 
@@ -269,8 +269,8 @@ Item {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         anchors.margins: 12
-        text: "Enter para aplicar"
+        text: "Enter to apply"
         color: Theme.overlay1
-        font.pixelSize: Theme.fontPx(11)
+        font.pixelSize: Theme.fontPx(10)
     }
 }

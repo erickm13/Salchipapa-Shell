@@ -151,10 +151,14 @@ PanelWindow {
             onTriggered: island.peek = ""
         }
 
-        // Tamaños por modo
-        width: mode === "power" ? 370 : mode === "polkit" ? 370 : mode === "control" ? 440 : mode === "display" ? 460 : mode === "sound" ? 420 : mode === "launcher" || mode === "clipboard" ? Config.launcherWidth : mode === "emoji" ? 600 : mode === "perf" ? 600 : mode === "themes" ? 720 : mode === "wallpaper" ? 760 : mode === "calendar" ? 300 : mode === "expanded" ? 680 : mode === "notif" ? Config.notificationWidth : mode === "media" ? 370 : mode === "volume" || mode === "brightness" ? 300 : Math.max(Config.collapsedWidth, idleRow.implicitWidth + Config.innerPadding * 2)
+        // Tamaños por modo. Los paneles usan solo tres anchos (pequeño, mediano, grande) para que
+        // no cambie de tamaño a cada paso; el launcher sigue su ajuste (por defecto el mediano).
+        readonly property int widthSmall: 480
+        readonly property int widthMedium: 600
+        readonly property int widthLarge: 760
+        width: ["power", "polkit", "control", "display", "sound", "media"].includes(mode) ? widthSmall : ["clipboard", "emoji", "perf", "expanded"].includes(mode) ? widthMedium : ["themes", "wallpaper"].includes(mode) ? widthLarge : mode === "launcher" ? Config.launcherWidth : mode === "notif" ? Config.notificationWidth : mode === "calendar" || mode === "volume" || mode === "brightness" ? 300 : Math.max(Config.collapsedWidth, idleRow.implicitWidth + Config.innerPadding * 2)
         // Alto final del modo (sin animar): la ventana se ajusta a él una sola vez
-        readonly property real targetHeight: mode === "power" ? (powerMenu.confirmAction === "" ? 84 : 176) : mode === "polkit" ? 250 : mode === "control" ? Math.min(controlContent.preferredHeight + 32, (win.screen?.height ?? 1080) - Config.topMargin - 60) : mode === "display" ? (142 + (Hyprland.monitors?.values?.length ?? 1) * 206) : mode === "sound" ? (213 + Math.min(Audio.sinks?.length ?? 1, 5) * 42 + Math.min(Audio.sources?.length ?? 1, 4) * 42 + Math.max(1, Math.min(Audio.apps?.length ?? 0, 4)) * 62) : mode === "launcher" ? (85 + Config.launcherRowsBeforeScrolling * Config.launcherRowHeight + (Config.launcherRowsBeforeScrolling - 1) * 2) : mode === "clipboard" ? 470 : mode === "emoji" ? 440 : mode === "perf" ? 470 : mode === "themes" ? 210 : mode === "wallpaper" ? 250 : mode === "calendar" ? 250 : mode === "expanded" ? 142 : mode === "notif" ? 74 : mode === "media" ? 58 : mode === "volume" || mode === "brightness" ? 42 : Config.barHeight
+        readonly property real targetHeight: mode === "power" ? (powerMenu.confirmAction === "" ? 110 : 176) : mode === "polkit" ? 250 : mode === "control" ? Math.min(controlContent.preferredHeight + 32, (win.screen?.height ?? 1080) - Config.topMargin - 60) : mode === "display" ? (142 + (Hyprland.monitors?.values?.length ?? 1) * 206) : mode === "sound" ? (213 + Math.min(Audio.sinks?.length ?? 1, 5) * 42 + Math.min(Audio.sources?.length ?? 1, 4) * 42 + Math.max(1, Math.min(Audio.apps?.length ?? 0, 4)) * 62) : mode === "launcher" ? (85 + Config.launcherRowsBeforeScrolling * Config.launcherRowHeight + (Config.launcherRowsBeforeScrolling - 1) * 2) : mode === "clipboard" ? 470 : mode === "emoji" ? 440 : mode === "perf" ? 470 : mode === "themes" ? 210 : mode === "wallpaper" ? 250 : mode === "calendar" ? 250 : mode === "expanded" ? 142 : mode === "notif" ? 74 : mode === "media" ? 58 : mode === "volume" || mode === "brightness" ? 42 : Config.barHeight
         height: targetHeight
 
         Behavior on width {
@@ -649,7 +653,7 @@ PanelWindow {
                                 Text {
                                     font.family: Theme.bodyFontFamily
                                     width: parent.width
-                                    text: Media.title || "Sin reproducción"
+                                    text: Media.title || "Nothing playing"
                                     color: "#ffffff"
                                     font.pixelSize: Theme.fontPx(13)
                                     font.bold: true
@@ -897,7 +901,7 @@ PanelWindow {
                     Text {
                         font.family: Theme.bodyFontFamily
                         width: parent.width
-                        text: Media.title || "Sin reproducción"
+                        text: Media.title || "Nothing playing"
                         color: "#ffffff"
                         font.pixelSize: Theme.fontPx(12)
                         font.bold: true
@@ -1077,7 +1081,7 @@ PanelWindow {
                     Text {
                         font.family: Theme.bodyFontFamily
                         width: parent.width
-                        text: island.notifApp || "Notificación"
+                        text: island.notifApp || "Notification"
                         color: Theme.mauve
                         font.pixelSize: Theme.fontPx(16)
                         font.bold: true

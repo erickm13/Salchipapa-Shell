@@ -77,7 +77,7 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 text: "Display"
                 color: "#ffffff"
-                font.pixelSize: Theme.fontPx(16)
+                font.pixelSize: Theme.fontPx(15)
                 font.bold: true
             }
         }
@@ -128,14 +128,14 @@ Item {
                         font.family: Theme.bodyFontFamily
                         text: mon.modelData.name
                         color: "#ffffff"
-                        font.pixelSize: Theme.fontPx(15)
+                        font.pixelSize: Theme.fontPx(12)
                         font.bold: true
                     }
                     Text {
                         font.family: Theme.bodyFontFamily
                         text: mon.modelData.width + "×" + mon.modelData.height + " · " + Math.round(mon.rr) + " Hz · " + mon.modelData.scale + "×"
                         color: Theme.secondaryText
-                        font.pixelSize: Theme.fontPx(12)
+                        font.pixelSize: Theme.fontPx(11)
                     }
                 }
                 Text {
@@ -146,7 +146,7 @@ Item {
                     anchors.rightMargin: 14
                     text: "focused"
                     color: Theme.green
-                    font.pixelSize: Theme.fontPx(12)
+                    font.pixelSize: Theme.fontPx(11)
                     font.bold: true
                     visible: mon.modelData.focused
                 }
@@ -198,7 +198,7 @@ Item {
                                 anchors.centerIn: parent
                                 text: sc.modelData + "×"
                                 color: sc.active ? Theme.islandBg : Theme.text
-                                font.pixelSize: Theme.fontPx(13)
+                                font.pixelSize: Theme.fontPx(12)
                                 font.bold: sc.active
                             }
                             MouseArea {
@@ -231,7 +231,7 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                         text: "Resolution"
                         color: Theme.secondaryText
-                        font.pixelSize: Theme.fontPx(13)
+                        font.pixelSize: Theme.fontPx(12)
                     }
                     Text {
                         font.family: Theme.bodyFontFamily
@@ -240,7 +240,7 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                         text: mon.modelData.width + "×" + mon.modelData.height + " @ " + Math.round(mon.rr) + " Hz"
                         color: "#ffffff"
-                        font.pixelSize: Theme.fontPx(13)
+                        font.pixelSize: Theme.fontPx(12)
                         font.bold: true
                     }
                     Icon {
@@ -304,14 +304,14 @@ Item {
                     font.family: Theme.bodyFontFamily
                     text: "Night Light"
                     color: "#ffffff"
-                    font.pixelSize: Theme.fontPx(15)
+                    font.pixelSize: Theme.fontPx(12)
                     font.bold: true
                 }
                 Text {
                     font.family: Theme.bodyFontFamily
                     text: Quick.nightLight ? "On" : "Off"
                     color: Theme.secondaryText
-                    font.pixelSize: Theme.fontPx(12)
+                    font.pixelSize: Theme.fontPx(11)
                 }
             }
 
