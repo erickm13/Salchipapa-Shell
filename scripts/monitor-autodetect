@@ -69,7 +69,8 @@ apply_profile() {
             | [($mon.availableModes // [])[] | rtrimstr("Hz") | split("@")
                | select(.[0] == $m.res and ((.[1] | tonumber | round) == ($m.hz | tostring | tonumber | round)))
                | join("@")] | first // "preferred";
-        .[$k] // empty | .[] | select(.name) |
+        # Primero las que se apagan: si no, las que se colocan solapan una que sigue encendida
+        .[$k] // empty | map(select(.name)) | sort_by(.disabled != true) | .[] |
         if .disabled then "hl.monitor({ output = \"\(.name)\", disabled = true })"
         else "hl.monitor({ output = \"\(.name)\", disabled = false, mode = \"\(mode(.))\", position = \"\(.x)x\(.y)\", scale = \(.scale // 1), transform = \(.transform // 0) })"
         end' "$profiles" 2>/dev/null)
