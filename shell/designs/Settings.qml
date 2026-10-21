@@ -26,41 +26,33 @@ FloatingWindow {
     implicitWidth: Math.round(1080 * uiScale)
     implicitHeight: Math.round(620 * uiScale)
 
+    // Ordenadas por uso: las que más se tocan primero. Las páginas se eligen por índice
+    // (win.category === N), así que al reordenar hay que renumerar esas condiciones.
     readonly property var categories: [
-        {
-            name: "Bar & Island",
-            icon: "crop_16_9",
-            desc: "Island shape and size, notch and Game Mode bar."
-        },
-        {
-            name: "Media",
-            icon: "music_note",
-            desc: "Media player and controls."
-        },
-        {
-            name: "Clock & Date",
-            icon: "schedule",
-            desc: "Clock, time format and calendar."
-        },
         {
             name: "Appearance",
             icon: "palette",
             desc: "Colors, theme and wallpaper."
         },
         {
-            name: "Motion",
-            icon: "animation",
-            desc: "Animations and transitions."
+            name: "Bar & Island",
+            icon: "crop_16_9",
+            desc: "Island shape and size, notch and Game Mode bar."
         },
         {
-            name: "Launcher",
-            icon: "search",
-            desc: "Size of the app launcher (Super + Space)."
+            name: "Display",
+            icon: "monitor",
+            desc: "Monitor position, resolution, refresh rate and orientation."
         },
         {
             name: "Notifications",
             icon: "notifications",
             desc: "Notifications and Do Not Disturb."
+        },
+        {
+            name: "Media",
+            icon: "music_note",
+            desc: "Media player and controls."
         },
         {
             name: "Control Center",
@@ -73,19 +65,29 @@ FloatingWindow {
             desc: "Lock screen clock, background and content."
         },
         {
-            name: "Display",
-            icon: "monitor",
-            desc: "Monitor position, resolution, refresh rate and orientation."
+            name: "Clock & Date",
+            icon: "schedule",
+            desc: "Clock, time format and calendar."
         },
         {
-            name: "Login & Boot",
-            icon: "login",
-            desc: "Login (SDDM) and boot (GRUB) themes."
+            name: "Launcher",
+            icon: "search",
+            desc: "Size of the app launcher (Super + Space)."
+        },
+        {
+            name: "Motion",
+            icon: "animation",
+            desc: "Animations and transitions."
         },
         {
             name: "System",
             icon: "settings",
             desc: "Touchpad, blur, processes and shell info."
+        },
+        {
+            name: "Login & Boot",
+            icon: "login",
+            desc: "Login (SDDM) and boot (GRUB) themes."
         }
     ]
 
@@ -529,11 +531,11 @@ FloatingWindow {
 
                     // ---- Bar & Island ----
                     SectionTitle {
-                        visible: win.category === 0
+                        visible: win.category === 1
                         text: "Island"
                     }
                     ToggleRow {
-                        visible: win.category === 0
+                        visible: win.category === 1
                         width: parent.width
                         label: "Notch mode"
                         checked: Config.notchMode
@@ -542,7 +544,7 @@ FloatingWindow {
                     // Dónde va la isla: excluyentes, así que una sola fila de opciones (por dentro
                     // siguen siendo islandAllScreens + islandFollowFocus)
                     ChoiceRow {
-                        visible: win.category === 0
+                        visible: win.category === 1
                         width: parent.width
                         label: "Island on"
                         options: [
@@ -557,25 +559,25 @@ FloatingWindow {
                         }
                     }
                     ToggleRow {
-                        visible: win.category === 0
+                        visible: win.category === 1
                         width: parent.width
                         label: "Close panels on outside click"
                         checked: Config.islandCloseOnClickOutside
                         onToggled: Config.opt.islandCloseOnClickOutside = !Config.islandCloseOnClickOutside
                     }
                     ToggleRow {
-                        visible: win.category === 0
+                        visible: win.category === 1
                         width: parent.width
                         label: "Battery percentage"
                         checked: Config.clockShowBatteryPercent
                         onToggled: Config.opt.clockShowBatteryPercent = !Config.clockShowBatteryPercent
                     }
                     SectionTitle {
-                        visible: win.category === 0
+                        visible: win.category === 1
                         text: "Size"
                     }
                     PxSlider {
-                        visible: win.category === 0
+                        visible: win.category === 1
                         width: parent.width
                         label: "Bar height"
                         from: 20
@@ -584,7 +586,7 @@ FloatingWindow {
                         onMoved: v => Config.opt.barHeight = v
                     }
                     PxSlider {
-                        visible: win.category === 0
+                        visible: win.category === 1
                         width: parent.width
                         label: "Collapsed width"
                         from: 60
@@ -593,7 +595,7 @@ FloatingWindow {
                         onMoved: v => Config.opt.collapsedWidth = v
                     }
                     PxSlider {
-                        visible: win.category === 0
+                        visible: win.category === 1
                         width: parent.width
                         label: "Expanded height"
                         from: 120
@@ -602,7 +604,7 @@ FloatingWindow {
                         onMoved: v => Config.opt.expandedHeight = v
                     }
                     PxSlider {
-                        visible: win.category === 0
+                        visible: win.category === 1
                         width: parent.width
                         label: "Edge gap"
                         from: 0
@@ -611,7 +613,7 @@ FloatingWindow {
                         onMoved: v => Config.opt.gapFromEdge = v
                     }
                     PxSlider {
-                        visible: win.category === 0
+                        visible: win.category === 1
                         width: parent.width
                         label: "Inner padding"
                         from: 4
@@ -622,11 +624,11 @@ FloatingWindow {
 
                     // ---- Media ----
                     SectionTitle {
-                        visible: win.category === 1
+                        visible: win.category === 4
                         text: "Layout"
                     }
                     PxSlider {
-                        visible: win.category === 1
+                        visible: win.category === 4
                         width: parent.width
                         label: "Title width"
                         from: 60
@@ -635,7 +637,7 @@ FloatingWindow {
                         onMoved: v => Config.opt.mediaTitleWidth = v
                     }
                     PxSlider {
-                        visible: win.category === 1
+                        visible: win.category === 4
                         width: parent.width
                         label: "Album art size"
                         from: 40
@@ -644,39 +646,39 @@ FloatingWindow {
                         onMoved: v => Config.opt.mediaAlbumArtSize = v
                     }
                     SectionTitle {
-                        visible: win.category === 1
+                        visible: win.category === 4
                         text: "What to show"
                     }
                     ToggleRow {
-                        visible: win.category === 1
+                        visible: win.category === 4
                         width: parent.width
                         label: "Album line"
                         checked: Config.mediaShowAlbum
                         onToggled: Config.opt.mediaShowAlbum = !Config.mediaShowAlbum
                     }
                     ToggleRow {
-                        visible: win.category === 1
+                        visible: win.category === 4
                         width: parent.width
                         label: "Artist line"
                         checked: Config.mediaShowArtist
                         onToggled: Config.opt.mediaShowArtist = !Config.mediaShowArtist
                     }
                     ToggleRow {
-                        visible: win.category === 1
+                        visible: win.category === 4
                         width: parent.width
                         label: "Transport buttons"
                         checked: Config.mediaShowControls
                         onToggled: Config.opt.mediaShowControls = !Config.mediaShowControls
                     }
                     ToggleRow {
-                        visible: win.category === 1
+                        visible: win.category === 4
                         width: parent.width
                         label: "Lyrics"
                         checked: Config.mediaShowLyrics
                         onToggled: Config.opt.mediaShowLyrics = !Config.mediaShowLyrics
                     }
                     ToggleRow {
-                        visible: win.category === 1
+                        visible: win.category === 4
                         width: parent.width
                         label: "Scroll to change track"
                         checked: Config.mediaScrollToChangeTrack
@@ -685,68 +687,68 @@ FloatingWindow {
 
                     // ---- Clock & Date ----
                     SectionTitle {
-                        visible: win.category === 2
+                        visible: win.category === 7
                         text: "Bar clock"
                     }
                     ToggleRow {
-                        visible: win.category === 2
+                        visible: win.category === 7
                         width: parent.width
                         label: "24-hour time"
                         checked: Config.clock24Hour
                         onToggled: Config.opt.clock24Hour = !Config.clock24Hour
                     }
                     ToggleRow {
-                        visible: win.category === 2
+                        visible: win.category === 7
                         width: parent.width
                         label: "Show seconds"
                         checked: Config.clockShowSeconds
                         onToggled: Config.opt.clockShowSeconds = !Config.clockShowSeconds
                     }
                     ToggleRow {
-                        visible: win.category === 2
+                        visible: win.category === 7
                         width: parent.width
                         label: "Workspace dots"
                         checked: Config.clockShowWorkspaceDots
                         onToggled: Config.opt.clockShowWorkspaceDots = !Config.clockShowWorkspaceDots
                     }
                     ToggleRow {
-                        visible: win.category === 2
+                        visible: win.category === 7
                         width: parent.width
                         label: "Battery & Wi-Fi"
                         checked: Config.clockShowBatteryWifi
                         onToggled: Config.opt.clockShowBatteryWifi = !Config.clockShowBatteryWifi
                     }
                     SectionTitle {
-                        visible: win.category === 2
+                        visible: win.category === 7
                         text: "Expanded island"
                     }
                     ToggleRow {
-                        visible: win.category === 2
+                        visible: win.category === 7
                         width: parent.width
                         label: "Workspaces on the left"
                         checked: Config.clockExpandedWorkspaces
                         onToggled: Config.opt.clockExpandedWorkspaces = !Config.clockExpandedWorkspaces
                     }
                     ToggleRow {
-                        visible: win.category === 2
+                        visible: win.category === 7
                         width: parent.width
                         label: "Status on the right"
                         checked: Config.clockExpandedStatus
                         onToggled: Config.opt.clockExpandedStatus = !Config.clockExpandedStatus
                     }
                     ToggleRow {
-                        visible: win.category === 2
+                        visible: win.category === 7
                         width: parent.width
                         label: "Media card"
                         checked: Config.clockExpandedMedia
                         onToggled: Config.opt.clockExpandedMedia = !Config.clockExpandedMedia
                     }
                     SectionTitle {
-                        visible: win.category === 2
+                        visible: win.category === 7
                         text: "Calendar"
                     }
                     PxSlider {
-                        visible: win.category === 2
+                        visible: win.category === 7
                         width: parent.width
                         label: "Week starts on"
                         from: 0
@@ -756,7 +758,7 @@ FloatingWindow {
                         onMoved: v => Config.opt.clockWeekStart = v
                     }
                     PxSlider {
-                        visible: win.category === 2
+                        visible: win.category === 7
                         width: parent.width
                         label: "Day cell height"
                         from: 20
@@ -765,7 +767,7 @@ FloatingWindow {
                         onMoved: v => Config.opt.clockCalendarDayHeight = v
                     }
                     ToggleRow {
-                        visible: win.category === 2
+                        visible: win.category === 7
                         width: parent.width
                         label: "Show neighbouring months"
                         checked: Config.clockShowNeighbouringMonths
@@ -774,48 +776,57 @@ FloatingWindow {
 
                     // ---- Motion ----
                     SectionTitle {
-                        visible: win.category === 4
+                        visible: win.category === 9
                         text: "Animation"
                     }
                     ToggleRow {
-                        visible: win.category === 4
+                        visible: win.category === 9
                         width: parent.width
                         label: "Reduce motion"
                         checked: Config.opt.motionReduce
                         onToggled: Config.opt.motionReduce = !Config.opt.motionReduce
                     }
                     PxSlider {
-                        visible: win.category === 4
+                        visible: win.category === 9
                         width: parent.width
                         label: "Movement"
                         from: 0
                         to: 1000
                         value: Config.opt.motionMovementDuration
-                        unit: "ms"
+                        unit: "s"
+                        divisor: 1000
+                        decimals: 2
+                        snap: 10
                         onMoved: v => Config.opt.motionMovementDuration = v
                     }
                     PxSlider {
-                        visible: win.category === 4
+                        visible: win.category === 9
                         width: parent.width
                         label: "Fades"
                         from: 0
                         to: 1000
                         value: Config.opt.motionFadeDuration
-                        unit: "ms"
+                        unit: "s"
+                        divisor: 1000
+                        decimals: 2
+                        snap: 10
                         onMoved: v => Config.opt.motionFadeDuration = v
                     }
                     PxSlider {
-                        visible: win.category === 4
+                        visible: win.category === 9
                         width: parent.width
                         label: "Hover response"
                         from: 0
                         to: 1000
                         value: Config.opt.motionHoverDuration
-                        unit: "ms"
+                        unit: "s"
+                        divisor: 1000
+                        decimals: 2
+                        snap: 10
                         onMoved: v => Config.opt.motionHoverDuration = v
                     }
                     PxSlider {
-                        visible: win.category === 4
+                        visible: win.category === 9
                         width: parent.width
                         label: "Bounce"
                         from: 0
@@ -826,48 +837,48 @@ FloatingWindow {
                     }
 
                     LauncherSettings {
-                        visible: win.category === 5
-                        width: parent.width
-                        height: visible ? implicitHeight : 0
-                    }
-                    NotificationsSettings {
-                        visible: win.category === 6
-                        width: parent.width
-                        height: visible ? implicitHeight : 0
-                    }
-                    ControlCenterSettings {
-                        visible: win.category === 7
-                        width: parent.width
-                        height: visible ? implicitHeight : 0
-                    }
-                    LockScreenSettings {
                         visible: win.category === 8
                         width: parent.width
                         height: visible ? implicitHeight : 0
                     }
+                    NotificationsSettings {
+                        visible: win.category === 3
+                        width: parent.width
+                        height: visible ? implicitHeight : 0
+                    }
+                    ControlCenterSettings {
+                        visible: win.category === 5
+                        width: parent.width
+                        height: visible ? implicitHeight : 0
+                    }
+                    LockScreenSettings {
+                        visible: win.category === 6
+                        width: parent.width
+                        height: visible ? implicitHeight : 0
+                    }
                     DisplaySettings {
-                        visible: win.category === 9
+                        visible: win.category === 2
                         width: parent.width
                         height: visible ? implicitHeight : 0
                     }
                     BootThemesSettings {
-                        visible: win.category === 10
+                        visible: win.category === 11
                         width: parent.width
                         height: visible ? implicitHeight : 0
                     }
                     SystemSettings {
-                        visible: win.category === 11
+                        visible: win.category === 10
                         width: parent.width
                         height: visible ? implicitHeight : 0
                     }
 
                     // ---- Appearance ----
                     SectionTitle {
-                        visible: win.category === 3
+                        visible: win.category === 0
                         text: "Theme & wallpaper"
                     }
                     Rectangle {
-                        visible: win.category === 3
+                        visible: win.category === 0
                         width: parent.width
                         height: 68
                         radius: 12
@@ -970,11 +981,11 @@ FloatingWindow {
                         }
                     }
                     SectionTitle {
-                        visible: win.category === 3
+                        visible: win.category === 0
                         text: "Accent"
                     }
                     Rectangle {
-                        visible: win.category === 3
+                        visible: win.category === 0
                         width: parent.width
                         height: 44
                         radius: 12
@@ -1020,7 +1031,7 @@ FloatingWindow {
                         }
                     }
                     Rectangle {
-                        visible: win.category === 3
+                        visible: win.category === 0
                         width: parent.width
                         height: 42
                         radius: 12
@@ -1077,14 +1088,14 @@ FloatingWindow {
                         }
                     }
                     ToggleRow {
-                        visible: win.category === 3
+                        visible: win.category === 0
                         width: parent.width
                         label: "Color burst"
                         checked: Config.appearanceColorBurst
                         onToggled: Config.opt.appearanceColorBurst = !Config.appearanceColorBurst
                     }
                     ChoiceRow {
-                        visible: win.category === 3
+                        visible: win.category === 0
                         width: parent.width
                         label: "Color style"
                         options: [
@@ -1102,7 +1113,7 @@ FloatingWindow {
                         }
                     }
                     ChoiceRow {
-                        visible: win.category === 3
+                        visible: win.category === 0
                         width: parent.width
                         label: "Color intensity"
                         options: [
@@ -1117,7 +1128,7 @@ FloatingWindow {
                         }
                     }
                     Text {
-                        visible: win.category === 3
+                        visible: win.category === 0
                         width: parent.width
                         wrapMode: Text.Wrap
                         text: "Used when colours come from the wallpaper (Super+W with Colours on). Soft is the Material default; Expressive gives distinct hues. Intensity makes the accent colours deeper; backgrounds and text stay readable."
@@ -1126,21 +1137,24 @@ FloatingWindow {
                         font.pixelSize: Theme.fontPx(10)
                     }
                     SectionTitle {
-                        visible: win.category === 3
+                        visible: win.category === 0
                         text: "Type"
                     }
                     PxSlider {
-                        visible: win.category === 3
+                        visible: win.category === 0
                         width: parent.width
                         label: "Font size"
                         from: 10
                         to: 24
                         value: Config.appearanceFontSize
+                        // 15 px = 100 % (Theme.fontPx escala todo el texto desde ahí)
+                        unit: "%"
+                        divisor: 0.15
                         onMoved: v => Config.opt.appearanceFontSize = v
                     }
                     Rectangle {
                         id: fontPicker
-                        visible: win.category === 3
+                        visible: win.category === 0
                         width: parent.width
                         height: fontList.visible ? 174 : 42
                         radius: 12
@@ -1249,7 +1263,7 @@ FloatingWindow {
                     }
                     Rectangle {
                         id: displayFontPicker
-                        visible: win.category === 3
+                        visible: win.category === 0
                         width: parent.width
                         height: displayFontList.visible ? 174 : 42
                         radius: Theme.radiusMedium
@@ -1356,49 +1370,49 @@ FloatingWindow {
                     }
 
                     SectionTitle {
-                        visible: win.category === 3
+                        visible: win.category === 0
                         text: "Shape & depth"
                     }
-                    PxSlider { visible: win.category === 3; width: parent.width; label: "Spacing unit"; from: 2; to: 8; value: Config.appearanceSpacingUnit; onMoved: v => Config.opt.appearanceSpacingUnit = v }
-                    PxSlider { visible: win.category === 3; width: parent.width; label: "Small radius"; from: 0; to: 24; value: Config.appearanceSmallRadius; onMoved: v => Config.opt.appearanceSmallRadius = v }
-                    PxSlider { visible: win.category === 3; width: parent.width; label: "Medium radius"; from: 0; to: 32; value: Config.appearanceMediumRadius; onMoved: v => Config.opt.appearanceMediumRadius = v }
-                    PxSlider { visible: win.category === 3; width: parent.width; label: "Large radius"; from: 0; to: 40; value: Config.appearanceLargeRadius; onMoved: v => Config.opt.appearanceLargeRadius = v }
+                    PxSlider { visible: win.category === 0; width: parent.width; label: "Spacing"; from: 2; to: 8; value: Config.appearanceSpacingUnit; unit: "%"; divisor: 0.04; onMoved: v => Config.opt.appearanceSpacingUnit = v }
+                    PxSlider { visible: win.category === 0; width: parent.width; label: "Small radius"; from: 0; to: 24; value: Config.appearanceSmallRadius; onMoved: v => Config.opt.appearanceSmallRadius = v }
+                    PxSlider { visible: win.category === 0; width: parent.width; label: "Medium radius"; from: 0; to: 32; value: Config.appearanceMediumRadius; onMoved: v => Config.opt.appearanceMediumRadius = v }
+                    PxSlider { visible: win.category === 0; width: parent.width; label: "Large radius"; from: 0; to: 40; value: Config.appearanceLargeRadius; onMoved: v => Config.opt.appearanceLargeRadius = v }
                     ToggleRow {
-                        visible: win.category === 3
+                        visible: win.category === 0
                         width: parent.width
                         label: "Screen corners"
                         checked: Config.appearanceScreenCorners
                         onToggled: Config.opt.appearanceScreenCorners = !Config.appearanceScreenCorners
                     }
-                    PxSlider { visible: win.category === 3 && Config.appearanceScreenCorners; width: parent.width; label: "Screen corner radius"; from: 0; to: 32; value: Config.appearanceScreenCornerRadius; onMoved: v => Config.opt.appearanceScreenCornerRadius = v }
-                    PxSlider { visible: win.category === 3; width: parent.width; label: "Icon size"; from: 12; to: 32; value: Config.appearanceIconSize; onMoved: v => Config.opt.appearanceIconSize = v }
-                    PxSlider { visible: win.category === 3; width: parent.width; label: "Icon stroke"; from: 1; to: 20; value: Config.appearanceIconStroke; unit: ""; onMoved: v => Config.opt.appearanceIconStroke = v }
+                    PxSlider { visible: win.category === 0 && Config.appearanceScreenCorners; width: parent.width; label: "Screen corner radius"; from: 0; to: 32; value: Config.appearanceScreenCornerRadius; onMoved: v => Config.opt.appearanceScreenCornerRadius = v }
+                    PxSlider { visible: win.category === 0; width: parent.width; label: "Icon size"; from: 12; to: 32; value: Config.appearanceIconSize; unit: "%"; divisor: 0.18; onMoved: v => Config.opt.appearanceIconSize = v }
+                    PxSlider { visible: win.category === 0; width: parent.width; label: "Icon stroke"; from: 1; to: 20; value: Config.appearanceIconStroke; unit: ""; onMoved: v => Config.opt.appearanceIconStroke = v }
 
                     SectionTitle {
-                        visible: win.category === 3
+                        visible: win.category === 0
                         text: "Surfaces & ink"
                     }
-                    PxSlider { visible: win.category === 3; width: parent.width; label: "Surface lift"; from: 0; to: 20; value: Config.appearanceSurfaceLift; unit: "%"; onMoved: v => Config.opt.appearanceSurfaceLift = v }
-                    PxSlider { visible: win.category === 3; width: parent.width; label: "Divider strength"; from: 0; to: 100; value: Config.appearanceDividerStrength; unit: "%"; onMoved: v => Config.opt.appearanceDividerStrength = v }
-                    PxSlider { visible: win.category === 3; width: parent.width; label: "Secondary text"; from: 0; to: 100; value: Config.appearanceSecondaryText; unit: "%"; onMoved: v => Config.opt.appearanceSecondaryText = v }
-                    PxSlider { visible: win.category === 3; width: parent.width; label: "Tertiary text"; from: 0; to: 100; value: Config.appearanceTertiaryText; unit: "%"; onMoved: v => Config.opt.appearanceTertiaryText = v }
-                    PxSlider { visible: win.category === 3; width: parent.width; label: "Hover fill"; from: 0; to: 30; value: Config.appearanceHoverFill; unit: "%"; onMoved: v => Config.opt.appearanceHoverFill = v }
-                    PxSlider { visible: win.category === 3; width: parent.width; label: "Selected fill"; from: 0; to: 30; value: Config.appearanceSelectedFill; unit: "%"; onMoved: v => Config.opt.appearanceSelectedFill = v }
-                    PxSlider { visible: win.category === 3; width: parent.width; label: "Modal dim"; from: 0; to: 90; value: Config.appearanceModalDim; unit: "%"; onMoved: v => Config.opt.appearanceModalDim = v }
+                    PxSlider { visible: win.category === 0; width: parent.width; label: "Surface lift"; from: 0; to: 20; value: Config.appearanceSurfaceLift; unit: "%"; onMoved: v => Config.opt.appearanceSurfaceLift = v }
+                    PxSlider { visible: win.category === 0; width: parent.width; label: "Divider strength"; from: 0; to: 100; value: Config.appearanceDividerStrength; unit: "%"; onMoved: v => Config.opt.appearanceDividerStrength = v }
+                    PxSlider { visible: win.category === 0; width: parent.width; label: "Secondary text"; from: 0; to: 100; value: Config.appearanceSecondaryText; unit: "%"; onMoved: v => Config.opt.appearanceSecondaryText = v }
+                    PxSlider { visible: win.category === 0; width: parent.width; label: "Tertiary text"; from: 0; to: 100; value: Config.appearanceTertiaryText; unit: "%"; onMoved: v => Config.opt.appearanceTertiaryText = v }
+                    PxSlider { visible: win.category === 0; width: parent.width; label: "Hover fill"; from: 0; to: 30; value: Config.appearanceHoverFill; unit: "%"; onMoved: v => Config.opt.appearanceHoverFill = v }
+                    PxSlider { visible: win.category === 0; width: parent.width; label: "Selected fill"; from: 0; to: 30; value: Config.appearanceSelectedFill; unit: "%"; onMoved: v => Config.opt.appearanceSelectedFill = v }
+                    PxSlider { visible: win.category === 0; width: parent.width; label: "Modal dim"; from: 0; to: 90; value: Config.appearanceModalDim; unit: "%"; onMoved: v => Config.opt.appearanceModalDim = v }
 
                     SectionTitle {
-                        visible: win.category === 3
+                        visible: win.category === 0
                         text: "Shadow"
                     }
-                    PxSlider { visible: win.category === 3; width: parent.width; label: "Opacity"; from: 0; to: 100; value: Config.appearanceShadowOpacity; unit: "%"; onMoved: v => { Config.opt.appearanceShadowOpacity = v; WindowShadowSync.scheduleSync(); } }
-                    PxSlider { visible: win.category === 3; width: parent.width; label: "Blur"; from: 0; to: 100; value: Config.appearanceShadowBlur; unit: "%"; onMoved: v => { Config.opt.appearanceShadowBlur = v; WindowShadowSync.scheduleSync(); } }
-                    PxSlider { visible: win.category === 3; width: parent.width; label: "Vertical offset"; from: 0; to: 30; value: Config.appearanceShadowOffset; onMoved: v => { Config.opt.appearanceShadowOffset = v; WindowShadowSync.scheduleSync(); } }
-                    PxSlider { visible: win.category === 3; width: parent.width; label: "Spread"; from: 0; to: 450; value: Config.appearanceShadowSpread; onMoved: v => { Config.opt.appearanceShadowSpread = v; WindowShadowSync.scheduleSync(); } }
+                    PxSlider { visible: win.category === 0; width: parent.width; label: "Opacity"; from: 0; to: 100; value: Config.appearanceShadowOpacity; unit: "%"; onMoved: v => { Config.opt.appearanceShadowOpacity = v; WindowShadowSync.scheduleSync(); } }
+                    PxSlider { visible: win.category === 0; width: parent.width; label: "Blur"; from: 0; to: 100; value: Config.appearanceShadowBlur; unit: "%"; onMoved: v => { Config.opt.appearanceShadowBlur = v; WindowShadowSync.scheduleSync(); } }
+                    PxSlider { visible: win.category === 0; width: parent.width; label: "Vertical offset"; from: 0; to: 30; value: Config.appearanceShadowOffset; onMoved: v => { Config.opt.appearanceShadowOffset = v; WindowShadowSync.scheduleSync(); } }
+                    PxSlider { visible: win.category === 0; width: parent.width; label: "Spread"; from: 0; to: 450; value: Config.appearanceShadowSpread; onMoved: v => { Config.opt.appearanceShadowSpread = v; WindowShadowSync.scheduleSync(); } }
                     SectionTitle {
-                        visible: win.category === 3
+                        visible: win.category === 0
                         text: "Wallpaper"
                     }
-                    PxSlider { visible: win.category === 3; width: parent.width; label: "Wallpaper crossfade"; from: 0; to: 1000; value: Config.appearanceWallpaperCrossfade; unit: "ms"; onMoved: v => Config.opt.appearanceWallpaperCrossfade = v }
+                    PxSlider { visible: win.category === 0; width: parent.width; label: "Wallpaper crossfade"; from: 0; to: 1000; value: Config.appearanceWallpaperCrossfade; unit: "s"; divisor: 1000; decimals: 2; snap: 50; onMoved: v => Config.opt.appearanceWallpaperCrossfade = v }
 
                     // ---- Otras categorías (placeholder) ----
                     Item {
@@ -1687,6 +1701,10 @@ FloatingWindow {
         property int to: 100
         property int value: 0
         property string unit: "px"
+        // Como en SettingSliderRow: se muestra valor / divisor; snap redondea a múltiplos
+        property real divisor: 1
+        property int decimals: 0
+        property int snap: 1
         signal moved(int v)
 
         height: 58
@@ -1695,10 +1713,10 @@ FloatingWindow {
         border.width: activeFocus ? 2 : 0
         border.color: Theme.green
 
-        // ←/→ en pasos de 1/20 del rango; con Shift, de uno en uno
-        readonly property int step: Math.max(1, Math.round((to - from) / 20))
+        // ←/→ en pasos de 1/20 del rango; con Shift, de `snap` en `snap`
+        readonly property int step: Math.max(snap, Math.round((to - from) / 20 / snap) * snap)
         function nudge(dir: int, fine: bool): void {
-            moved(Math.max(from, Math.min(to, value + dir * (fine ? 1 : step))));
+            moved(Math.max(from, Math.min(to, value + dir * (fine ? snap : step))));
         }
         activeFocusOnTab: true
         onActiveFocusChanged: if (activeFocus) KeyNav.ensureVisible(ps)
@@ -1724,7 +1742,8 @@ FloatingWindow {
             anchors.right: parent.right
             anchors.topMargin: 12
             anchors.rightMargin: 14
-            text: ps.unit === "" ? ("" + ps.value) : (ps.value + " " + ps.unit)
+            readonly property real shown: Number((ps.value / ps.divisor).toFixed(ps.decimals))
+            text: ps.unit === "" ? ("" + shown) : ps.unit === "%" ? (shown + "%") : (shown + " " + ps.unit)
             color: Theme.secondaryText
             font.pixelSize: Theme.fontPx(13)
         }
@@ -1766,7 +1785,8 @@ FloatingWindow {
                 cursorShape: Qt.PointingHandCursor
                 function setX(mx) {
                     const r = Math.max(0, Math.min(1, mx / track.width));
-                    ps.moved(Math.round(ps.from + r * (ps.to - ps.from)));
+                    const v = Math.round((ps.from + r * (ps.to - ps.from)) / ps.snap) * ps.snap;
+                    ps.moved(Math.max(ps.from, Math.min(ps.to, v)));
                 }
                 onPressed: mouse => setX(mouse.x)
                 onPositionChanged: mouse => {

@@ -1,5 +1,7 @@
 // Fila de ajuste con slider, dentro de un SettingGroup. `unit` se pega tal cual al valor
-// (" px", " ms", "%"…). Mismas medidas que el PxSlider de Settings.qml.
+// (" px", " s", "%"…). Mismas medidas que el PxSlider de Settings.qml.
+// Lo guardado no cambia; solo cómo se muestra: valor / `divisor` con `decimals` decimales
+// (ms → s con divisor 1000). `snap` redondea los valores a múltiplos suyos.
 import QtQuick
 import "../common"
 
@@ -10,16 +12,19 @@ Item {
     property int from: 0
     property int to: 100
     property string unit: ""
+    property real divisor: 1
+    property int decimals: 0
+    property int snap: 1
     signal moved(int value)
 
     width: parent.width
     height: 58
     opacity: enabled ? 1 : 0.45
 
-    // ←/→ en pasos de 1/20 del rango; con Shift, de uno en uno
-    readonly property int step: Math.max(1, Math.round((to - from) / 20))
+    // ←/→ en pasos de 1/20 del rango; con Shift, de `snap` en `snap`
+    readonly property int step: Math.max(snap, Math.round((to - from) / 20 / snap) * snap)
     function nudge(dir: int, fine: bool): void {
-        moved(Math.max(from, Math.min(to, value + dir * (fine ? 1 : step))));
+        moved(Math.max(from, Math.min(to, value + dir * (fine ? snap : step))));
     }
     activeFocusOnTab: true
     onActiveFocusChanged: if (activeFocus) KeyNav.ensureVisible(row)
@@ -59,7 +64,7 @@ Item {
         anchors.rightMargin: 16
         anchors.top: parent.top
         anchors.topMargin: 12
-        text: String(row.value) + row.unit
+        text: Number((row.value / row.divisor).toFixed(row.decimals)) + row.unit
         color: Theme.secondaryText
         font.family: Theme.bodyFontFamily
         font.pixelSize: Theme.fontPx(13)
@@ -98,7 +103,8 @@ Item {
             enabled: row.enabled
             cursorShape: row.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
             function setAt(x: real): void {
-                row.moved(Math.round(row.from + Math.max(0, Math.min(1, x / track.width)) * (row.to - row.from)));
+                const v = row.from + Math.max(0, Math.min(1, x / track.width)) * (row.to - row.from);
+                row.moved(Math.max(row.from, Math.min(row.to, Math.round(v / row.snap) * row.snap)));
             }
             onPressed: mouse => setAt(mouse.x)
             onPositionChanged: mouse => {
