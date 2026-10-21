@@ -101,6 +101,7 @@ ShellRoot {
         Overlay.mode;
         LockScreen.locked;
         Idle.objectName; // bloqueo/suspensión automáticos
+        Downloads.objectName; // aviso de descargas terminadas
         LockScreen.mediaService = Media;
         WindowBlur.apply();
         Touchpad.apply();

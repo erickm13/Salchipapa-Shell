@@ -93,6 +93,7 @@ Singleton {
     readonly property bool notificationQueueHidden: settings.notificationQueueHidden
     readonly property bool notificationTimeoutBar: settings.notificationTimeoutBar
     readonly property int notificationProgressWait: settings.notificationProgressWait
+    readonly property bool notificationDownloads: settings.notificationDownloads
     readonly property bool notificationShowBody: settings.notificationShowBody
     readonly property bool notificationSound: settings.notificationSound
     readonly property int notificationHistoryHeight: settings.notificationHistoryHeight
@@ -228,6 +229,7 @@ Singleton {
             property bool notificationQueueHidden: true // las del "+N" también suben al irse las de arriba
             property bool notificationTimeoutBar: true
             property int notificationProgressWait: 30 // s que espera a una descarga en curso (0 = nada)
+            property bool notificationDownloads: true // aviso al terminar una descarga
             property bool notificationShowBody: true
             property bool notificationSound: true
             property int notificationHistoryHeight: 200

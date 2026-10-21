@@ -56,6 +56,12 @@ Item {
                 onMoved: v => Config.opt.notificationProgressWait = v
             }
             SettingToggleRow {
+                label: "Finished downloads"
+                sublabel: "Notify when a new file finishes downloading"
+                checked: Config.opt.notificationDownloads
+                onToggled: Config.opt.notificationDownloads = !Config.opt.notificationDownloads
+            }
+            SettingToggleRow {
                 label: "Show time left"
                 sublabel: "Bar under the notification that empties until it hides"
                 checked: Config.opt.notificationTimeoutBar

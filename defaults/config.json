@@ -68,6 +68,7 @@
   "motionMovementDuration": 420,
   "motionReduce": false,
   "notchMode": true,
+  "notificationDownloads": true,
   "notificationHistoryHeight": 200,
   "notificationMaxVisible": 3,
   "notificationPopupTimeout": 4000,
