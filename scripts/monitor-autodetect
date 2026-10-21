@@ -14,6 +14,9 @@
 # OJO: con la config en Lua `hyprctl keyword` no vale; los monitores se aplican con
 # `hyprctl eval 'hl.monitor({...})'`. Y una pantalla apagada solo vuelve con `disabled = false`
 # explícito (sin él, hl.monitor responde "ok" pero la deja apagada).
+# Los perfiles van por conector, no por pantalla: si el modo guardado no existe en el monitor
+# conectado (otro monitor en el mismo puerto) se usa "preferred". Pedir un modo inexistente y
+# encadenar modesets sin pausa tumbó Hyprland con dos monitores en la NVIDIA (segfault en aquamarine).
 set -uo pipefail
 
 profiles="${XDG_CONFIG_HOME:-$HOME/.config}/salchipapa-shell/display-profiles.json"
@@ -47,7 +50,7 @@ enable_all() {
 }
 
 apply_profile() {
-    local key="$1" lua
+    local key="$1" lua monitors
     log "monitores: '$key'"
 
     if [[ "$key" != *"|"* ]]; then
@@ -58,10 +61,17 @@ apply_profile() {
         return
     fi
 
-    lua=$(jq -r --arg k "$key" '
+    monitors=$(hyprctl monitors all -j 2>/dev/null) || monitors='[]'
+    # Modo exacto de availableModes ("3440x1440@99.98Hz") con la misma resolución y los Hz redondeados
+    lua=$(jq -r --arg k "$key" --argjson mons "$monitors" '
+        def mode($m):
+            ($mons | map(select(.name == $m.name)) | first // {}) as $mon
+            | [($mon.availableModes // [])[] | rtrimstr("Hz") | split("@")
+               | select(.[0] == $m.res and ((.[1] | tonumber | round) == ($m.hz | tostring | tonumber | round)))
+               | join("@")] | first // "preferred";
         .[$k] // empty | .[] | select(.name) |
         if .disabled then "hl.monitor({ output = \"\(.name)\", disabled = true })"
-        else "hl.monitor({ output = \"\(.name)\", disabled = false, mode = \"\(.res)@\(.hz)\", position = \"\(.x)x\(.y)\", scale = \(.scale // 1), transform = \(.transform // 0) })"
+        else "hl.monitor({ output = \"\(.name)\", disabled = false, mode = \"\(mode(.))\", position = \"\(.x)x\(.y)\", scale = \(.scale // 1), transform = \(.transform // 0) })"
         end' "$profiles" 2>/dev/null)
 
     if [ -z "$lua" ]; then
@@ -71,6 +81,8 @@ apply_profile() {
     while IFS= read -r line; do
         log "  $line"
         hyprctl eval "$line" >>"$log_file" 2>&1
+        # Un modeset por vez: seguidos chocan con el page-flip pendiente del anterior
+        sleep 1 9>&-
     done <<<"$lua"
     log "perfil aplicado"
     notify-send -i display -t 3000 "Display" "Perfil de monitores aplicado" 2>/dev/null || true
