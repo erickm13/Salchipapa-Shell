@@ -1,7 +1,9 @@
 pragma Singleton
 // Reproductor multimedia activo vía MPRIS.
+import QtQuick
 import Quickshell
 import Quickshell.Hyprland
+import Quickshell.Io
 import Quickshell.Services.Mpris
 
 Singleton {
@@ -29,6 +31,34 @@ Singleton {
     readonly property string lyrics: {
         const metadata = active?.metadata ?? ({});
         return metadata["xesam:asText"] ?? metadata["lyrics"] ?? "";
+    }
+
+    // Portada como archivo local: el cliente HTTP de Qt a veces se atasca ("sendRequest() called
+    // without QHttpNetworkReply") y desde entonces ninguna portada de internet carga hasta
+    // reiniciar la shell. Se descarga con curl a ~/.cache/salchipapa-shell/art/ (las de más de
+    // 30 días se borran) y las tarjetas usan artPath.
+    readonly property string artUrl: active?.trackArtUrl ?? ""
+    property string artPath: ""
+    onArtUrlChanged: fetchArt()
+    Component.onCompleted: fetchArt()
+    function fetchArt(): void {
+        if (!artUrl.startsWith("http")) {
+            artPath = artUrl; // vacía o ya local (file://)
+            return;
+        }
+        artPath = "";
+        artProc.exec(["sh", "-c", 'd="${XDG_CACHE_HOME:-$HOME/.cache}/salchipapa-shell/art"; mkdir -p "$d"; f="$d/$(printf %s "$1" | sha1sum | cut -c1-40)"; if [ ! -s "$f" ]; then curl -sfL --max-time 15 -o "$f.tmp" "$1" && mv -f "$f.tmp" "$f"; rm -f "$f.tmp"; fi; find "$d" -type f -mtime +30 -delete 2>/dev/null; [ -s "$f" ] && echo "$f"', "_", artUrl]);
+    }
+    Process {
+        id: artProc
+        stdout: StdioCollector {
+            id: artOut
+            onStreamFinished: {
+                const path = artOut.text.trim();
+                if (path !== "")
+                    root.artPath = "file://" + path;
+            }
+        }
     }
 
     function toggle(): void {

@@ -154,6 +154,7 @@ Singleton {
                     height: 200
                     visible: Config.lockShowMusic && !!player
                     player: root.mediaService?.active ?? null
+                    art: root.mediaService?.artPath ?? ""
                     title: root.mediaService?.title ?? ""
                     artist: root.mediaService?.artist || root.mediaService?.album || ""
                     sinkName: Audio.sink?.description || Audio.sink?.nickname || ""

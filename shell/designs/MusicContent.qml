@@ -182,7 +182,7 @@ Item {
             color: Theme.panelCardHi
             Image {
                 anchors.fill: parent
-                source: root.player?.trackArtUrl ?? ""
+                source: Media.artPath
                 sourceSize.width: 300
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
@@ -194,7 +194,7 @@ Item {
                 font.family: "Material Symbols Rounded"
                 font.pixelSize: 48
                 color: Theme.green
-                visible: !(root.player?.trackArtUrl)
+                visible: Media.artPath === ""
             }
         }
     }

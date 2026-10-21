@@ -641,6 +641,7 @@ PanelWindow {
                             mini: true
                             radius: 14
                             player: Media.active
+                            art: Media.artPath
                             title: Media.title
                             artist: Media.artist || Media.album
                         }
@@ -824,6 +825,7 @@ PanelWindow {
                 radius: Theme.radiusLarge - 6
                 compact: true
                 player: Media.active
+                art: Media.artPath
                 title: Media.title
                 artist: [Config.mediaShowArtist ? Media.artist : "", Config.mediaShowAlbum ? Media.album : ""].filter(x => x !== "").join(" · ")
                 showControls: Config.mediaShowControls

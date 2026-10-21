@@ -24,7 +24,8 @@ Item {
     // Medidas de la versión compacta (isla) y de la grande (pantalla de bloqueo)
     readonly property real buttonSize: compact ? 32 : 36
 
-    readonly property string art: player?.trackArtUrl ?? ""
+    // Portada: quien la usa le pasa Media.artPath (archivo local); si no, la URL del reproductor
+    property string art: player?.trackArtUrl ?? ""
     readonly property real length: player?.length ?? 0
     property real position: 0
     // MPRIS no notifica la posición sola: se pide cada segundo mientras suena
