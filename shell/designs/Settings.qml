@@ -133,18 +133,143 @@ FloatingWindow {
         Overlay.mode = "wallpaper";
     }
 
-    readonly property var filtered: {
+    // ---- Buscador: secciones y ajustes ----
+    // Sin texto, la barra lateral lista las secciones. Con texto, las secciones cuyo nombre
+    // coincide y después los ajustes que coinciden ({ cat, setting }); elegir un ajuste abre su
+    // sección y pone el foco en él.
+    readonly property var results: {
         const q = query.trim().toLowerCase();
-        return q === "" ? categories : categories.filter(c => c.name.toLowerCase().includes(q));
+        const sections = categories.map((c, i) => ({ cat: i, setting: "" }));
+        if (q === "")
+            return sections;
+        const out = sections.filter(r => categories[r.cat].name.toLowerCase().includes(q));
+        for (const e of Overlay.settingsIndex)
+            if (e.label.toLowerCase().includes(q))
+                out.push({ cat: e.cat, setting: e.label });
+        return out.slice(0, 40);
+    }
+    property int sel: 0 // resultado marcado mientras se busca
+    onQueryChanged: sel = 0
+
+    // ↑/↓ en el buscador: sin texto cambia de sección; con texto recorre los resultados
+    // (y muestra la sección del resultado marcado)
+    function stepResult(delta: int): void {
+        if (query.trim() === "") {
+            stepCategory(delta);
+            return;
+        }
+        if (results.length === 0)
+            return;
+        sel = (sel + delta + results.length) % results.length;
+        category = results[sel].cat;
     }
 
-    // ↑/↓ en el buscador: categoría anterior/siguiente entre las que muestra la barra lateral
+    // Sección anterior/siguiente entre todas (Ctrl+↑/↓ y ↑/↓ sin búsqueda)
     function stepCategory(delta: int): void {
-        if (filtered.length === 0)
+        category = (category + delta + categories.length) % categories.length;
+    }
+
+    function openResult(r: var): void {
+        if (!r)
             return;
-        const i = filtered.findIndex(c => c.name === categories[category]?.name);
-        const next = i < 0 ? filtered[0] : filtered[(i + delta + filtered.length) % filtered.length];
-        category = categories.findIndex(c => c.name === next.name);
+        category = r.cat;
+        if (r.setting === "")
+            KeyNav.move(searchInput, true);
+        else
+            focusTimer.start(); // tras recolocar la columna, para que el ajuste quede a la vista
+    }
+    property string pendingSetting: results[sel]?.setting ?? ""
+    Timer {
+        id: focusTimer
+        interval: 60
+        onTriggered: win.focusSetting(win.pendingSetting)
+    }
+
+    // Etiquetas de los controles visibles bajo `item`: la propiedad `label` de las filas y los
+    // títulos en blanco o negrita de las filas hechas a mano (no los campos de texto ni iconos).
+    function collectLabels(item: Item, out: var): void {
+        // Los botones (señal clicked) no son ajustes, y de una fila con opciones solo cuenta su título
+        if (typeof item.clicked === "function")
+            return;
+        if (item.options !== undefined) {
+            if (typeof item.label === "string" && item.label !== "")
+                out.push(item.label.trim());
+            return;
+        }
+        const l = item.label;
+        if (typeof l === "string" && l.trim() !== "")
+            out.push(l.trim());
+        else if (typeof item.text === "string" && item.echoMode === undefined && !String(item.font?.family).startsWith("Material")
+                 && (Qt.colorEqual(item.color, "#ffffff") || item.font?.bold)) {
+            const t = item.text.trim();
+            if (t.length >= 3 && t.length <= 40)
+                out.push(t);
+        }
+        for (const c of item.children)
+            collectLabels(c, out);
+    }
+
+    // Recorre las secciones una vez por sesión de la shell (mostrar algunas páginas consulta
+    // procesos o monitores, así que no se repite en cada apertura)
+    function buildIndex(): void {
+        const saved = category;
+        const out = [];
+        for (let i = 0; i < categories.length; i++) {
+            category = i;
+            const labels = [];
+            for (const child of controlsCol.children)
+                if (child.visible)
+                    collectLabels(child, labels);
+            for (const label of new Set(labels))
+                out.push({ cat: i, label: label });
+        }
+        category = saved;
+        Overlay.settingsIndex = out;
+    }
+
+    function findLabel(item: Item, label: string): Item {
+        if (!item.visible)
+            return null;
+        if (item.label === label || (item.text === label && item.echoMode === undefined))
+            return item;
+        for (const c of item.children) {
+            const hit = findLabel(c, label);
+            if (hit)
+                return hit;
+        }
+        return null;
+    }
+
+    function firstFocusable(item: Item): Item {
+        for (const c of item.children) {
+            if (!c.visible || !c.enabled)
+                continue;
+            if (c.activeFocusOnTab)
+                return c;
+            const hit = firstFocusable(c);
+            if (hit)
+                return hit;
+        }
+        return null;
+    }
+
+    // Foco en el control del ajuste: la propia fila si es enfocable o, si es un título, el
+    // control enfocable más cercano de su fila (sube como mucho tres niveles)
+    function focusSetting(label: string): void {
+        const hit = findLabel(controlsCol, label);
+        if (!hit) {
+            KeyNav.move(searchInput, true);
+            return;
+        }
+        let p = hit;
+        for (let up = 0; p && p !== controlsCol && up < 4; up++, p = p.parent) {
+            const target = p.activeFocusOnTab ? p : firstFocusable(p);
+            if (target) {
+                target.forceActiveFocus();
+                return;
+            }
+        }
+        KeyNav.ensureVisible(hit);
     }
 
     // ===== Card =====
@@ -161,6 +286,30 @@ FloatingWindow {
         border.color: Theme.divider
 
         focus: Overlay.settings
+        // Al abrir, el foco en el buscador: ↑/↓ cambian de sección desde el primer momento
+        // (con `focus: true` solo, al crearse la ventana a veces no lo recibía nadie)
+        Component.onCompleted: {
+            if (Overlay.settingsIndex.length === 0)
+                win.buildIndex();
+            Qt.callLater(() => searchInput.forceActiveFocus());
+        }
+
+        // Cambiar de sección desde cualquier parte, también con el foco en un control
+        Shortcut {
+            sequences: ["Ctrl+Down", "Ctrl+Tab", "Ctrl+PgDown"]
+            onActivated: {
+                win.stepCategory(1);
+                searchInput.forceActiveFocus();
+            }
+        }
+        Shortcut {
+            sequences: ["Ctrl+Up", "Ctrl+Shift+Tab", "Ctrl+Backtab", "Ctrl+PgUp"]
+            onActivated: {
+                win.stepCategory(-1);
+                searchInput.forceActiveFocus();
+            }
+        }
+
         // Esc desde un control vuelve a la barra lateral; desde ahí cierra
         Keys.onEscapePressed: {
             if (searchInput.activeFocus)
@@ -228,13 +377,14 @@ FloatingWindow {
                     clip: true
                     focus: Overlay.settings
                     onTextChanged: win.query = text
-                    Keys.onUpPressed: win.stepCategory(-1)
-                    Keys.onDownPressed: win.stepCategory(1)
-                    // Enter: con búsqueda abre el primer resultado; luego entra a los controles
+                    Keys.onUpPressed: win.stepResult(-1)
+                    Keys.onDownPressed: win.stepResult(1)
+                    // Enter: con búsqueda abre el resultado marcado; sin ella, entra a los controles
                     function enterContent(): void {
-                        if (win.query.trim() !== "" && win.filtered.length > 0)
-                            win.category = win.categories.findIndex(c => c.name === win.filtered[0].name);
-                        KeyNav.move(searchInput, true);
+                        if (win.query.trim() !== "")
+                            win.openResult(win.results[win.sel]);
+                        else
+                            KeyNav.move(searchInput, true);
                     }
                     Keys.onReturnPressed: enterContent()
                     Keys.onEnterPressed: enterContent()
@@ -260,17 +410,25 @@ FloatingWindow {
                 anchors.bottomMargin: 8
                 clip: true
                 spacing: 2
-                model: win.filtered
+                model: win.results
                 boundsBehavior: Flickable.StopAtBounds
+                currentIndex: win.query.trim() === "" ? win.category : win.sel
+                highlightFollowsCurrentItem: false
+                onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
 
+                // Un ajuste se muestra con el icono de su sección y el nombre de la sección a la derecha
                 delegate: NavItem {
                     required property int index
                     required property var modelData
                     width: ListView.view.width
-                    iconName: modelData.icon
-                    label: modelData.name
-                    active: win.categories[win.category] && win.categories[win.category].name === modelData.name
-                    onClicked: win.category = win.categories.findIndex(c => c.name === modelData.name)
+                    iconName: win.categories[modelData.cat].icon
+                    label: modelData.setting || win.categories[modelData.cat].name
+                    hint: modelData.setting ? win.categories[modelData.cat].name : ""
+                    active: win.query.trim() === "" ? win.category === modelData.cat : win.sel === index
+                    onClicked: {
+                        win.sel = index;
+                        win.openResult(modelData);
+                    }
                 }
             }
         }
@@ -731,6 +889,10 @@ FloatingWindow {
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: win.openThemeSelector()
                             }
+                            KeyButton {
+                                radius: Theme.radiusSmall
+                                onActivated: win.openThemeSelector()
+                            }
                         }
                         Rectangle {
                             anchors.top: parent.top
@@ -779,6 +941,10 @@ FloatingWindow {
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: win.openWallpaperSelector()
                             }
+                            KeyButton {
+                                radius: Theme.radiusSmall
+                                onActivated: win.openWallpaperSelector()
+                            }
                         }
                     }
                     Text {
@@ -826,6 +992,10 @@ FloatingWindow {
                                         anchors.margins: -3
                                         cursorShape: Qt.PointingHandCursor
                                         onClicked: Config.opt.appearanceAccent = index === 0 ? "" : String(modelData).replace("#", "")
+                                    }
+                                    KeyButton {
+                                        radius: 8
+                                        onActivated: Config.opt.appearanceAccent = index === 0 ? "" : String(modelData).replace("#", "")
                                     }
                                 }
                             }
@@ -1008,6 +1178,11 @@ FloatingWindow {
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: fontList.visible = !fontList.visible
                             }
+                            KeyButton {
+                                id: fontFieldKey
+                                radius: 8
+                                onActivated: fontList.visible = !fontList.visible
+                            }
                         }
                         ListView {
                             id: fontList
@@ -1045,6 +1220,14 @@ FloatingWindow {
                                     onClicked: {
                                         Config.opt.appearanceBodyFont = modelData === "System default" ? "" : modelData;
                                         fontList.visible = false;
+                                    }
+                                }
+                                KeyButton {
+                                    radius: 6
+                                    onActivated: {
+                                        Config.opt.appearanceBodyFont = modelData === "System default" ? "" : modelData;
+                                        fontList.visible = false;
+                                        fontFieldKey.forceActiveFocus();
                                     }
                                 }
                             }
@@ -1103,6 +1286,11 @@ FloatingWindow {
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: displayFontList.visible = !displayFontList.visible
                             }
+                            KeyButton {
+                                id: displayFontFieldKey
+                                radius: Theme.radiusSmall
+                                onActivated: displayFontList.visible = !displayFontList.visible
+                            }
                         }
                         ListView {
                             id: displayFontList
@@ -1139,6 +1327,14 @@ FloatingWindow {
                                     onClicked: {
                                         Config.opt.appearanceDisplayFont = modelData === "System default" ? "" : modelData;
                                         displayFontList.visible = false;
+                                    }
+                                }
+                                KeyButton {
+                                    radius: 6
+                                    onActivated: {
+                                        Config.opt.appearanceDisplayFont = modelData === "System default" ? "" : modelData;
+                                        displayFontList.visible = false;
+                                        displayFontFieldKey.forceActiveFocus();
                                     }
                                 }
                             }
@@ -1230,6 +1426,7 @@ FloatingWindow {
         id: nav
         property string iconName: ""
         property string label: ""
+        property string hint: ""
         property bool active: false
         signal clicked
 
@@ -1264,11 +1461,26 @@ FloatingWindow {
             font.family: Theme.bodyFontFamily
             anchors.left: ic.right
             anchors.leftMargin: 10
+            anchors.right: hintText.left
+            anchors.rightMargin: 6
             anchors.verticalCenter: parent.verticalCenter
             text: nav.label
             color: nav.active ? "#ffffff" : Theme.text
-            font.pixelSize: Theme.fontPx(15)
+            font.pixelSize: Theme.fontPx(nav.hint !== "" ? 13 : 15)
             font.bold: nav.active
+            elide: Text.ElideRight
+        }
+        Text {
+            id: hintText
+            anchors.right: parent.right
+            anchors.rightMargin: 10
+            anchors.verticalCenter: parent.verticalCenter
+            width: nav.hint !== "" ? Math.min(implicitWidth, 80) : 0
+            text: nav.hint
+            color: Theme.tertiaryText
+            font.family: Theme.bodyFontFamily
+            font.pixelSize: Theme.fontPx(10)
+            elide: Text.ElideRight
         }
         MouseArea {
             id: navMouse

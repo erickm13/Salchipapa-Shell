@@ -128,6 +128,10 @@ Item {
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: root.kind = seg.modelData.key
                             }
+                            KeyButton {
+                                radius: seg.radius
+                                onActivated: root.kind = seg.modelData.key
+                            }
                         }
                     }
                 }
@@ -206,6 +210,10 @@ Item {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
                     onClicked: root.apply()
+                }
+                KeyButton {
+                    radius: applyBtn.radius
+                    onActivated: root.apply()
                 }
             }
         }
@@ -287,6 +295,15 @@ Item {
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
+                                if (root.status !== "applying") {
+                                    root.selected = card.isCurrent ? "" : card.modelData.name;
+                                    root.status = "";
+                                }
+                            }
+                        }
+                        KeyButton {
+                            radius: thumb.radius
+                            onActivated: {
                                 if (root.status !== "applying") {
                                     root.selected = card.isCurrent ? "" : card.modelData.name;
                                     root.status = "";

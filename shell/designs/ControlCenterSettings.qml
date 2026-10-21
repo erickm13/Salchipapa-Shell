@@ -415,6 +415,18 @@ Item {
                 root.selected = block.entry.id;
             }
         }
+        // Teclado: Espacio/Enter = seleccionar, R = cambiar tamaño (como el clic derecho)
+        KeyButton {
+            radius: block.radius
+            onActivated: root.selected = block.entry.id
+            Keys.onPressed: event => {
+                if (event.key === Qt.Key_R) {
+                    root.resize(block.entry.id);
+                    root.selected = block.entry.id;
+                    event.accepted = true;
+                }
+            }
+        }
     }
 
     component Chip: Rectangle {
@@ -454,6 +466,10 @@ Item {
             enabled: chip.enabled
             cursorShape: Qt.PointingHandCursor
             onClicked: chip.clicked()
+        }
+        KeyButton {
+            radius: chip.radius
+            onActivated: chip.clicked()
         }
     }
 }

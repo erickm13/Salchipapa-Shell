@@ -55,6 +55,20 @@ Item {
         height: 58
         radius: Theme.radiusMedium
         color: Theme.panelCard
+        border.width: activeFocus ? 2 : 0
+        border.color: Theme.green
+
+        // ←/→ en pasos de 1/20 del rango; con Shift, de uno en uno
+        readonly property int step: Math.max(1, Math.round((to - from) / 20))
+        function nudge(dir: int, fine: bool): void {
+            moved(Math.max(from, Math.min(to, value + dir * (fine ? 1 : step))));
+        }
+        activeFocusOnTab: true
+        onActiveFocusChanged: if (activeFocus) KeyNav.ensureVisible(row)
+        Keys.onUpPressed: KeyNav.move(row, false)
+        Keys.onDownPressed: KeyNav.move(row, true)
+        Keys.onLeftPressed: event => row.nudge(-1, event.modifiers & Qt.ShiftModifier)
+        Keys.onRightPressed: event => row.nudge(1, event.modifiers & Qt.ShiftModifier)
 
         Text {
             id: rowLabel

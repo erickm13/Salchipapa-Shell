@@ -167,6 +167,10 @@ Item {
                             hoverEnabled: true; cursorShape: Qt.PointingHandCursor
                             onClicked: root.refreshProcesses()
                         }
+                        KeyButton {
+                            radius: 6
+                            onActivated: root.refreshProcesses()
+                        }
                     }
                 }
                 Rectangle {
@@ -239,6 +243,16 @@ Item {
                                     MouseArea {
                                         anchors.fill: parent; cursorShape: Qt.PointingHandCursor
                                         onClicked: {
+                                            if (processRow.modelData.pid === root.pendingPid)
+                                                root.endProcess(processRow.modelData.pid);
+                                            else
+                                                root.pendingPid = processRow.modelData.pid;
+                                        }
+                                    }
+                                    // Igual que el clic: el primer Enter pide confirmar, el segundo termina
+                                    KeyButton {
+                                        radius: endButton.radius
+                                        onActivated: {
                                             if (processRow.modelData.pid === root.pendingPid)
                                                 root.endProcess(processRow.modelData.pid);
                                             else

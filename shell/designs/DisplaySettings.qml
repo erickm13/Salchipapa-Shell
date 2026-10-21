@@ -358,6 +358,10 @@ Item {
                                 }
                             }
                         }
+                        KeyButton {
+                            radius: box.radius
+                            onActivated: root.selectedName = box.modelData.name
+                        }
                     }
                 }
 
@@ -400,6 +404,10 @@ Item {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: root.selectedName = offBox.modelData.name
+                            }
+                            KeyButton {
+                                radius: offBox.radius
+                                onActivated: root.selectedName = offBox.modelData.name
                             }
                         }
                     }
@@ -575,6 +583,11 @@ Item {
                 cursorShape: Qt.PointingHandCursor
                 onClicked: row.open = !row.open
             }
+            KeyButton {
+                id: fieldKey
+                radius: field.radius
+                onActivated: row.open = !row.open
+            }
         }
         ListView {
             id: list
@@ -610,6 +623,15 @@ Item {
                             row.picked(opt.modelData);
                     }
                 }
+                KeyButton {
+                    radius: opt.radius
+                    onActivated: {
+                        row.open = false;
+                        fieldKey.forceActiveFocus();
+                        if (opt.modelData !== row.current)
+                            row.picked(opt.modelData);
+                    }
+                }
             }
         }
         Rectangle {
@@ -641,6 +663,10 @@ Item {
             anchors.fill: parent
             cursorShape: Qt.PointingHandCursor
             onClicked: btn.clicked()
+        }
+        KeyButton {
+            radius: btn.radius
+            onActivated: btn.clicked()
         }
     }
 }

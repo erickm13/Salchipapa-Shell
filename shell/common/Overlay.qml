@@ -15,6 +15,8 @@ Singleton {
     property bool settings: false
     property string settingsMonitor: ""
     property int settingsCategory: 0
+    // Índice del buscador de ajustes ([{ cat, label }]): se arma la primera vez que se abre el panel
+    property var settingsIndex: []
 
     function toggleSettings(): void {
         if (!settings)
