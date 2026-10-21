@@ -3,3 +3,4 @@ singleton Theme Theme.qml
 singleton Overlay Overlay.qml
 singleton Wallpaper Wallpaper.qml
 singleton WindowShadowSync WindowShadowSync.qml
+singleton KeyNav KeyNav.qml

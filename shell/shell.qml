@@ -110,6 +110,10 @@ ShellRoot {
     // Captura de región con freeze (Super+Shift+S)
     AreaPicker {}
 
-    // Panel de ajustes (Super+I)
-    Settings {}
+    // Panel de ajustes (Super+I). Se crea al abrirlo: reutilizar la ventana oculta en otro monitor
+    // hacía que Hyprland la mostrara con el tamaño del anterior.
+    LazyLoader {
+        active: Overlay.settings
+        Settings {}
+    }
 }

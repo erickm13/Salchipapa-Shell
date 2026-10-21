@@ -16,6 +16,29 @@ Item {
     height: 58
     opacity: enabled ? 1 : 0.45
 
+    // ←/→ en pasos de 1/20 del rango; con Shift, de uno en uno
+    readonly property int step: Math.max(1, Math.round((to - from) / 20))
+    function nudge(dir: int, fine: bool): void {
+        moved(Math.max(from, Math.min(to, value + dir * (fine ? 1 : step))));
+    }
+    activeFocusOnTab: true
+    onActiveFocusChanged: if (activeFocus) KeyNav.ensureVisible(row)
+    Keys.onUpPressed: KeyNav.move(row, false)
+    Keys.onDownPressed: KeyNav.move(row, true)
+    Keys.onLeftPressed: event => row.nudge(-1, event.modifiers & Qt.ShiftModifier)
+    Keys.onRightPressed: event => row.nudge(1, event.modifiers & Qt.ShiftModifier)
+
+    // Marco del control enfocado con el teclado
+    Rectangle {
+        anchors.fill: parent
+        anchors.margins: 2
+        radius: Theme.radiusMedium
+        color: "transparent"
+        border.width: 2
+        border.color: Theme.green
+        visible: row.activeFocus
+    }
+
     Text {
         id: rowLabel
         anchors.left: parent.left

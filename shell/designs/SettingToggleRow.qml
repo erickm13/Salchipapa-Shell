@@ -13,6 +13,25 @@ Item {
     width: parent.width
     height: sublabel !== "" ? 64 : 48
 
+    activeFocusOnTab: true
+    onActiveFocusChanged: if (activeFocus) KeyNav.ensureVisible(row)
+    Keys.onUpPressed: KeyNav.move(row, false)
+    Keys.onDownPressed: KeyNav.move(row, true)
+    Keys.onSpacePressed: row.toggled()
+    Keys.onReturnPressed: row.toggled()
+    Keys.onEnterPressed: row.toggled()
+
+    // Marco del control enfocado con el teclado
+    Rectangle {
+        anchors.fill: parent
+        anchors.margins: 2
+        radius: Theme.radiusMedium
+        color: "transparent"
+        border.width: 2
+        border.color: Theme.green
+        visible: row.activeFocus
+    }
+
     Column {
         anchors.left: parent.left
         anchors.leftMargin: 16

@@ -5,7 +5,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import Quickshell.Hyprland
 import QtQuick.Effects
 import "../common"
 import "../services"
@@ -13,26 +12,17 @@ import "../services"
 FloatingWindow {
     id: win
 
-    // Hyprland la abre en el monitor enfocado: la escala se calcula con ese y se fija al abrir
-    // (si cambia con la ventana ya abierta, el contenido se amplía pero la ventana no y se recorta)
-    property ShellScreen openScreen: Quickshell.screens[0]
-    property bool shown: false
-    Connections {
-        target: Overlay
-        function onSettingsChanged(): void {
-            if (Overlay.settings)
-                win.openScreen = Quickshell.screens.find(s => s.name === Hyprland.focusedMonitor?.name) ?? Quickshell.screens[0];
-            win.shown = Overlay.settings;
-        }
-    }
+    // La ventana se crea al abrir el panel (LazyLoader en shell.qml) en el monitor enfocado en ese
+    // momento (Overlay.settingsMonitor): la escala sale de ese monitor y no cambia mientras está abierta.
+    readonly property ShellScreen openScreen: Quickshell.screens.find(s => s.name === Overlay.settingsMonitor) ?? Quickshell.screens[0]
 
-    visible: shown
+    visible: true
     color: "transparent"
     title: "Salchipapa Settings"
     screen: openScreen
     // Todo el panel se diseña a 1080×620 y se amplía con `scale` (el texto sigue nítido): para
     // agrandarlo o achicarlo entero basta con cambiar el 1.3. Si la pantalla no da, se reduce.
-    readonly property real uiScale: Math.min(1.3, (screen.width - 96) / 1080, (screen.height - 144) / 620)
+    readonly property real uiScale: Math.min(1.3, (openScreen.width - 96) / 1080, (openScreen.height - 144) / 620)
     implicitWidth: Math.round(1080 * uiScale)
     implicitHeight: Math.round(620 * uiScale)
 
@@ -99,7 +89,9 @@ FloatingWindow {
         }
     ]
 
-    property int category: 0
+    // La ventana se destruye al cerrar: la categoría abierta se guarda en Overlay
+    property int category: Overlay.settingsCategory
+    onCategoryChanged: Overlay.settingsCategory = category
     property string query: ""
     property string currentScheme: "Dynamic"
 
@@ -146,6 +138,15 @@ FloatingWindow {
         return q === "" ? categories : categories.filter(c => c.name.toLowerCase().includes(q));
     }
 
+    // ↑/↓ en el buscador: categoría anterior/siguiente entre las que muestra la barra lateral
+    function stepCategory(delta: int): void {
+        if (filtered.length === 0)
+            return;
+        const i = filtered.findIndex(c => c.name === categories[category]?.name);
+        const next = i < 0 ? filtered[0] : filtered[(i + delta + filtered.length) % filtered.length];
+        category = categories.findIndex(c => c.name === next.name);
+    }
+
     // ===== Card =====
     Rectangle {
         id: cardBg
@@ -160,7 +161,13 @@ FloatingWindow {
         border.color: Theme.divider
 
         focus: Overlay.settings
-        Keys.onEscapePressed: Overlay.settings = false
+        // Esc desde un control vuelve a la barra lateral; desde ahí cierra
+        Keys.onEscapePressed: {
+            if (searchInput.activeFocus)
+                Overlay.settings = false;
+            else
+                searchInput.forceActiveFocus();
+        }
 
         MouseArea {
             anchors.fill: parent // traga clics (no cierra)
@@ -221,6 +228,16 @@ FloatingWindow {
                     clip: true
                     focus: Overlay.settings
                     onTextChanged: win.query = text
+                    Keys.onUpPressed: win.stepCategory(-1)
+                    Keys.onDownPressed: win.stepCategory(1)
+                    // Enter: con búsqueda abre el primer resultado; luego entra a los controles
+                    function enterContent(): void {
+                        if (win.query.trim() !== "" && win.filtered.length > 0)
+                            win.category = win.categories.findIndex(c => c.name === win.filtered[0].name);
+                        KeyNav.move(searchInput, true);
+                    }
+                    Keys.onReturnPressed: enterContent()
+                    Keys.onEnterPressed: enterContent()
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
                         text: "Search Settings"
@@ -1297,6 +1314,22 @@ FloatingWindow {
         height: crCol.implicitHeight + 24
         radius: Theme.radiusMedium
         color: Theme.panelCard
+        border.width: activeFocus ? 2 : 0
+        border.color: Theme.green
+
+        // ←/→: opción anterior/siguiente
+        function step(dir: int): void {
+            const i = options.findIndex(o => o.value === current);
+            const next = options[Math.max(0, Math.min(options.length - 1, i + dir))];
+            if (next && next.value !== current)
+                picked(next.value);
+        }
+        activeFocusOnTab: true
+        onActiveFocusChanged: if (activeFocus) KeyNav.ensureVisible(cr)
+        Keys.onUpPressed: KeyNav.move(cr, false)
+        Keys.onDownPressed: KeyNav.move(cr, true)
+        Keys.onLeftPressed: cr.step(-1)
+        Keys.onRightPressed: cr.step(1)
         Column {
             id: crCol
             x: 16
@@ -1353,6 +1386,16 @@ FloatingWindow {
         height: 48
         radius: Theme.radiusMedium
         color: Theme.panelCard
+        border.width: activeFocus ? 2 : 0
+        border.color: Theme.green
+
+        activeFocusOnTab: true
+        onActiveFocusChanged: if (activeFocus) KeyNav.ensureVisible(tr)
+        Keys.onUpPressed: KeyNav.move(tr, false)
+        Keys.onDownPressed: KeyNav.move(tr, true)
+        Keys.onSpacePressed: tr.toggled()
+        Keys.onReturnPressed: tr.toggled()
+        Keys.onEnterPressed: tr.toggled()
 
         Text {
             font.family: Theme.bodyFontFamily
@@ -1410,6 +1453,20 @@ FloatingWindow {
         height: 58
         radius: Theme.radiusMedium
         color: Theme.panelCard
+        border.width: activeFocus ? 2 : 0
+        border.color: Theme.green
+
+        // ←/→ en pasos de 1/20 del rango; con Shift, de uno en uno
+        readonly property int step: Math.max(1, Math.round((to - from) / 20))
+        function nudge(dir: int, fine: bool): void {
+            moved(Math.max(from, Math.min(to, value + dir * (fine ? 1 : step))));
+        }
+        activeFocusOnTab: true
+        onActiveFocusChanged: if (activeFocus) KeyNav.ensureVisible(ps)
+        Keys.onUpPressed: KeyNav.move(ps, false)
+        Keys.onDownPressed: KeyNav.move(ps, true)
+        Keys.onLeftPressed: event => ps.nudge(-1, event.modifiers & Qt.ShiftModifier)
+        Keys.onRightPressed: event => ps.nudge(1, event.modifiers & Qt.ShiftModifier)
 
         Text {
             font.family: Theme.bodyFontFamily

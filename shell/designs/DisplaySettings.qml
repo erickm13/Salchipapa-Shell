@@ -163,14 +163,23 @@ Item {
         return Qt.point(bestX, bestY);
     }
 
-    function applyPositions(positions: var): void {
+    function positionsLua(positions: var): string {
         let minX = Infinity, minY = Infinity;
         for (const m of enabledMonitors) {
             minX = Math.min(minX, positions[m.name]?.x ?? m.x);
             minY = Math.min(minY, positions[m.name]?.y ?? m.y);
         }
-        const lua = enabledMonitors.map(m => monitorLua(m, { x: (positions[m.name]?.x ?? m.x) - minX, y: (positions[m.name]?.y ?? m.y) - minY })).join("\n");
-        apply(lua);
+        return enabledMonitors.map(m => monitorLua(m, { x: (positions[m.name]?.x ?? m.x) - minX, y: (positions[m.name]?.y ?? m.y) - minY })).join("\n");
+    }
+
+    function applyPositions(positions: var): void {
+        apply(positionsLua(positions));
+    }
+
+    // El panel se destruye al cerrarse: si la cuenta atrás seguía, revertir sin esperar al Timer
+    Component.onDestruction: {
+        if (countdown > 0)
+            Quickshell.execDetached(["hyprctl", "eval", positionsLua(previousPositions)]);
     }
 
     function setEnabled(m: var, on: bool): void {

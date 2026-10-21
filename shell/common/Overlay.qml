@@ -10,8 +10,17 @@ Singleton {
     // "" = nada; el resto son overlays que se muestran dentro de la isla.
     property string mode: ""
 
-    // Panel de ajustes (ventana propia, no es un modo de la isla)
+    // Panel de ajustes (ventana propia, no es un modo de la isla). La ventana se crea al abrirlo
+    // (shell.qml), con el tamaño del monitor enfocado en ese momento; la categoría se recuerda aquí.
     property bool settings: false
+    property string settingsMonitor: ""
+    property int settingsCategory: 0
+
+    function toggleSettings(): void {
+        if (!settings)
+            settingsMonitor = Hyprland.focusedMonitor?.name ?? "";
+        settings = !settings;
+    }
 
     function close(): void {
         mode = "";
@@ -63,7 +72,7 @@ Singleton {
         appid: "salchipapa"
         name: "settings"
         description: "Abrir/cerrar el panel de ajustes"
-        onPressed: root.settings = !root.settings
+        onPressed: root.toggleSettings()
     }
 
     GlobalShortcut {
