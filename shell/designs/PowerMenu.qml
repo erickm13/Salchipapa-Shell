@@ -46,7 +46,11 @@ Item {
     }
 
     function confirm(): void {
-        LockScreen.confirmPowerAction();
+        if (confirmAction === "logout")
+            // Detiene la sesión UWSM y devuelve el control al greeter de SDDM.
+            Quickshell.execDetached(["/usr/bin/uwsm", "stop"]);
+        else
+            LockScreen.confirmPowerAction();
         Overlay.close();
         confirmAction = "";
     }
@@ -58,13 +62,12 @@ Item {
         } else if (action === "suspend") {
             Overlay.close();
             LockScreen.suspend();
-        } else if (action === "logout") {
-            Overlay.close();
-            // Detiene la sesión UWSM y devuelve el control al greeter de SDDM.
-            Quickshell.execDetached(["/usr/bin/uwsm", "stop"]);
         } else {
+            // Log Out, Reboot y Power Off piden confirmación (cerrar sesión no pasa por systemctl,
+            // así que no se marca en LockScreen.powerAction)
             confirmAction = action;
-            LockScreen.powerAction = action;
+            if (action !== "logout")
+                LockScreen.powerAction = action;
             confirmationIndex = 0;
         }
     }
@@ -190,23 +193,23 @@ Item {
         MouseArea { anchors.fill: parent }
 
         Rectangle {
-            anchors.centerIn: parent
-            width: Math.min(290, parent.width - 24)
-            height: 150
+            anchors.fill: parent
+            anchors.margins: 10
             radius: 20
             color: Theme.panelCard
 
+            // Pregunta y botones centrados en el recuadro
             Column {
-                anchors.fill: parent
-                anchors.margins: 16
-                spacing: 12
+                anchors.centerIn: parent
+                width: parent.width - 32
+                spacing: 18
 
                 Text {
                     width: parent.width
-                    text: root.confirmAction === "reboot" ? "Restart the computer?" : "Power off the computer?"
+                    text: root.confirmAction === "reboot" ? "Restart the computer?" : root.confirmAction === "logout" ? "Log out of the session?" : "Power off the computer?"
                     color: Theme.text
                     font.family: Theme.displayFontFamily
-                    font.pixelSize: Theme.fontPx(15)
+                    font.pixelSize: Theme.fontPx(19)
                     font.bold: true
                     horizontalAlignment: Text.AlignHCenter
                     wrapMode: Text.Wrap
@@ -214,12 +217,12 @@ Item {
 
                 Row {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    spacing: 10
+                    spacing: 14
 
                     Rectangle {
-                        width: 100
-                        height: 36
-                        radius: 18
+                        width: 150
+                        height: 48
+                        radius: 24
                         color: Theme.surface0
                         border.width: root.confirmationIndex === 0 ? 2 : 0
                         border.color: Theme.green
@@ -228,7 +231,7 @@ Item {
                             text: "Cancel"
                             color: Theme.text
                             font.family: Theme.bodyFontFamily
-                            font.pixelSize: Theme.fontPx(12)
+                            font.pixelSize: Theme.fontPx(15)
                         }
                         MouseArea {
                             anchors.fill: parent
@@ -239,18 +242,18 @@ Item {
                         }
                     }
                     Rectangle {
-                        width: 100
-                        height: 36
-                        radius: 18
+                        width: 150
+                        height: 48
+                        radius: 24
                         color: Theme.red
                         border.width: root.confirmationIndex === 1 ? 2 : 0
                         border.color: Theme.text
                         Text {
                             anchors.centerIn: parent
-                            text: root.confirmAction === "reboot" ? "Reboot" : "Power Off"
+                            text: root.confirmAction === "reboot" ? "Reboot" : root.confirmAction === "logout" ? "Log Out" : "Power Off"
                             color: Theme.panelBg
                             font.family: Theme.bodyFontFamily
-                            font.pixelSize: Theme.fontPx(12)
+                            font.pixelSize: Theme.fontPx(15)
                             font.bold: true
                         }
                         MouseArea {
