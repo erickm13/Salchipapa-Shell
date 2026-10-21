@@ -5,6 +5,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Hyprland
 import QtQuick.Effects
 import "../common"
 import "../services"
@@ -12,10 +13,23 @@ import "../services"
 FloatingWindow {
     id: win
 
-    visible: Overlay.settings
+    // Hyprland la abre en el monitor enfocado: la escala se calcula con ese y se fija al abrir
+    // (si cambia con la ventana ya abierta, el contenido se amplía pero la ventana no y se recorta)
+    property ShellScreen openScreen: Quickshell.screens[0]
+    property bool shown: false
+    Connections {
+        target: Overlay
+        function onSettingsChanged(): void {
+            if (Overlay.settings)
+                win.openScreen = Quickshell.screens.find(s => s.name === Hyprland.focusedMonitor?.name) ?? Quickshell.screens[0];
+            win.shown = Overlay.settings;
+        }
+    }
+
+    visible: shown
     color: "transparent"
     title: "Salchipapa Settings"
-    screen: Quickshell.screens[0]
+    screen: openScreen
     // Todo el panel se diseña a 1080×620 y se amplía con `scale` (el texto sigue nítido): para
     // agrandarlo o achicarlo entero basta con cambiar el 1.3. Si la pantalla no da, se reduce.
     readonly property real uiScale: Math.min(1.3, (screen.width - 96) / 1080, (screen.height - 144) / 620)
