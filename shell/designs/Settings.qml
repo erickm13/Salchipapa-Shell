@@ -16,69 +16,72 @@ FloatingWindow {
     color: "transparent"
     title: "Salchipapa Settings"
     screen: Quickshell.screens[0]
-    implicitWidth: Math.min(1080, screen.width - 96)
-    implicitHeight: Math.min(620, screen.height - 144)
+    // Todo el panel se diseña a 1080×620 y se amplía con `scale` (el texto sigue nítido): para
+    // agrandarlo o achicarlo entero basta con cambiar el 1.3. Si la pantalla no da, se reduce.
+    readonly property real uiScale: Math.min(1.3, (screen.width - 96) / 1080, (screen.height - 144) / 620)
+    implicitWidth: Math.round(1080 * uiScale)
+    implicitHeight: Math.round(620 * uiScale)
 
     readonly property var categories: [
         {
             name: "Bar & Island",
             icon: "crop_16_9",
-            desc: "Forma y tamaño de la isla, el notch y la barra de Game Mode."
+            desc: "Island shape and size, notch and Game Mode bar."
         },
         {
             name: "Media",
             icon: "music_note",
-            desc: "Reproductor y controles multimedia."
+            desc: "Media player and controls."
         },
         {
             name: "Clock & Date",
             icon: "schedule",
-            desc: "Reloj, formato de hora y calendario."
+            desc: "Clock, time format and calendar."
         },
         {
             name: "Appearance",
             icon: "palette",
-            desc: "Colores, tema y wallpaper."
+            desc: "Colors, theme and wallpaper."
         },
         {
             name: "Motion",
             icon: "animation",
-            desc: "Animaciones y transiciones."
+            desc: "Animations and transitions."
         },
         {
             name: "Launcher",
             icon: "search",
-            desc: "Lanzador de aplicaciones."
+            desc: "Size of the app launcher (Super + Space)."
         },
         {
             name: "Notifications",
             icon: "notifications",
-            desc: "Notificaciones y modo No molestar."
+            desc: "Notifications and Do Not Disturb."
         },
         {
             name: "Control Center",
             icon: "tune",
-            desc: "Interruptores rápidos y páginas del centro de control."
+            desc: "Quick toggles and control center layout."
         },
         {
             name: "Lock Screen",
             icon: "lock",
-            desc: "Reloj, fondo y contenido de la pantalla de bloqueo."
+            desc: "Lock screen clock, background and content."
         },
         {
             name: "Display",
             icon: "monitor",
-            desc: "Monitores: posición, resolución, frecuencia, orientación y perfiles automáticos."
+            desc: "Monitor position, resolution, refresh rate and orientation."
         },
         {
             name: "Login & Boot",
             icon: "login",
-            desc: "Temas de la pantalla de login (SDDM) y del arranque (GRUB)."
+            desc: "Login (SDDM) and boot (GRUB) themes."
         },
         {
             name: "System",
             icon: "settings",
-            desc: "Espacios de trabajo e información de la shell."
+            desc: "Touchpad, blur, processes and shell info."
         }
     ]
 
@@ -132,8 +135,12 @@ FloatingWindow {
     // ===== Card =====
     Rectangle {
         id: cardBg
-        anchors.fill: parent
-        radius: Config.appearanceScreenCorners ? Config.appearanceScreenCornerRadius : 0
+        width: 1080
+        height: 620
+        scale: win.uiScale
+        transformOrigin: Item.TopLeft
+        // Dividido por la escala: las esquinas quedan del mismo radio que las de la pantalla
+        radius: (Config.appearanceScreenCorners ? Config.appearanceScreenCornerRadius : 0) / win.uiScale
         color: Theme.panelBg
         border.width: 0
         border.color: Theme.divider
@@ -342,21 +349,21 @@ FloatingWindow {
                     ToggleRow {
                         visible: win.category === 0
                         width: parent.width
-                        label: "Show the island on all monitors (off: only on the primary one, the one with workspace 1)"
+                        label: "Island on all monitors"
                         checked: Config.islandAllScreens
                         onToggled: Config.opt.islandAllScreens = !Config.islandAllScreens
                     }
                     ToggleRow {
                         visible: win.category === 0
                         width: parent.width
-                        label: "Close the island's panels (launcher, themes, control center…) when clicking outside"
+                        label: "Close panels on outside click"
                         checked: Config.islandCloseOnClickOutside
                         onToggled: Config.opt.islandCloseOnClickOutside = !Config.islandCloseOnClickOutside
                     }
                     ToggleRow {
                         visible: win.category === 0
                         width: parent.width
-                        label: "Battery percentage in the island"
+                        label: "Battery percentage"
                         checked: Config.clockShowBatteryPercent
                         onToggled: Config.opt.clockShowBatteryPercent = !Config.clockShowBatteryPercent
                     }
@@ -390,7 +397,7 @@ FloatingWindow {
                     PxSlider {
                         visible: win.category === 0
                         width: parent.width
-                        label: "Gap from screen edge"
+                        label: "Edge gap"
                         from: 0
                         to: 40
                         value: Config.topMargin
@@ -410,7 +417,7 @@ FloatingWindow {
                     PxSlider {
                         visible: win.category === 1
                         width: parent.width
-                        label: "Song name width"
+                        label: "Title width"
                         from: 60
                         to: 240
                         value: Config.mediaTitleWidth
@@ -487,14 +494,14 @@ FloatingWindow {
                     ToggleRow {
                         visible: win.category === 2
                         width: parent.width
-                        label: "Workspace dots beside the clock"
+                        label: "Workspace dots"
                         checked: Config.clockShowWorkspaceDots
                         onToggled: Config.opt.clockShowWorkspaceDots = !Config.clockShowWorkspaceDots
                     }
                     ToggleRow {
                         visible: win.category === 2
                         width: parent.width
-                        label: "Battery and Wi-Fi beside the clock"
+                        label: "Battery & Wi-Fi"
                         checked: Config.clockShowBatteryWifi
                         onToggled: Config.opt.clockShowBatteryWifi = !Config.clockShowBatteryWifi
                     }
@@ -523,7 +530,7 @@ FloatingWindow {
                     ToggleRow {
                         visible: win.category === 2
                         width: parent.width
-                        label: "Media card under the clock"
+                        label: "Media card"
                         checked: Config.clockExpandedMedia
                         onToggled: Config.opt.clockExpandedMedia = !Config.clockExpandedMedia
                     }
@@ -573,7 +580,7 @@ FloatingWindow {
                     PxSlider {
                         visible: win.category === 4
                         width: parent.width
-                        label: "Movement (size / position)"
+                        label: "Movement"
                         from: 0
                         to: 1000
                         value: Config.opt.motionMovementDuration
@@ -583,7 +590,7 @@ FloatingWindow {
                     PxSlider {
                         visible: win.category === 4
                         width: parent.width
-                        label: "Fades & colour"
+                        label: "Fades"
                         from: 0
                         to: 1000
                         value: Config.opt.motionFadeDuration
@@ -804,7 +811,7 @@ FloatingWindow {
                             anchors.left: parent.left
                             anchors.leftMargin: 12
                             anchors.verticalCenter: parent.verticalCenter
-                            text: "Custom (#rrggbb)"
+                            text: "Custom"
                             color: "#ffffff"
                             font.pixelSize: Theme.fontPx(13)
                         }
@@ -853,14 +860,14 @@ FloatingWindow {
                     ToggleRow {
                         visible: win.category === 3
                         width: parent.width
-                        label: "Color burst (a different palette colour per surface)"
+                        label: "Color burst"
                         checked: Config.appearanceColorBurst
                         onToggled: Config.opt.appearanceColorBurst = !Config.appearanceColorBurst
                     }
                     ChoiceRow {
                         visible: win.category === 3
                         width: parent.width
-                        label: "Wallpaper colours: style"
+                        label: "Color style"
                         options: [
                             { value: "scheme-tonal-spot", label: "Soft" },
                             { value: "scheme-expressive", label: "Expressive" },
@@ -878,7 +885,7 @@ FloatingWindow {
                     ChoiceRow {
                         visible: win.category === 3
                         width: parent.width
-                        label: "Wallpaper colours: intensity"
+                        label: "Color intensity"
                         options: [
                             { value: "0", label: "Pastel" },
                             { value: "1", label: "Medium" },
@@ -1176,7 +1183,7 @@ FloatingWindow {
                         Text {
                             font.family: Theme.bodyFontFamily
                             anchors.centerIn: parent
-                            text: "Próximamente"
+                            text: "Coming soon"
                             color: Theme.tertiaryText
                             font.pixelSize: Theme.fontPx(13)
                         }

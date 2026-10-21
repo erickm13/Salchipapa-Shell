@@ -74,9 +74,9 @@ Item {
         width: parent.width
         spacing: Theme.space(4)
 
-        SettingsGroup {
+        SettingGroup {
             width: parent.width
-            ToggleRow {
+            SettingToggleRow {
                 label: "Touchpad"
                 checked: Config.touchpadEnabled
                 onToggled: Touchpad.toggle()
@@ -85,28 +85,28 @@ Item {
 
         Text {
             width: parent.width
-            text: "The touchpad key on the keyboard also turns it on and off. Mice and other pointing devices are not affected."
+            text: "The keyboard's touchpad key also toggles it."
             color: Theme.tertiaryText
             wrapMode: Text.Wrap
             font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(10)
+            font.pixelSize: Theme.fontPx(12)
         }
 
-        SettingsGroup {
+        SettingGroup {
             width: parent.width
-            ToggleRow {
+            SettingToggleRow {
                 label: "Window blur"
                 checked: Config.windowBlurEnabled
                 onToggled: Config.opt.windowBlurEnabled = !Config.windowBlurEnabled
             }
-            SliderRow {
+            SettingSliderRow {
                 label: "Blur size"
                 value: Config.windowBlurSize
                 from: 1; to: 20; unit: ""
                 enabled: Config.windowBlurEnabled
                 onMoved: v => Config.opt.windowBlurSize = v
             }
-            SliderRow {
+            SettingSliderRow {
                 label: "Blur passes"
                 value: Config.windowBlurPasses
                 from: 1; to: 6; unit: ""
@@ -117,11 +117,11 @@ Item {
 
         Text {
             width: parent.width
-            text: "These are Hyprland's global blur settings for eligible windows. Per-application exceptions require window rules."
+            text: "Global Hyprland blur. Per-app exceptions need window rules."
             color: Theme.tertiaryText
             wrapMode: Text.Wrap
             font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(10)
+            font.pixelSize: Theme.fontPx(12)
         }
 
         Text {
@@ -129,7 +129,7 @@ Item {
             text: "TASK MANAGER"
             color: Theme.secondaryText
             font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(10)
+            font.pixelSize: Theme.fontPx(12)
             leftPadding: 2
         }
 
@@ -144,14 +144,14 @@ Item {
                 spacing: 8
                 Item {
                     width: parent.width
-                    height: 38
+                    height: 44
                     Text {
                         anchors.left: parent.left; anchors.leftMargin: 12
                         anchors.verticalCenter: parent.verticalCenter
-                        text: "Running applications"
+                        text: "Running apps"
                         color: Theme.text
                         font.family: Theme.bodyFontFamily
-                        font.pixelSize: Theme.fontPx(12)
+                        font.pixelSize: Theme.fontPx(14)
                         font.bold: true
                     }
                     Text {
@@ -172,7 +172,7 @@ Item {
                 Rectangle {
                     anchors.left: parent.left; anchors.right: parent.right
                     anchors.leftMargin: 10; anchors.rightMargin: 10
-                    height: 30; radius: 10; color: Theme.panelCardHi
+                    height: 36; radius: 10; color: Theme.panelCardHi
                     TextInput {
                         anchors.fill: parent; anchors.leftMargin: 10; anchors.rightMargin: 10
                         verticalAlignment: TextInput.AlignVCenter
@@ -180,12 +180,12 @@ Item {
                         onTextChanged: root.processFilter = text
                         color: Theme.text
                         font.family: Theme.bodyFontFamily
-                        font.pixelSize: Theme.fontPx(11)
+                        font.pixelSize: Theme.fontPx(13)
                         clip: true
                         Text {
                             anchors.fill: parent
                             verticalAlignment: Text.AlignVCenter
-                            text: "Filter processes"
+                            text: "Filter"
                             color: Theme.tertiaryText
                             font: parent.font
                             visible: parent.text.length === 0
@@ -208,7 +208,7 @@ Item {
                                 id: processRow
                                 required property var modelData
                                 width: processList.width - 20
-                                height: 38
+                                height: 44
                                 x: 10
                                 radius: 10
                                 color: Theme.panelCardHi
@@ -219,14 +219,14 @@ Item {
                                     text: processRow.modelData.name + "  ·  PID " + processRow.modelData.pid + "  ·  " + processRow.modelData.cpu + "% CPU  ·  " + processRow.modelData.memory + "% RAM"
                                     color: Theme.text
                                     font.family: Theme.bodyFontFamily
-                                    font.pixelSize: Theme.fontPx(10)
+                                    font.pixelSize: Theme.fontPx(12)
                                     elide: Text.ElideRight
                                 }
                                 Rectangle {
                                     id: endButton
                                     anchors.right: parent.right; anchors.rightMargin: 6
                                     anchors.verticalCenter: parent.verticalCenter
-                                    width: endLabel.implicitWidth + 16; height: 26; radius: 13
+                                    width: endLabel.implicitWidth + 20; height: 30; radius: 15
                                     color: processRow.modelData.pid === root.pendingPid ? Theme.red : Theme.panelCard
                                     Text {
                                         id: endLabel
@@ -234,7 +234,7 @@ Item {
                                         text: processRow.modelData.pid === root.pendingPid ? "Confirm" : "End"
                                         color: Theme.text
                                         font.family: Theme.bodyFontFamily
-                                        font.pixelSize: Theme.fontPx(9)
+                                        font.pixelSize: Theme.fontPx(12)
                                     }
                                     MouseArea {
                                         anchors.fill: parent; cursorShape: Qt.PointingHandCursor
@@ -254,7 +254,7 @@ Item {
                         text: "No matching processes"
                         color: Theme.tertiaryText
                         font.family: Theme.bodyFontFamily
-                        font.pixelSize: Theme.fontPx(10)
+                        font.pixelSize: Theme.fontPx(12)
                         visible: root.processes.filter(p => root.processFilter.trim() === "" || p.name.toLowerCase().includes(root.processFilter.trim().toLowerCase())).length === 0
                     }
                 }
@@ -263,17 +263,17 @@ Item {
 
         Text {
             width: parent.width
-            text: "Only processes owned by your user are listed. Ending a process sends SIGTERM; core session processes are hidden."
+            text: "Only your processes. End sends SIGTERM; session processes are hidden."
             color: Theme.tertiaryText
             wrapMode: Text.Wrap
             font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(10)
+            font.pixelSize: Theme.fontPx(12)
         }
 
-        SettingsGroup {
+        SettingGroup {
             width: parent.width
-            SliderRow {
-                label: "Hyprland workspaces shown"
+            SettingSliderRow {
+                label: "Workspaces"
                 value: Config.workspaceCount
                 from: 1; to: 10; unit: ""
                 onMoved: v => Config.opt.workspaceCount = v
@@ -294,7 +294,7 @@ Item {
                     text: "System information"
                     color: Theme.text
                     font.family: Theme.bodyFontFamily
-                    font.pixelSize: Theme.fontPx(12)
+                    font.pixelSize: Theme.fontPx(14)
                     font.bold: true
                 }
                 InfoRow { label: "Compositor"; value: Quickshell.env("XDG_CURRENT_DESKTOP") || "Hyprland" }
@@ -305,106 +305,11 @@ Item {
 
         Text {
             width: parent.width
-            text: "Workspace count controls the workspace indicators in the island. Other system services are managed by Hyprland and your user session."
+            text: "Number of workspace indicators in the island."
             color: Theme.tertiaryText
             wrapMode: Text.Wrap
             font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(10)
-        }
-    }
-
-    component SettingsGroup: Rectangle {
-        default property alias rows: rowsColumn.data
-        implicitHeight: rowsColumn.implicitHeight
-        height: implicitHeight
-        radius: Theme.radiusMedium
-        color: Theme.panelCard
-        clip: true
-        Column { id: rowsColumn; width: parent.width; spacing: 0 }
-    }
-
-    component ToggleRow: Item {
-        id: row
-        property string label: ""
-        property bool checked: false
-        signal toggled
-        width: parent.width
-        height: 42
-        Text {
-            anchors.left: parent.left; anchors.leftMargin: 12
-            anchors.verticalCenter: parent.verticalCenter
-            text: row.label; color: Theme.text
-            font.family: Theme.bodyFontFamily; font.pixelSize: Theme.fontPx(11)
-        }
-        Rectangle {
-            anchors.right: parent.right; anchors.rightMargin: 12
-            anchors.verticalCenter: parent.verticalCenter
-            width: 32; height: 18; radius: 9
-            color: row.checked ? Theme.green : Theme.panelCardHi
-            Rectangle {
-                width: 14; height: 14; radius: 7
-                anchors.verticalCenter: parent.verticalCenter
-                x: row.checked ? parent.width - width - 2 : 2
-                color: "#ffffff"
-            }
-            MouseArea {
-                anchors.fill: parent; cursorShape: Qt.PointingHandCursor
-                onClicked: row.toggled()
-            }
-        }
-        Rectangle {
-            anchors.left: parent.left; anchors.right: parent.right; anchors.bottom: parent.bottom
-            anchors.leftMargin: 10; anchors.rightMargin: 10
-            height: 1; color: Theme.divider
-        }
-    }
-
-    component SliderRow: Item {
-        id: row
-        property string label: ""
-        property int value: 0
-        property int from: 0
-        property int to: 100
-        property string unit: ""
-        signal moved(int value)
-        width: parent.width
-        height: 48
-        opacity: enabled ? 1 : 0.45
-        Text {
-            anchors.left: parent.left; anchors.leftMargin: 12; anchors.top: parent.top; anchors.topMargin: 5
-            text: row.label; color: Theme.text
-            font.family: Theme.bodyFontFamily; font.pixelSize: Theme.fontPx(11)
-        }
-        Text {
-            anchors.right: parent.right; anchors.rightMargin: 12; anchors.top: parent.top; anchors.topMargin: 5
-            text: String(row.value) + row.unit; color: Theme.secondaryText
-            font.family: Theme.bodyFontFamily; font.pixelSize: Theme.fontPx(10)
-        }
-        Rectangle {
-            id: track
-            anchors.left: parent.left; anchors.right: parent.right; anchors.bottom: parent.bottom; anchors.bottomMargin: 8
-            anchors.leftMargin: 12; anchors.rightMargin: 12
-            height: 4; radius: 2; color: Theme.panelCardHi
-            Rectangle {
-                id: fill
-                width: track.width * Math.max(0, Math.min(1, (row.value - row.from) / Math.max(1, row.to - row.from)))
-                height: parent.height; radius: 2; color: Theme.green
-            }
-            Rectangle {
-                width: 12; height: 12; radius: 6
-                x: Math.max(0, Math.min(track.width - width, fill.width - width / 2))
-                anchors.verticalCenter: parent.verticalCenter; color: Theme.text
-            }
-            MouseArea {
-                anchors.fill: parent; anchors.topMargin: -15; anchors.bottomMargin: -12
-                cursorShape: row.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-                enabled: row.enabled
-                function setAt(x: real): void {
-                    row.moved(Math.round(row.from + Math.max(0, Math.min(1, x / track.width)) * (row.to - row.from)));
-                }
-                onPressed: mouse => setAt(mouse.x)
-                onPositionChanged: mouse => { if (pressed) setAt(mouse.x); }
-            }
+            font.pixelSize: Theme.fontPx(12)
         }
     }
 
@@ -419,14 +324,14 @@ Item {
             text: row.label
             color: Theme.secondaryText
             font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(10)
+            font.pixelSize: Theme.fontPx(12)
         }
         Text {
             width: row.width * 0.68 - row.spacing
             text: row.value
             color: Theme.text
             font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(10)
+            font.pixelSize: Theme.fontPx(12)
             elide: Text.ElideMiddle
         }
     }

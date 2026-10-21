@@ -114,7 +114,7 @@ Item {
         // ---- Barra: deshacer / restablecer ----
         Item {
             width: parent.width
-            height: 28
+            height: 36
             Row {
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
@@ -144,17 +144,17 @@ Item {
         // ---- Acciones del control seleccionado ----
         Rectangle {
             width: parent.width
-            height: 44
+            height: 54
             radius: Theme.radiusMedium
             color: Theme.panelCard
 
             Text {
                 visible: root.selectedEntry === null
                 anchors.centerIn: parent
-                text: "Select a control in the preview to move, resize or remove it"
+                text: "Select a control in the preview to edit it"
                 color: Theme.secondaryText
                 font.family: Theme.bodyFontFamily
-                font.pixelSize: Theme.fontPx(11)
+                font.pixelSize: Theme.fontPx(13)
             }
             Row {
                 visible: root.selectedEntry !== null
@@ -173,7 +173,7 @@ Item {
                     text: root.selectedEntry ? root.info(root.selected).label : ""
                     color: Theme.text
                     font.family: Theme.bodyFontFamily
-                    font.pixelSize: Theme.fontPx(12)
+                    font.pixelSize: Theme.fontPx(14)
                     font.bold: true
                     anchors.verticalCenter: parent.verticalCenter
                 }
@@ -220,7 +220,7 @@ Item {
             text: "ADD A CONTROL"
             color: Theme.secondaryText
             font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(10)
+            font.pixelSize: Theme.fontPx(12)
         }
         Flow {
             id: addFlow
@@ -355,10 +355,10 @@ Item {
         Text {
             width: parent.width
             wrapMode: Text.Wrap
-            text: "The preview has the same layout as the real control center. Switches can be compact or large, cards compact or large, and notifications short or with the full history. The lock and night light buttons and Power mode are always shown. Changes are saved automatically."
+            text: "Same layout as the real control center. Lock, night light and Power mode are always shown. Changes save automatically."
             color: Theme.tertiaryText
             font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(10)
+            font.pixelSize: Theme.fontPx(12)
         }
     }
 
@@ -423,26 +423,26 @@ Item {
         property string label: ""
         property bool danger: false
         signal clicked
-        width: chipRow.implicitWidth + 18
-        height: 28
-        radius: 14
+        width: chipRow.implicitWidth + 24
+        height: 34
+        radius: 17
         opacity: enabled ? 1 : 0.4
         color: danger ? (chipMouse.containsMouse ? Theme.red : Theme.panelCardHi) : (chipMouse.containsMouse && enabled ? Theme.panelCardHi : Theme.panelCard)
         Row {
             id: chipRow
             anchors.centerIn: parent
-            spacing: 5
+            spacing: 6
             Text {
                 text: chip.icon
                 font.family: "Material Symbols Rounded"
-                font.pixelSize: 15
+                font.pixelSize: 18
                 color: chip.danger && chipMouse.containsMouse ? Theme.crust : (chip.danger ? Theme.red : Theme.text)
                 anchors.verticalCenter: parent.verticalCenter
             }
             Text {
                 text: chip.label
                 font.family: Theme.bodyFontFamily
-                font.pixelSize: Theme.fontPx(10)
+                font.pixelSize: Theme.fontPx(12)
                 color: chip.danger && chipMouse.containsMouse ? Theme.crust : Theme.text
                 anchors.verticalCenter: parent.verticalCenter
             }

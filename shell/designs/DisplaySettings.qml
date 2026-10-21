@@ -308,7 +308,7 @@ Item {
                                 text: box.modelData.name
                                 color: Theme.text
                                 font.family: Theme.bodyFontFamily
-                                font.pixelSize: Theme.fontPx(11)
+                                font.pixelSize: Theme.fontPx(13)
                                 font.bold: true
                             }
                             Text {
@@ -316,7 +316,7 @@ Item {
                                 text: root.currentRes(box.modelData) + " · " + Math.round(box.modelData.refreshRate) + " Hz"
                                 color: Theme.secondaryText
                                 font.family: Theme.bodyFontFamily
-                                font.pixelSize: Theme.fontPx(9)
+                                font.pixelSize: Theme.fontPx(11)
                                 visible: box.width > 90
                             }
                         }
@@ -362,8 +362,8 @@ Item {
                         delegate: Rectangle {
                             id: offBox
                             required property var modelData
-                            width: 100
-                            height: 46
+                            width: 120
+                            height: 54
                             radius: 6
                             opacity: 0.6
                             color: Theme.panelCardHi
@@ -376,7 +376,7 @@ Item {
                                     text: offBox.modelData.name
                                     color: Theme.text
                                     font.family: Theme.bodyFontFamily
-                                    font.pixelSize: Theme.fontPx(10)
+                                    font.pixelSize: Theme.fontPx(12)
                                     font.bold: true
                                 }
                                 Text {
@@ -384,7 +384,7 @@ Item {
                                     text: "Off"
                                     color: Theme.secondaryText
                                     font.family: Theme.bodyFontFamily
-                                    font.pixelSize: Theme.fontPx(9)
+                                    font.pixelSize: Theme.fontPx(11)
                                 }
                             }
                             MouseArea {
@@ -402,7 +402,7 @@ Item {
                     text: "Reading monitors…"
                     color: Theme.tertiaryText
                     font.family: Theme.bodyFontFamily
-                    font.pixelSize: Theme.fontPx(10)
+                    font.pixelSize: Theme.fontPx(12)
                 }
             }
         }
@@ -459,11 +459,11 @@ Item {
             text: root.selected ? (root.selected.name + (root.selected.description ? "  ·  " + root.selected.description : "")).toUpperCase() : ""
         }
 
-        SettingsGroup {
+        SettingGroup {
             visible: root.selected !== null
             width: parent.width
 
-            ToggleRow {
+            SettingToggleRow {
                 label: "Enabled"
                 sublabel: root.selected && !root.selected.disabled && root.enabledMonitors.length === 1 ? "It's the only screen on: it can't be turned off" : "Turn this monitor on or off"
                 checked: root.selected ? !root.selected.disabled : false
@@ -491,7 +491,7 @@ Item {
                 current: root.selected ? (root.orientationLabels[root.selected.transform] ?? root.orientationLabels[0]) : ""
                 onPicked: value => root.apply(root.monitorLua(root.selected, { transform: root.orientationLabels.indexOf(value) }))
             }
-            ToggleRow {
+            SettingToggleRow {
                 visible: root.selected !== null && !root.selected.disabled && root.enabledMonitors.length > 1
                 label: "Primary monitor"
                 sublabel: "Move workspace 1 to this monitor"
@@ -502,11 +502,11 @@ Item {
 
         Text {
             width: parent.width
-            text: "Each change is saved as the profile for this set of monitors (~/.config/salchipapa-shell/display-profiles.json) and applied again automatically when you reconnect them. After moving monitors you have 10 seconds to keep the change; otherwise it reverts."
+            text: "Saved per set of monitors and reapplied when you reconnect them. After moving monitors, keep the change within 10 s or it reverts."
             color: Theme.tertiaryText
             wrapMode: Text.Wrap
             font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(10)
+            font.pixelSize: Theme.fontPx(12)
         }
     }
 
@@ -514,68 +514,9 @@ Item {
         width: parent.width
         color: Theme.secondaryText
         font.family: Theme.bodyFontFamily
-        font.pixelSize: Theme.fontPx(10)
+        font.pixelSize: Theme.fontPx(12)
         leftPadding: 2
         elide: Text.ElideRight
-    }
-
-    component SettingsGroup: Rectangle {
-        default property alias rows: rowsColumn.data
-        implicitHeight: rowsColumn.implicitHeight
-        height: implicitHeight
-        radius: Theme.radiusMedium
-        color: Theme.panelCard
-        clip: true
-        Column { id: rowsColumn; width: parent.width; spacing: 0 }
-    }
-
-    component ToggleRow: Item {
-        id: row
-        property string label: ""
-        property string sublabel: ""
-        property bool checked: false
-        signal toggled
-        width: parent.width
-        height: sublabel !== "" ? 50 : 42
-        Column {
-            anchors.left: parent.left; anchors.leftMargin: 12
-            anchors.right: toggle.left; anchors.rightMargin: 10
-            anchors.verticalCenter: parent.verticalCenter
-            spacing: 2
-            Text {
-                text: row.label; color: Theme.text
-                font.family: Theme.bodyFontFamily; font.pixelSize: Theme.fontPx(11)
-            }
-            Text {
-                visible: row.sublabel !== ""
-                width: parent.width
-                text: row.sublabel; color: Theme.tertiaryText
-                font.family: Theme.bodyFontFamily; font.pixelSize: Theme.fontPx(9)
-                elide: Text.ElideRight
-            }
-        }
-        Rectangle {
-            id: toggle
-            anchors.right: parent.right; anchors.rightMargin: 12
-            anchors.verticalCenter: parent.verticalCenter
-            width: 32; height: 18; radius: 9
-            color: row.checked ? Theme.green : Theme.panelCardHi
-            Rectangle {
-                width: 14; height: 14; radius: 7
-                anchors.verticalCenter: parent.verticalCenter
-                x: row.checked ? parent.width - width - 2 : 2
-                color: "#ffffff"
-            }
-            MouseArea {
-                anchors.fill: parent; cursorShape: Qt.PointingHandCursor
-                onClicked: row.toggled()
-            }
-        }
-        Rectangle {
-            anchors.left: parent.left; anchors.right: parent.right; anchors.bottom: parent.bottom
-            anchors.leftMargin: 10; anchors.rightMargin: 10
-            height: 1; color: Theme.divider
-        }
     }
 
     // Fila con desplegable: el valor actual a la derecha; al pulsar, la lista debajo
@@ -588,19 +529,19 @@ Item {
         property bool open: false
         signal picked(string value)
         width: parent.width
-        height: 42 + (open ? list.height + 8 : 0)
+        height: 48 + (open ? list.height + 8 : 0)
         clip: true
         Text {
             anchors.left: parent.left; anchors.leftMargin: 12
-            y: 21 - height / 2
+            y: 24 - height / 2
             text: row.label; color: Theme.text
-            font.family: Theme.bodyFontFamily; font.pixelSize: Theme.fontPx(11)
+            font.family: Theme.bodyFontFamily; font.pixelSize: Theme.fontPx(13)
         }
         Rectangle {
             id: field
             anchors.right: parent.right; anchors.rightMargin: 8
             y: 6
-            width: 170; height: 30; radius: 8
+            width: 200; height: 36; radius: 8
             color: Theme.panelCardHi
             Text {
                 anchors.left: parent.left; anchors.leftMargin: 10
@@ -608,7 +549,7 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 text: row.current + row.suffix
                 color: Theme.text
-                font.family: Theme.bodyFontFamily; font.pixelSize: Theme.fontPx(11)
+                font.family: Theme.bodyFontFamily; font.pixelSize: Theme.fontPx(13)
                 elide: Text.ElideRight
             }
             Text {
@@ -617,7 +558,7 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 text: row.open ? "expand_less" : "expand_more"
                 font.family: "Material Symbols Rounded"
-                font.pixelSize: 15
+                font.pixelSize: 18
                 color: Theme.secondaryText
             }
             MouseArea {
@@ -639,7 +580,7 @@ Item {
                 id: opt
                 required property string modelData
                 width: ListView.view.width
-                height: 28
+                height: 32
                 radius: 6
                 color: optMouse.containsMouse || modelData === row.current ? Theme.panelCardHi : "transparent"
                 Text {
@@ -647,7 +588,7 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     text: opt.modelData + row.suffix
                     color: opt.modelData === row.current ? Theme.green : Theme.text
-                    font.family: Theme.bodyFontFamily; font.pixelSize: Theme.fontPx(11)
+                    font.family: Theme.bodyFontFamily; font.pixelSize: Theme.fontPx(13)
                 }
                 MouseArea {
                     id: optMouse
@@ -675,8 +616,8 @@ Item {
         property bool accent: false
         signal clicked
         width: btnText.implicitWidth + 24
-        height: 30
-        radius: 15
+        height: 36
+        radius: 18
         color: accent ? Theme.green : Theme.panelCardHi
         Text {
             id: btnText
@@ -684,7 +625,7 @@ Item {
             text: btn.label
             color: btn.accent ? Theme.crust : Theme.text
             font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(11)
+            font.pixelSize: Theme.fontPx(13)
             font.bold: btn.accent
         }
         MouseArea {

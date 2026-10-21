@@ -34,7 +34,7 @@ Item {
         }
         RangeRow {
             width: parent.width
-            label: "Rows before scrolling"
+            label: "Visible rows"
             from: 3
             to: 12
             value: Config.launcherRowsBeforeScrolling

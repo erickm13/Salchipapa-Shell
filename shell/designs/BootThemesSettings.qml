@@ -33,7 +33,7 @@ Item {
         if (selected === "" || status === "applying")
             return;
         status = "applying";
-        statusText = kind === "grub" ? "Aplicando " + selected + " (regenerando la config de GRUB)…" : "Aplicando " + selected + "…";
+        statusText = kind === "grub" ? "Applying " + selected + " (regenerating the GRUB config)…" : "Applying " + selected + "…";
         applyProc.exec([script, "apply", kind, selected]);
     }
 
@@ -61,11 +61,11 @@ Item {
         onExited: code => {
             if (code === 0) {
                 root.status = "ok";
-                root.statusText = (root.kind === "grub" ? "Tema de GRUB aplicado: " : "Tema de SDDM aplicado: ") + root.selected + (root.kind === "grub" ? ". Se verá al reiniciar." : ". Se verá al cerrar sesión.");
+                root.statusText = (root.kind === "grub" ? "GRUB theme applied: " : "SDDM theme applied: ") + root.selected + (root.kind === "grub" ? ". Shown on reboot." : ". Shown on logout.");
                 root.selected = "";
             } else {
                 root.status = "error";
-                root.statusText = "No se pudo aplicar: " + (applyErr.text.trim().split("\n").pop() || "código " + code);
+                root.statusText = "Could not apply: " + (applyErr.text.trim().split("\n").pop() || "exit code " + code);
             }
             root.refresh();
         }
@@ -79,14 +79,14 @@ Item {
         // ---- SDDM / GRUB + buscador ----
         Item {
             width: parent.width
-            height: 32
+            height: 40
 
             Rectangle {
                 id: segment
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
                 width: segRow.implicitWidth + 6
-                height: 30
+                height: 36
                 radius: 15
                 color: Theme.panelCard
                 Row {
@@ -94,13 +94,13 @@ Item {
                     anchors.centerIn: parent
                     spacing: 2
                     Repeater {
-                        model: [{ key: "sddm", label: "Login (SDDM)", icon: "login" }, { key: "grub", label: "Arranque (GRUB)", icon: "power_settings_new" }]
+                        model: [{ key: "sddm", label: "Login (SDDM)", icon: "login" }, { key: "grub", label: "Boot (GRUB)", icon: "power_settings_new" }]
                         delegate: Rectangle {
                             id: seg
                             required property var modelData
                             readonly property bool on: root.kind === modelData.key
                             width: segContent.implicitWidth + 18
-                            height: 24
+                            height: 30
                             radius: 12
                             color: on ? Theme.green : "transparent"
                             Row {
@@ -110,14 +110,14 @@ Item {
                                 Text {
                                     text: seg.modelData.icon
                                     font.family: "Material Symbols Rounded"
-                                    font.pixelSize: 14
+                                    font.pixelSize: 16
                                     color: seg.on ? Theme.crust : Theme.secondaryText
                                     anchors.verticalCenter: parent.verticalCenter
                                 }
                                 Text {
                                     text: seg.modelData.label
                                     font.family: Theme.bodyFontFamily
-                                    font.pixelSize: Theme.fontPx(11)
+                                    font.pixelSize: Theme.fontPx(13)
                                     font.bold: seg.on
                                     color: seg.on ? Theme.crust : Theme.text
                                     anchors.verticalCenter: parent.verticalCenter
@@ -138,7 +138,7 @@ Item {
                 anchors.leftMargin: 10
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
-                height: 30
+                height: 36
                 radius: 15
                 color: Theme.panelCard
                 TextInput {
@@ -148,13 +148,13 @@ Item {
                     verticalAlignment: TextInput.AlignVCenter
                     color: Theme.text
                     font.family: Theme.bodyFontFamily
-                    font.pixelSize: Theme.fontPx(11)
+                    font.pixelSize: Theme.fontPx(13)
                     clip: true
                     onTextChanged: root.filter = text
                     Text {
                         anchors.fill: parent
                         verticalAlignment: Text.AlignVCenter
-                        text: "Buscar tema (" + root.section.themes.length + ")"
+                        text: "Search themes (" + root.section.themes.length + ")"
                         color: Theme.tertiaryText
                         font: parent.font
                         visible: parent.text.length === 0
@@ -166,7 +166,7 @@ Item {
         // ---- Aplicar el seleccionado / estado ----
         Rectangle {
             width: parent.width
-            height: 40
+            height: 48
             radius: Theme.radiusMedium
             color: Theme.panelCard
             visible: root.selected !== "" || root.status !== ""
@@ -177,10 +177,10 @@ Item {
                 anchors.right: applyBtn.left
                 anchors.rightMargin: 10
                 anchors.verticalCenter: parent.verticalCenter
-                text: root.status !== "" && root.selected === "" || root.status === "applying" ? root.statusText : "Seleccionado: " + root.selected
+                text: root.status !== "" && root.selected === "" || root.status === "applying" ? root.statusText : "Selected: " + root.selected
                 color: root.status === "error" ? Theme.red : root.status === "ok" ? Theme.green : Theme.text
                 font.family: Theme.bodyFontFamily
-                font.pixelSize: Theme.fontPx(11)
+                font.pixelSize: Theme.fontPx(13)
                 elide: Text.ElideRight
             }
             Rectangle {
@@ -190,16 +190,16 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 visible: root.selected !== "" && root.status !== "applying"
                 width: applyText.implicitWidth + 24
-                height: 28
+                height: 34
                 radius: 14
                 color: Theme.green
                 Text {
                     id: applyText
                     anchors.centerIn: parent
-                    text: "Aplicar"
+                    text: "Apply"
                     color: Theme.crust
                     font.family: Theme.bodyFontFamily
-                    font.pixelSize: Theme.fontPx(11)
+                    font.pixelSize: Theme.fontPx(13)
                     font.bold: true
                 }
                 MouseArea {
@@ -268,16 +268,16 @@ Item {
                             anchors.right: parent.right
                             anchors.margins: 8
                             width: badge.implicitWidth + 12
-                            height: 18
+                            height: 22
                             radius: 9
                             color: "#b3000000"
                             Text {
                                 id: badge
                                 anchors.centerIn: parent
-                                text: card.isCurrent ? "● Activo" : "Vídeo"
+                                text: card.isCurrent ? "● Active" : "Video"
                                 color: card.isCurrent ? Theme.green : "#ffffff"
                                 font.family: Theme.bodyFontFamily
-                                font.pixelSize: Theme.fontPx(9)
+                                font.pixelSize: Theme.fontPx(11)
                                 font.bold: true
                             }
                         }
@@ -303,7 +303,7 @@ Item {
                         text: card.modelData.name
                         color: card.isCurrent || card.isSelected ? Theme.text : Theme.secondaryText
                         font.family: Theme.bodyFontFamily
-                        font.pixelSize: Theme.fontPx(10)
+                        font.pixelSize: Theme.fontPx(12)
                         font.bold: card.isCurrent || card.isSelected
                         elide: Text.ElideRight
                     }
@@ -316,19 +316,19 @@ Item {
             visible: root.themes.length === 0
             horizontalAlignment: Text.AlignHCenter
             topPadding: 20
-            text: root.loading ? "Leyendo temas…" : root.section.themes.length === 0 ? (root.kind === "grub" ? "No hay temas en /boot/grub/themes (¿el equipo arranca con GRUB?)" : "No hay temas en /usr/share/sddm/themes") : "Ningún tema coincide"
+            text: root.loading ? "Reading themes…" : root.section.themes.length === 0 ? (root.kind === "grub" ? "No themes in /boot/grub/themes (does this machine boot with GRUB?)" : "No themes in /usr/share/sddm/themes") : "No matching themes"
             color: Theme.tertiaryText
             font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(10)
+            font.pixelSize: Theme.fontPx(12)
         }
 
         Text {
             width: parent.width
-            text: "Elige un tema y pulsa Aplicar. SDDM se ve al cerrar sesión; GRUB al reiniciar (aplicarlo regenera /boot/grub/grub.cfg y tarda unos segundos)."
+            text: "Pick a theme and press Apply. SDDM shows on logout; GRUB on reboot."
             color: Theme.tertiaryText
             wrapMode: Text.Wrap
             font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(10)
+            font.pixelSize: Theme.fontPx(12)
         }
     }
 }
