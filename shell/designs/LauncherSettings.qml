@@ -14,6 +14,9 @@ Item {
         anchors.right: parent.right
         spacing: Theme.space(3)
 
+        SectionTitle {
+            text: "Size"
+        }
         RangeRow {
             width: parent.width
             label: "Width"

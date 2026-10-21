@@ -76,6 +76,9 @@ Item {
         width: parent.width
         spacing: Theme.space(3)
 
+        SectionTitle {
+            text: "Themes"
+        }
         // ---- SDDM / GRUB + buscador ----
         Item {
             width: parent.width

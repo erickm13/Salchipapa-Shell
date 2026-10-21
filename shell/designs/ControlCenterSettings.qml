@@ -111,6 +111,9 @@ Item {
         width: parent.width
         spacing: Theme.space(3)
 
+        SectionTitle {
+            text: "Layout"
+        }
         // ---- Barra: deshacer / restablecer ----
         Item {
             width: parent.width
@@ -215,12 +218,9 @@ Item {
         }
 
         // ---- Añadir ----
-        Text {
+        SectionTitle {
             visible: addFlow.children.length > 1
-            text: "ADD A CONTROL"
-            color: Theme.secondaryText
-            font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(12)
+            text: "Add a control"
         }
         Flow {
             id: addFlow

@@ -75,6 +75,7 @@ Item {
         spacing: Theme.space(4)
 
         SettingGroup {
+            title: "Input"
             width: parent.width
             SettingToggleRow {
                 label: "Touchpad"
@@ -93,6 +94,7 @@ Item {
         }
 
         SettingGroup {
+            title: "Blur"
             width: parent.width
             SettingToggleRow {
                 label: "Window blur"
@@ -124,13 +126,8 @@ Item {
             font.pixelSize: Theme.fontPx(12)
         }
 
-        Text {
-            width: parent.width
-            text: "TASK MANAGER"
-            color: Theme.secondaryText
-            font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(12)
-            leftPadding: 2
+        SectionTitle {
+            text: "Task manager"
         }
 
         Rectangle {
@@ -285,6 +282,7 @@ Item {
         }
 
         SettingGroup {
+            title: "Island"
             width: parent.width
             SettingSliderRow {
                 label: "Workspaces"

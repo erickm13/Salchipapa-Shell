@@ -14,6 +14,7 @@ Item {
         spacing: Theme.space(4)
 
         SettingGroup {
+            title: "Popups & history"
             width: parent.width
             SettingSliderRow {
                 label: "Popup timeout"
@@ -51,18 +52,8 @@ Item {
             }
         }
 
-        Text {
-            width: parent.width
-            text: "VOLUME & BRIGHTNESS"
-            color: Theme.secondaryText
-            font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(12)
-            leftPadding: 2
-            topPadding: 2
-            bottomPadding: 1
-        }
-
         SettingGroup {
+            title: "Volume & brightness"
             width: parent.width
             SettingSliderRow {
                 label: "Duration"

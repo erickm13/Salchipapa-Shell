@@ -465,6 +465,7 @@ Item {
         }
 
         SettingGroup {
+            title: "Selected monitor"
             visible: root.selected !== null
             width: parent.width
 

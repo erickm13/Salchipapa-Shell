@@ -528,6 +528,10 @@ FloatingWindow {
                     spacing: Theme.space(3)
 
                     // ---- Bar & Island ----
+                    SectionTitle {
+                        visible: win.category === 0
+                        text: "Island"
+                    }
                     ToggleRow {
                         visible: win.category === 0
                         width: parent.width
@@ -565,6 +569,10 @@ FloatingWindow {
                         label: "Battery percentage"
                         checked: Config.clockShowBatteryPercent
                         onToggled: Config.opt.clockShowBatteryPercent = !Config.clockShowBatteryPercent
+                    }
+                    SectionTitle {
+                        visible: win.category === 0
+                        text: "Size"
                     }
                     PxSlider {
                         visible: win.category === 0
@@ -613,6 +621,10 @@ FloatingWindow {
                     }
 
                     // ---- Media ----
+                    SectionTitle {
+                        visible: win.category === 1
+                        text: "Layout"
+                    }
                     PxSlider {
                         visible: win.category === 1
                         width: parent.width
@@ -631,13 +643,9 @@ FloatingWindow {
                         value: Config.mediaAlbumArtSize
                         onMoved: v => Config.opt.mediaAlbumArtSize = v
                     }
-                    Text {
-                        font.family: Theme.bodyFontFamily
+                    SectionTitle {
                         visible: win.category === 1
-                        width: parent.width
                         text: "What to show"
-                        color: Theme.text
-                        font.pixelSize: Theme.fontPx(11)
                     }
                     ToggleRow {
                         visible: win.category === 1
@@ -676,6 +684,10 @@ FloatingWindow {
                     }
 
                     // ---- Clock & Date ----
+                    SectionTitle {
+                        visible: win.category === 2
+                        text: "Bar clock"
+                    }
                     ToggleRow {
                         visible: win.category === 2
                         width: parent.width
@@ -704,13 +716,9 @@ FloatingWindow {
                         checked: Config.clockShowBatteryWifi
                         onToggled: Config.opt.clockShowBatteryWifi = !Config.clockShowBatteryWifi
                     }
-                    Text {
-                        font.family: Theme.bodyFontFamily
+                    SectionTitle {
                         visible: win.category === 2
-                        width: parent.width
                         text: "Expanded island"
-                        color: Theme.text
-                        font.pixelSize: Theme.fontPx(11)
                     }
                     ToggleRow {
                         visible: win.category === 2
@@ -733,13 +741,9 @@ FloatingWindow {
                         checked: Config.clockExpandedMedia
                         onToggled: Config.opt.clockExpandedMedia = !Config.clockExpandedMedia
                     }
-                    Text {
-                        font.family: Theme.bodyFontFamily
+                    SectionTitle {
                         visible: win.category === 2
-                        width: parent.width
                         text: "Calendar"
-                        color: Theme.text
-                        font.pixelSize: Theme.fontPx(11)
                     }
                     PxSlider {
                         visible: win.category === 2
@@ -769,6 +773,10 @@ FloatingWindow {
                     }
 
                     // ---- Motion ----
+                    SectionTitle {
+                        visible: win.category === 4
+                        text: "Animation"
+                    }
                     ToggleRow {
                         visible: win.category === 4
                         width: parent.width
@@ -854,6 +862,10 @@ FloatingWindow {
                     }
 
                     // ---- Appearance ----
+                    SectionTitle {
+                        visible: win.category === 3
+                        text: "Theme & wallpaper"
+                    }
                     Rectangle {
                         visible: win.category === 3
                         width: parent.width
@@ -957,13 +969,9 @@ FloatingWindow {
                             }
                         }
                     }
-                    Text {
-                        font.family: Theme.bodyFontFamily
+                    SectionTitle {
                         visible: win.category === 3
-                        width: parent.width
                         text: "Accent"
-                        color: Theme.text
-                        font.pixelSize: Theme.fontPx(11)
                     }
                     Rectangle {
                         visible: win.category === 3
@@ -1117,13 +1125,9 @@ FloatingWindow {
                         font.family: Theme.bodyFontFamily
                         font.pixelSize: Theme.fontPx(10)
                     }
-                    Text {
-                        font.family: Theme.bodyFontFamily
+                    SectionTitle {
                         visible: win.category === 3
-                        width: parent.width
                         text: "Type"
-                        color: Theme.text
-                        font.pixelSize: Theme.fontPx(11)
                     }
                     PxSlider {
                         visible: win.category === 3
@@ -1351,13 +1355,9 @@ FloatingWindow {
                         }
                     }
 
-                    Text {
-                        font.family: Theme.bodyFontFamily
+                    SectionTitle {
                         visible: win.category === 3
-                        width: parent.width
                         text: "Shape & depth"
-                        color: Theme.text
-                        font.pixelSize: Theme.fontPx(11)
                     }
                     PxSlider { visible: win.category === 3; width: parent.width; label: "Spacing unit"; from: 2; to: 8; value: Config.appearanceSpacingUnit; onMoved: v => Config.opt.appearanceSpacingUnit = v }
                     PxSlider { visible: win.category === 3; width: parent.width; label: "Small radius"; from: 0; to: 24; value: Config.appearanceSmallRadius; onMoved: v => Config.opt.appearanceSmallRadius = v }
@@ -1374,13 +1374,9 @@ FloatingWindow {
                     PxSlider { visible: win.category === 3; width: parent.width; label: "Icon size"; from: 12; to: 32; value: Config.appearanceIconSize; onMoved: v => Config.opt.appearanceIconSize = v }
                     PxSlider { visible: win.category === 3; width: parent.width; label: "Icon stroke"; from: 1; to: 20; value: Config.appearanceIconStroke; unit: ""; onMoved: v => Config.opt.appearanceIconStroke = v }
 
-                    Text {
-                        font.family: Theme.bodyFontFamily
+                    SectionTitle {
                         visible: win.category === 3
-                        width: parent.width
                         text: "Surfaces & ink"
-                        color: Theme.text
-                        font.pixelSize: Theme.fontPx(11)
                     }
                     PxSlider { visible: win.category === 3; width: parent.width; label: "Surface lift"; from: 0; to: 20; value: Config.appearanceSurfaceLift; unit: "%"; onMoved: v => Config.opt.appearanceSurfaceLift = v }
                     PxSlider { visible: win.category === 3; width: parent.width; label: "Divider strength"; from: 0; to: 100; value: Config.appearanceDividerStrength; unit: "%"; onMoved: v => Config.opt.appearanceDividerStrength = v }
@@ -1390,25 +1386,17 @@ FloatingWindow {
                     PxSlider { visible: win.category === 3; width: parent.width; label: "Selected fill"; from: 0; to: 30; value: Config.appearanceSelectedFill; unit: "%"; onMoved: v => Config.opt.appearanceSelectedFill = v }
                     PxSlider { visible: win.category === 3; width: parent.width; label: "Modal dim"; from: 0; to: 90; value: Config.appearanceModalDim; unit: "%"; onMoved: v => Config.opt.appearanceModalDim = v }
 
-                    Text {
-                        font.family: Theme.bodyFontFamily
+                    SectionTitle {
                         visible: win.category === 3
-                        width: parent.width
                         text: "Shadow"
-                        color: Theme.text
-                        font.pixelSize: Theme.fontPx(11)
                     }
                     PxSlider { visible: win.category === 3; width: parent.width; label: "Opacity"; from: 0; to: 100; value: Config.appearanceShadowOpacity; unit: "%"; onMoved: v => { Config.opt.appearanceShadowOpacity = v; WindowShadowSync.scheduleSync(); } }
                     PxSlider { visible: win.category === 3; width: parent.width; label: "Blur"; from: 0; to: 100; value: Config.appearanceShadowBlur; unit: "%"; onMoved: v => { Config.opt.appearanceShadowBlur = v; WindowShadowSync.scheduleSync(); } }
                     PxSlider { visible: win.category === 3; width: parent.width; label: "Vertical offset"; from: 0; to: 30; value: Config.appearanceShadowOffset; onMoved: v => { Config.opt.appearanceShadowOffset = v; WindowShadowSync.scheduleSync(); } }
                     PxSlider { visible: win.category === 3; width: parent.width; label: "Spread"; from: 0; to: 450; value: Config.appearanceShadowSpread; onMoved: v => { Config.opt.appearanceShadowSpread = v; WindowShadowSync.scheduleSync(); } }
-                    Text {
-                        font.family: Theme.bodyFontFamily
+                    SectionTitle {
                         visible: win.category === 3
-                        width: parent.width
                         text: "Wallpaper"
-                        color: Theme.text
-                        font.pixelSize: Theme.fontPx(11)
                     }
                     PxSlider { visible: win.category === 3; width: parent.width; label: "Wallpaper crossfade"; from: 0; to: 1000; value: Config.appearanceWallpaperCrossfade; unit: "ms"; onMoved: v => Config.opt.appearanceWallpaperCrossfade = v }
 
