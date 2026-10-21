@@ -8,7 +8,11 @@ import "../common"
 Item {
     id: kb
     property real radius: Theme.radiusMedium
+    // Controles con dos acciones (p. ej. Wi‑Fi: el icono enciende, el resto abre detalles):
+    // Espacio = activated, Enter = altActivated
+    property bool hasAlt: false
     signal activated
+    signal altActivated
 
     anchors.fill: parent
     activeFocusOnTab: true
@@ -18,8 +22,8 @@ Item {
     Keys.onLeftPressed: KeyNav.move(kb, false)
     Keys.onRightPressed: KeyNav.move(kb, true)
     Keys.onSpacePressed: kb.activated()
-    Keys.onReturnPressed: kb.activated()
-    Keys.onEnterPressed: kb.activated()
+    Keys.onReturnPressed: kb.hasAlt ? kb.altActivated() : kb.activated()
+    Keys.onEnterPressed: kb.hasAlt ? kb.altActivated() : kb.activated()
 
     Rectangle {
         anchors.fill: parent

@@ -75,6 +75,12 @@ Item {
     readonly property real preferredHeight: (hasControl("notifications") ? notificationTop + notificationControlHeight : notificationTop - 12) + 4
 
     focus: Overlay.mode === "control"
+    // Teclado: con el panel recién abierto, flechas o Tab llevan al primer control; luego cada
+    // control pasa el foco con las flechas (KeyButton / SettingCard) y Esc cierra.
+    Keys.onDownPressed: KeyNav.move(root, true)
+    Keys.onRightPressed: KeyNav.move(root, true)
+    Keys.onUpPressed: KeyNav.move(root, false)
+    Keys.onLeftPressed: KeyNav.move(root, false)
     Keys.onEscapePressed: {
         if (wifiDetailsOpen)
             wifiDetailsOpen = false;
@@ -82,6 +88,7 @@ Item {
             bluetoothDetailsOpen = false;
         else
             Overlay.close();
+        root.forceActiveFocus();
     }
 
     Connections {
@@ -238,6 +245,10 @@ Item {
                         cursorShape: Qt.PointingHandCursor
                         onClicked: PowerProfiles.setMode(profileChip.modelData.id)
                     }
+                    KeyButton {
+                        radius: profileChip.radius
+                        onActivated: PowerProfiles.setMode(profileChip.modelData.id)
+                    }
                 }
             }
         }
@@ -348,6 +359,10 @@ Item {
                 cursorShape: Qt.PointingHandCursor
                 onClicked: Notifs.clearAll()
             }
+            KeyButton {
+                radius: 6
+                onActivated: Notifs.clearAll()
+            }
         }
 
         // Vacío
@@ -399,6 +414,11 @@ Item {
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     onClicked: Notifs.activate(nItem.modelData)
+                }
+                KeyButton {
+                    radius: nItem.radius
+                    onActivated: Notifs.activate(nItem.modelData)
+                    Keys.onDeletePressed: nItem.modelData.dismiss()
                 }
 
                 Column {
@@ -551,6 +571,12 @@ Item {
                     bt.clicked();
             }
         }
+        KeyButton {
+            radius: bt.radius
+            hasAlt: bt.splitAction
+            onActivated: bt.clicked()
+            onAltActivated: bt.detailsClicked()
+        }
     }
 
     // Botón redondo (lock, night light)
@@ -582,6 +608,10 @@ Item {
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             onClicked: rb.clicked()
+        }
+        KeyButton {
+            radius: rb.radius
+            onActivated: rb.clicked()
         }
     }
 }

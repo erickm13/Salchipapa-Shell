@@ -20,6 +20,24 @@ Rectangle {
 
     height: rowSize >= 2 ? 82 : 60
     radius: Theme.radiusLarge
+    border.width: activeFocus ? 2 : 0
+    border.color: Theme.green
+
+    // Teclado: ←/→ mueven el slider un 5 % (Shift: 1 %), Enter abre la subpágina y Espacio hace
+    // lo del icono del slider (silenciar en Sound)
+    activeFocusOnTab: true
+    onActiveFocusChanged: if (activeFocus) KeyNav.ensureVisible(card)
+    function nudge(dir: int, fine: bool): void {
+        if (sliderEnabled)
+            sliderMoved(Math.max(0, Math.min(1, sliderValue + dir * (fine ? 0.01 : 0.05))));
+    }
+    Keys.onUpPressed: KeyNav.move(card, false)
+    Keys.onDownPressed: KeyNav.move(card, true)
+    Keys.onLeftPressed: event => card.nudge(-1, event.modifiers & Qt.ShiftModifier)
+    Keys.onRightPressed: event => card.nudge(1, event.modifiers & Qt.ShiftModifier)
+    Keys.onReturnPressed: card.opened()
+    Keys.onEnterPressed: card.opened()
+    Keys.onSpacePressed: card.sliderIconTapped()
     color: cardMouse.containsMouse ? Qt.tint(Theme.panelCardHi, Theme.hoverFill) : Theme.panelCard
     Behavior on color {
         ColorAnimation {

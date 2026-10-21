@@ -106,13 +106,13 @@ Rectangle {
         TextPill {
             visible: Recorder.recording
             glyph: Recorder.paused ? "play_arrow" : "pause"
-            label: Recorder.paused ? "Reanudar" : "Pausa"
+            label: Recorder.paused ? "Resume" : "Pause"
             onClicked: Recorder.togglePause()
         }
         TextPill {
             visible: Recorder.recording
             glyph: "stop"
-            label: "Detener"
+            label: "Stop"
             danger: true
             onClicked: Recorder.stop()
         }
@@ -155,6 +155,10 @@ Rectangle {
             cursorShape: Qt.PointingHandCursor
             onClicked: pill.clicked()
         }
+        KeyButton {
+            radius: pill.radius
+            onActivated: pill.clicked()
+        }
     }
 
     component IconPill: Rectangle {
@@ -179,6 +183,10 @@ Rectangle {
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             onClicked: ip.clicked()
+        }
+        KeyButton {
+            radius: ip.radius
+            onActivated: ip.clicked()
         }
     }
 }
