@@ -252,7 +252,7 @@ PanelWindow {
             id: peekTimer
             onTriggered: {
                 if (island.peek === "notif")
-                    island.removeNotif(0);
+                    island.removeEntry(island.notifTop, false);
                 else
                     island.peek = "";
             }
@@ -274,20 +274,28 @@ PanelWindow {
             return q.slice().sort((a, b) => (b.urgency - a.urgency) || (b.seq - a.seq));
         }
 
-        // Quita una de la cola. Si era la de arriba, sube la siguiente con su tiempo completo.
-        // Las transitorias (las que piden no quedarse en el historial) se cierran al quitarlas.
-        function removeNotif(i: int): void {
-            const gone = notifQueue[i];
-            if (gone?.obj?.transient)
-                gone.obj.expire();
+        // Quita una de la cola (por la propia entrada: al invocar una acción, la app puede cerrar la
+        // notificación y quitarla antes, y por índice se llevaría otra). Si era la de arriba, sube
+        // la siguiente con su tiempo completo. Las transitorias (las que piden no quedarse en el
+        // historial) se cierran al quitarlas; `closed`: ya la cerró la app.
+        function removeEntry(entry: var, closed: bool): void {
+            const i = notifQueue.indexOf(entry);
+            if (i < 0)
+                return;
             if (i === 0)
                 notifReplying = false;
             if (notifQueue.length <= 1) {
+                // La última se queda en la cola mientras se desvanece, pero sin el objeto si ya se
+                // cerró: leer uno destruido daba "undefined"
+                if (closed)
+                    notifQueue = [Object.assign({}, entry, { obj: null })];
                 peek = "";
-                return;
+            } else {
+                notifQueue = notifQueue.filter(e => e !== entry);
             }
-            notifQueue = notifQueue.filter((_, j) => j !== i);
-            if (i === 0) {
+            if (!closed && entry.obj?.transient)
+                entry.obj.expire();
+            if (i === 0 && peek === "notif" && notifQueue.length > 0) {
                 notifRiseAnim.restart();
                 showPeek("notif");
                 if (hovered)
@@ -324,8 +332,9 @@ PanelWindow {
         function sendReply(text: string): void {
             if (text.trim() === "")
                 return;
+            const entry = notifTop;
             notifObj?.sendInlineReply(text);
-            removeNotif(0);
+            removeEntry(entry, false);
         }
         function cancelReply(): void {
             notifReplying = false;
@@ -404,6 +413,12 @@ PanelWindow {
             function onReceived(notif: var): void {
                 if (!Quick.silenced) // Focus / Game mode: no molestar
                     island.addNotif(notif);
+            }
+            // La cerró la app (Firefox, p. ej., cierra las de una web que las reemplaza o ya se leyeron)
+            function onNotifClosed(notif: var): void {
+                const entry = island.notifQueue.find(e => e.obj === notif);
+                if (entry)
+                    island.removeEntry(entry, true);
             }
             // Una descarga que se dejó de mostrar antes de acabar vuelve a salir al terminar
             function onProgressDone(notif: var): void {
@@ -1198,9 +1213,10 @@ PanelWindow {
                         acceptedButtons: Qt.LeftButton | Qt.RightButton
                         cursorShape: Qt.PointingHandCursor
                         onClicked: mouse => {
+                            const entry = island.notifTop;
                             if (mouse.button === Qt.LeftButton && island.notifObj)
                                 Notifs.activate(island.notifObj);
-                            island.removeNotif(0);
+                            island.removeEntry(entry, false);
                         }
                     }
 
@@ -1433,8 +1449,9 @@ PanelWindow {
                                     text: modelData.text
                                     maxWidth: actionRow.maxButton
                                     onClicked: {
+                                        const entry = island.notifTop;
                                         modelData.invoke();
-                                        island.removeNotif(0);
+                                        island.removeEntry(entry, false);
                                     }
                                 }
                             }
@@ -1523,9 +1540,10 @@ PanelWindow {
                                 acceptedButtons: Qt.LeftButton | Qt.RightButton
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: mouse => {
-                                    if (mouse.button === Qt.LeftButton && olderRow.modelData.obj)
-                                        Notifs.activate(olderRow.modelData.obj);
-                                    island.removeNotif(olderRow.index + 1);
+                                    const entry = olderRow.modelData;
+                                    if (mouse.button === Qt.LeftButton && entry.obj)
+                                        Notifs.activate(entry.obj);
+                                    island.removeEntry(entry, false);
                                 }
                             }
                             ClippingRectangle {
@@ -1576,15 +1594,31 @@ PanelWindow {
                                 font.bold: true
                                 elide: Text.ElideRight
                             }
+                            // Título y, en gris, el cuerpo: en las de webs el título es solo el sitio
+                            // ("Instagram") y lo que importa va en el cuerpo
                             Text {
+                                id: olderSummary
                                 anchors.left: olderApp.right
                                 anchors.leftMargin: 10
-                                anchors.right: parent.right
                                 anchors.verticalCenter: parent.verticalCenter
+                                width: Math.min(implicitWidth, parent.width - x)
                                 font.family: Theme.bodyFontFamily
                                 text: olderRow.modelData.summary
                                 textFormat: Text.PlainText
                                 color: "#ffffff"
+                                font.pixelSize: Theme.fontPx(14)
+                                elide: Text.ElideRight
+                            }
+                            Text {
+                                anchors.left: olderSummary.right
+                                anchors.leftMargin: 8
+                                anchors.right: parent.right
+                                anchors.verticalCenter: parent.verticalCenter
+                                visible: olderRow.modelData.body !== ""
+                                font.family: Theme.bodyFontFamily
+                                text: olderRow.modelData.body
+                                textFormat: Text.PlainText
+                                color: Theme.secondaryText
                                 font.pixelSize: Theme.fontPx(14)
                                 elide: Text.ElideRight
                             }

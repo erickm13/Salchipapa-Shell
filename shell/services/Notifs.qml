@@ -15,6 +15,8 @@ Singleton {
     signal received(var notif)
     // Una notificación con progreso (pista "value") llegó al 100 %
     signal progressDone(var notif)
+    // Se cerró (la app, el usuario o al expirar): la isla la quita si la está mostrando
+    signal notifClosed(var notif)
 
     // Contador "reciente" para el panel Status (vuelve a 0 tras un rato de calma)
     property int count: 0
@@ -149,6 +151,7 @@ Singleton {
             resetTimer.restart();
             root.playSound(notif);
             root.log(notif);
+            notif.closed.connect(() => root.notifClosed(notif));
             root.received(notif);
             // Las apps actualizan el progreso en la misma notificación (no llega otra)
             let done = false;
