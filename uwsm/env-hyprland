@@ -13,3 +13,21 @@ export XDG_SESSION_DESKTOP=Hyprland
 
 # ############# Others #############
 export _JAVA_AWT_WM_NONREPARENTING=1
+
+# ########## GPU de render ##########
+# En portátiles híbridos Hyprland compone con la iGPU y copia cada frame a las salidas de la
+# NVIDIA: con monitores externos grandes (ultrawide a 100 Hz) todo va lento. Si al iniciar sesión
+# hay alguna pantalla conectada a la NVIDIA, ella pasa a ser la principal. Solo se mira al entrar:
+# conectar o desconectar después no cambia la GPU hasta el siguiente inicio de sesión.
+_dgpu= _igpu=
+for _card in /sys/class/drm/card[0-9]*; do
+	case "$_card" in *-*) continue ;; esac
+	_drv=$(basename "$(readlink "$_card/device/driver")" 2>/dev/null)
+	if [ "$_drv" = nvidia ]; then
+		grep -qx connected "$_card"-*/status 2>/dev/null && _dgpu=/dev/dri/${_card##*/}
+	else
+		_igpu=${_igpu:-/dev/dri/${_card##*/}}
+	fi
+done
+[ -n "$_dgpu" ] && export AQ_DRM_DEVICES="$_dgpu${_igpu:+:$_igpu}"
+unset _card _drv _dgpu _igpu
