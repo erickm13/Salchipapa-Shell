@@ -11,7 +11,7 @@ Singleton {
     id: root
 
     // Emite cuando llega una notificación nueva (para el "peek" de la isla)
-    signal received(string appName, string summary, string body, bool urgent)
+    signal received(var notif, string appName, string summary, string body, bool urgent)
 
     // Contador "reciente" para el panel Status (vuelve a 0 tras un rato de calma)
     property int count: 0
@@ -85,7 +85,7 @@ Singleton {
             root.count += 1;
             resetTimer.restart();
             root.playSound(notif);
-            root.received(notif.appName ?? "", notif.summary ?? "", notif.body ?? "", notif.urgency === NotificationUrgency.Critical);
+            root.received(notif, notif.appName ?? "", notif.summary ?? "", notif.body ?? "", notif.urgency === NotificationUrgency.Critical);
         }
     }
 }

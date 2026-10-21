@@ -219,7 +219,7 @@ Singleton {
             // Notifications / OSD
             property int notificationPopupTimeout: 2000
             property int notificationUrgentTimeout: 6000
-            property int notificationWidth: 480
+            property int notificationWidth: 580
             property bool notificationShowBody: true
             property bool notificationSound: true
             property int notificationHistoryHeight: 200

@@ -8,6 +8,7 @@ import Quickshell.Wayland
 import QtQuick
 import QtQuick.Shapes
 import QtQuick.Effects
+import Quickshell.Widgets
 import "../common"
 import "../services"
 
@@ -115,9 +116,15 @@ PanelWindow {
         readonly property bool inSpecial: (Hyprland.focusedMonitor?.lastIpcObject?.specialWorkspace?.name ?? "") !== ""
 
         // Datos del peek de notificación
+        property var notifObj: null
         property string notifApp: ""
-        property string notifText: ""
+        property string notifSummary: ""
+        property string notifBody: ""
+        property string notifIcon: ""
+        property string notifImage: ""
         property bool notifUrgent: false
+        property real notifProgress: 1 // barra de tiempo restante del peek
+        readonly property color notifAccent: notifUrgent ? Theme.red : Theme.mauve
 
         // Estado del dashboard (expandido). Night light / Game mode viven en Quick (compartidos
         // con el centro de control).
@@ -148,6 +155,18 @@ PanelWindow {
             peek = name;
             peekTimer.interval = name === "notif" ? (notifUrgent ? Config.notificationUrgentTimeout : Config.notificationPopupTimeout) : (name === "volume" || name === "brightness") ? Config.osdOnScreenTime : (name === "media" ? 3000 : 1400);
             peekTimer.restart();
+            if (name === "notif") {
+                notifProgressAnim.duration = peekTimer.interval;
+                notifProgressAnim.restart();
+            }
+        }
+
+        NumberAnimation {
+            id: notifProgressAnim
+            target: island
+            property: "notifProgress"
+            from: 1
+            to: 0
         }
 
         Timer {
@@ -162,7 +181,7 @@ PanelWindow {
         readonly property int widthLarge: 760
         width: ["power", "polkit", "control", "display", "sound", "media"].includes(mode) ? widthSmall : ["clipboard", "emoji", "expanded"].includes(mode) ? widthMedium : ["themes", "wallpaper", "perf", "music"].includes(mode) ? widthLarge : mode === "launcher" ? Config.launcherWidth : mode === "notif" ? Config.notificationWidth : mode === "calendar" || mode === "volume" || mode === "brightness" ? 300 : Math.max(Config.collapsedWidth, idleRow.implicitWidth + Config.innerPadding * 2)
         // Alto final del modo (sin animar): la ventana se ajusta a él una sola vez
-        readonly property real targetHeight: mode === "power" ? (powerMenu.confirmAction === "" ? 110 : 200) : mode === "polkit" ? 250 : mode === "control" ? Math.min(controlContent.preferredHeight + 32, (win.screen?.height ?? 1080) - Config.topMargin - 60) : mode === "display" ? (142 + (Hyprland.monitors?.values?.length ?? 1) * 206) : mode === "sound" ? (213 + Math.min(Audio.sinks?.length ?? 1, 5) * 42 + Math.min(Audio.sources?.length ?? 1, 4) * 42 + Math.max(1, Math.min(Audio.apps?.length ?? 0, 4)) * 62) : mode === "launcher" ? (85 + Config.launcherRowsBeforeScrolling * Config.launcherRowHeight + (Config.launcherRowsBeforeScrolling - 1) * 2) : mode === "clipboard" ? 470 : mode === "emoji" ? 440 : mode === "perf" ? 704 : mode === "music" ? 300 : mode === "themes" ? 210 : mode === "wallpaper" ? 250 : mode === "calendar" ? 250 : mode === "expanded" ? 149 : mode === "notif" ? 74 : mode === "media" ? (Config.mediaShowControls ? 124 : 80) : mode === "volume" || mode === "brightness" ? 42 : Config.barHeight
+        readonly property real targetHeight: mode === "power" ? (powerMenu.confirmAction === "" ? 110 : 200) : mode === "polkit" ? 250 : mode === "control" ? Math.min(controlContent.preferredHeight + 32, (win.screen?.height ?? 1080) - Config.topMargin - 60) : mode === "display" ? (142 + (Hyprland.monitors?.values?.length ?? 1) * 206) : mode === "sound" ? (213 + Math.min(Audio.sinks?.length ?? 1, 5) * 42 + Math.min(Audio.sources?.length ?? 1, 4) * 42 + Math.max(1, Math.min(Audio.apps?.length ?? 0, 4)) * 62) : mode === "launcher" ? (85 + Config.launcherRowsBeforeScrolling * Config.launcherRowHeight + (Config.launcherRowsBeforeScrolling - 1) * 2) : mode === "clipboard" ? 470 : mode === "emoji" ? 440 : mode === "perf" ? 704 : mode === "music" ? 300 : mode === "themes" ? 210 : mode === "wallpaper" ? 250 : mode === "calendar" ? 250 : mode === "expanded" ? 149 : mode === "notif" ? (notifBody !== "" ? 104 : 86) : mode === "media" ? (Config.mediaShowControls ? 124 : 80) : mode === "volume" || mode === "brightness" ? 42 : Config.barHeight
         height: targetHeight
 
         Behavior on width {
@@ -214,11 +233,16 @@ PanelWindow {
         }
         Connections {
             target: Notifs
-            function onReceived(appName: string, summary: string, body: string, urgent: bool): void {
+            function onReceived(notif: var, appName: string, summary: string, body: string, urgent: bool): void {
                 if (Quick.silenced) // Focus / Game mode: no molestar
                     return;
+                island.notifObj = notif;
                 island.notifApp = appName;
-                island.notifText = Config.notificationShowBody && body.length > 0 ? (summary.length > 0 ? summary + "\n" + body : body) : summary;
+                // Sin título, el cuerpo hace de título
+                island.notifSummary = summary.length > 0 ? summary : body;
+                island.notifBody = Config.notificationShowBody && summary.length > 0 ? body.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim() : "";
+                island.notifIcon = notif?.appIcon ?? "";
+                island.notifImage = notif?.image ?? "";
                 island.notifUrgent = urgent;
                 island.showPeek("notif");
             }
@@ -940,10 +964,13 @@ PanelWindow {
             }
 
             // ---------- notif (peek) ----------
+            // Icono (imagen de la notificación > icono de la app > inicial), cabecera con app y
+            // hora, título y cuerpo, y una barra con el tiempo que le queda. Clic: acción por
+            // defecto; clic derecho: ocultar.
             Item {
                 anchors.fill: parent
-                anchors.leftMargin: 16
-                anchors.rightMargin: 16
+                anchors.leftMargin: 18
+                anchors.rightMargin: 22
                 opacity: island.mode === "notif" ? 1 : 0
                 visible: opacity > 0
                 Behavior on opacity {
@@ -952,40 +979,123 @@ PanelWindow {
                     }
                 }
 
-                Rectangle {
-                    id: notifDot
-                    width: 8
-                    height: 8
-                    radius: 4
+                MouseArea {
+                    anchors.fill: parent
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: mouse => {
+                        if (mouse.button === Qt.LeftButton && island.notifObj)
+                            Notifs.activate(island.notifObj);
+                        island.peek = "";
+                    }
+                }
+
+                ClippingRectangle {
+                    id: notifIconBox
+                    width: 54
+                    height: 54
+                    radius: 15
                     anchors.left: parent.left
                     anchors.verticalCenter: parent.verticalCenter
-                    color: Theme.mauve
-                }
-                Column {
-                    anchors.left: notifDot.right
-                    anchors.leftMargin: 10
-                    anchors.right: parent.right
-                    anchors.verticalCenter: parent.verticalCenter
-                    spacing: 1
+                    anchors.verticalCenterOffset: -2
+                    color: Theme.alpha(island.notifAccent, 16)
+                    border.width: island.notifUrgent ? 1 : 0
+                    border.color: Theme.alpha(Theme.red, 70)
+
+                    Image {
+                        id: notifImg
+                        anchors.fill: parent
+                        visible: island.notifImage !== "" && status === Image.Ready
+                        source: island.notifImage
+                        sourceSize: Qt.size(108, 108)
+                        fillMode: Image.PreserveAspectCrop
+                        asynchronous: true
+                        smooth: true
+                    }
+                    AppIcon {
+                        anchors.centerIn: parent
+                        size: 36
+                        icon: island.notifIcon
+                        visible: !notifImg.visible && island.notifIcon !== ""
+                    }
                     Text {
+                        anchors.centerIn: parent
+                        visible: !notifImg.visible && island.notifIcon === ""
+                        text: (island.notifApp || "?").charAt(0).toUpperCase()
+                        color: island.notifAccent
                         font.family: Theme.bodyFontFamily
-                        width: parent.width
-                        text: island.notifApp || "Notification"
-                        color: Theme.mauve
-                        font.pixelSize: Theme.fontPx(16)
+                        font.pixelSize: Theme.fontPx(24)
                         font.bold: true
-                        elide: Text.ElideRight
+                    }
+                }
+
+                Column {
+                    anchors.left: notifIconBox.right
+                    anchors.leftMargin: 14
+                    anchors.right: parent.right
+                    anchors.verticalCenter: notifIconBox.verticalCenter
+                    spacing: 2
+
+                    Item {
+                        width: parent.width
+                        height: notifAppText.implicitHeight
+                        Text {
+                            id: notifAppText
+                            anchors.left: parent.left
+                            anchors.right: notifTime.left
+                            anchors.rightMargin: 8
+                            font.family: Theme.bodyFontFamily
+                            text: island.notifUrgent ? (island.notifApp || "Notification") + "  ·  urgent" : (island.notifApp || "Notification")
+                            color: island.notifAccent
+                            font.pixelSize: Theme.fontPx(13)
+                            font.bold: true
+                            font.letterSpacing: 0.3
+                            elide: Text.ElideRight
+                        }
+                        Text {
+                            id: notifTime
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+                            font.family: Theme.bodyFontFamily
+                            text: "now"
+                            color: Theme.tertiaryText
+                            font.pixelSize: Theme.fontPx(13)
+                        }
                     }
                     Text {
                         font.family: Theme.bodyFontFamily
                         width: parent.width
-                        text: island.notifText
+                        text: island.notifSummary
+                        textFormat: Text.PlainText
                         color: "#ffffff"
                         font.pixelSize: Theme.fontPx(18)
+                        font.weight: Font.DemiBold
                         elide: Text.ElideRight
-                        maximumLineCount: 2
-                        wrapMode: Text.Wrap
+                        maximumLineCount: 1
                     }
+                    Text {
+                        font.family: Theme.bodyFontFamily
+                        width: parent.width
+                        visible: island.notifBody !== ""
+                        text: island.notifBody
+                        textFormat: Text.PlainText
+                        color: Theme.secondaryText
+                        font.pixelSize: Theme.fontPx(15)
+                        elide: Text.ElideRight
+                        maximumLineCount: 1
+                    }
+                }
+
+                // Tiempo restante
+                Rectangle {
+                    anchors.left: notifIconBox.right
+                    anchors.leftMargin: 14
+                    anchors.bottom: parent.bottom
+                    anchors.bottomMargin: 8
+                    width: (parent.width - notifIconBox.width - 14) * island.notifProgress
+                    height: 3
+                    radius: 1.5
+                    color: Theme.alpha(island.notifAccent, 55)
                 }
             }
 
