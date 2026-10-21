@@ -22,6 +22,8 @@ Singleton {
     // Bar & Island
     readonly property bool notchMode: settings.notchMode
     readonly property bool islandAllScreens: settings.islandAllScreens
+    readonly property bool islandFollowFocus: settings.islandFollowFocus
+    readonly property string primaryMonitor: settings.primaryMonitor
     readonly property bool islandCloseOnClickOutside: settings.islandCloseOnClickOutside
     readonly property int barHeight: settings.barHeight
     readonly property int collapsedWidth: settings.collapsedWidth
@@ -134,7 +136,9 @@ Singleton {
 
             // Bar & Island
             property bool notchMode: false
-            property bool islandAllScreens: true // false = solo en el monitor principal (el del workspace 1)
+            property bool islandAllScreens: true // false = solo en el monitor principal (Overlay.primaryMonitor)
+            property bool islandFollowFocus: false // sin islandAllScreens: la isla va al monitor enfocado
+            property string primaryMonitor: "" // conector elegido en Display > Primary monitor
             property bool islandCloseOnClickOutside: true // clic fuera de la isla = cerrar el modo abierto
             property int barHeight: 30
             property int collapsedWidth: 90

@@ -24,7 +24,6 @@ Item {
     readonly property var disabledMonitors: monitors.filter(m => m.disabled)
     property string selectedName: ""
     readonly property var selected: monitors.find(m => m.name === selectedName) ?? null
-    property int primaryWorkspaceMonitorId: -1
 
     // Posiciones arrastradas sin aplicar, y las anteriores para revertir
     property var pendingPositions: ({})
@@ -96,7 +95,6 @@ Item {
 
     function refresh(): void {
         monitorsQuery.exec(["hyprctl", "monitors", "all", "-j"]);
-        workspacesQuery.exec(["hyprctl", "workspaces", "-j"]);
     }
 
     function readMonitors(text: string): void {
@@ -190,7 +188,9 @@ Item {
     }
 
     function makePrimary(m: var): void {
-        // Llevar el workspace 1 a ese monitor: enfocarlo y moverlo
+        // Se guarda en ajustes (la isla y este interruptor lo leen de ahí) y además se lleva el
+        // workspace 1 a ese monitor: enfocarlo y moverlo
+        Config.opt.primaryMonitor = m.name;
         Hyprland.dispatch("hl.dsp.focus({ workspace = 1 })");
         Hyprland.dispatch('hl.dsp.workspace.move({ monitor = "' + m.name + '" })');
         refreshTimer.restart();
@@ -204,18 +204,6 @@ Item {
         stdout: StdioCollector {
             id: monitorsOut
             onStreamFinished: root.readMonitors(monitorsOut.text)
-        }
-    }
-    Process {
-        id: workspacesQuery
-        stdout: StdioCollector {
-            id: workspacesOut
-            onStreamFinished: {
-                try {
-                    const ws = JSON.parse(workspacesOut.text).find(w => w.id === 1);
-                    root.primaryWorkspaceMonitorId = ws ? ws.monitorID : -1;
-                } catch (e) {}
-            }
         }
     }
     Process { id: applyProc }
@@ -512,7 +500,7 @@ Item {
                 visible: root.selected !== null && !root.selected.disabled && root.enabledMonitors.length > 1
                 label: "Primary monitor"
                 sublabel: "Move workspace 1 to this monitor"
-                checked: root.selected ? root.selected.id === root.primaryWorkspaceMonitorId : false
+                checked: root.selected ? root.selected.name === Overlay.primaryMonitor : false
                 onToggled: if (!checked) root.makePrimary(root.selected)
             }
         }

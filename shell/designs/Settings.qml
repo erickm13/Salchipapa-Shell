@@ -535,12 +535,22 @@ FloatingWindow {
                         checked: Config.notchMode
                         onToggled: Config.opt.notchMode = !Config.opt.notchMode
                     }
-                    ToggleRow {
+                    // Dónde va la isla: excluyentes, así que una sola fila de opciones (por dentro
+                    // siguen siendo islandAllScreens + islandFollowFocus)
+                    ChoiceRow {
                         visible: win.category === 0
                         width: parent.width
-                        label: "Island on all monitors"
-                        checked: Config.islandAllScreens
-                        onToggled: Config.opt.islandAllScreens = !Config.islandAllScreens
+                        label: "Island on"
+                        options: [
+                            { value: "all", label: "All monitors" },
+                            { value: "primary", label: "Primary monitor" },
+                            { value: "focus", label: "Focused monitor" }
+                        ]
+                        current: Config.islandAllScreens ? "all" : (Config.islandFollowFocus ? "focus" : "primary")
+                        onPicked: value => {
+                            Config.opt.islandAllScreens = value === "all";
+                            Config.opt.islandFollowFocus = value === "focus";
+                        }
                     }
                     ToggleRow {
                         visible: win.category === 0
@@ -1523,7 +1533,11 @@ FloatingWindow {
         property var options: [] // [{value, label}]
         property string current: ""
         signal picked(string value)
-        height: crCol.implicitHeight + 24
+        // Etiqueta a la izquierda y opciones a la derecha en la misma línea (como los
+        // interruptores); si no caben, las opciones bajan a una segunda línea
+        readonly property real chipsWidth: measureRow.implicitWidth
+        readonly property bool inline: crLabel.implicitWidth + 24 + chipsWidth + 30 <= width
+        height: inline ? 48 : chips.y + chips.height + 12
         radius: Theme.radiusMedium
         color: Theme.panelCard
         border.width: activeFocus ? 2 : 0
@@ -1542,47 +1556,72 @@ FloatingWindow {
         Keys.onDownPressed: KeyNav.move(cr, true)
         Keys.onLeftPressed: cr.step(-1)
         Keys.onRightPressed: cr.step(1)
-        Column {
-            id: crCol
-            x: 16
-            y: 12
-            width: cr.width - 32
-            spacing: 10
-            Text {
-                text: cr.label
-                color: "#ffffff"
-                font.family: Theme.bodyFontFamily
-                font.pixelSize: Theme.fontPx(14)
+        // Ancho natural de las opciones (en negrita, el caso más ancho), sin dibujarlas
+        Row {
+            id: measureRow
+            visible: false
+            spacing: 6
+            Repeater {
+                model: cr.options
+                delegate: Text {
+                    required property var modelData
+                    width: implicitWidth + 24
+                    text: modelData.label
+                    font.family: Theme.bodyFontFamily
+                    font.pixelSize: Theme.fontPx(11)
+                    font.bold: true
+                }
             }
-            Flow {
-                width: parent.width
-                spacing: 6
-                Repeater {
-                    model: cr.options
-                    delegate: Rectangle {
-                        id: chip
-                        required property var modelData
-                        readonly property bool on: cr.current === modelData.value
-                        width: chipText.implicitWidth + 24
-                        height: 28
-                        radius: 14
-                        color: on ? Theme.green : (chipMouse.containsMouse ? Theme.panelCardHi : Qt.rgba(1, 1, 1, 0.04))
-                        Text {
-                            id: chipText
-                            anchors.centerIn: parent
-                            text: chip.modelData.label
-                            color: chip.on ? Theme.crust : Theme.text
-                            font.family: Theme.bodyFontFamily
-                            font.pixelSize: Theme.fontPx(11)
-                            font.bold: chip.on
-                        }
-                        MouseArea {
-                            id: chipMouse
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: if (!chip.on) cr.picked(chip.modelData.value)
-                        }
+        }
+        Text {
+            id: crLabel
+            x: 16
+            y: cr.inline ? (cr.height - height) / 2 : 12
+            text: cr.label
+            color: "#ffffff"
+            font.family: Theme.bodyFontFamily
+            font.pixelSize: Theme.fontPx(14)
+        }
+        Flow {
+            id: chips
+            x: cr.inline ? cr.width - 14 - width : 16
+            y: cr.inline ? (cr.height - 28) / 2 : crLabel.y + crLabel.height + 10
+            width: cr.inline ? cr.chipsWidth : cr.width - 32
+            spacing: 6
+            Repeater {
+                model: cr.options
+                delegate: Rectangle {
+                    id: chip
+                    required property var modelData
+                    readonly property bool on: cr.current === modelData.value
+                    // Ancho de la versión en negrita: no baila al cambiar de opción y cuadra con measureRow
+                    width: boldText.implicitWidth + 24
+                    height: 28
+                    radius: 14
+                    color: on ? Theme.green : (chipMouse.containsMouse ? Theme.panelCardHi : Qt.rgba(1, 1, 1, 0.04))
+                    Text {
+                        id: boldText
+                        visible: false
+                        text: chip.modelData.label
+                        font.family: Theme.bodyFontFamily
+                        font.pixelSize: Theme.fontPx(11)
+                        font.bold: true
+                    }
+                    Text {
+                        id: chipText
+                        anchors.centerIn: parent
+                        text: chip.modelData.label
+                        color: chip.on ? Theme.crust : Theme.text
+                        font.family: Theme.bodyFontFamily
+                        font.pixelSize: Theme.fontPx(11)
+                        font.bold: chip.on
+                    }
+                    MouseArea {
+                        id: chipMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: if (!chip.on) cr.picked(chip.modelData.value)
                     }
                 }
             }

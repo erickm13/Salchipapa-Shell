@@ -64,9 +64,9 @@ ShellRoot {
         }
     }
 
-    // Monitor principal = el que tiene el workspace 1 (el mismo criterio que Ajustes > Display).
-    // Si aún no se conoce, el enfocado.
-    readonly property string primaryScreen: Hyprland.workspaces.values.find(w => w.id === 1)?.monitor?.name ?? Hyprland.focusedMonitor?.name ?? ""
+    // Monitor de la isla cuando no va en todos: el enfocado (si sigue al foco) o el principal
+    // (Overlay.primaryMonitor, el mismo que Ajustes > Display > Primary monitor)
+    readonly property string primaryScreen: Config.islandFollowFocus ? (Hyprland.focusedMonitor?.name ?? Overlay.primaryMonitor) : Overlay.primaryMonitor
 
     // Barra (una por monitor, según el diseño activo; o solo en el principal)
     Variants {

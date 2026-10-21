@@ -18,6 +18,16 @@ Singleton {
     // Índice del buscador de ajustes ([{ cat, label }]): se arma la primera vez que se abre el panel
     property var settingsIndex: []
 
+    // Monitor principal (isla cuando no va en todos, Display > Primary monitor): el elegido en
+    // ajustes si está conectado; si no, el del workspace 1; si no, el primero. Nunca el enfocado:
+    // un workspace 1 vacío deja de existir al cambiar de workspace y la isla seguía al foco.
+    readonly property string primaryMonitor: {
+        const names = Hyprland.monitors.values.map(m => m.name);
+        if (Config.primaryMonitor !== "" && names.includes(Config.primaryMonitor))
+            return Config.primaryMonitor;
+        return Hyprland.workspaces.values.find(w => w.id === 1)?.monitor?.name ?? names[0] ?? "";
+    }
+
     function toggleSettings(): void {
         if (!settings)
             settingsMonitor = Hyprland.focusedMonitor?.name ?? "";
