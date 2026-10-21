@@ -8,7 +8,9 @@
 set -uo pipefail
 
 artist="${1:-}" title="${2:-}" album="${3:-}" duration="${4:-0}"
-[ -n "$title" ] || { echo '{}'; exit 0; }
+# Sin artista no se busca: son vídeos del navegador (Netflix manda solo el título "Netflix") y la
+# búsqueda por título devolvía la letra de cualquier canción con ese nombre
+[ -n "$title" ] && [ -n "${artist// /}" ] || { echo '{}'; exit 0; }
 
 cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/salchipapa-shell/lyrics"
 mkdir -p "$cache_dir"
@@ -40,11 +42,12 @@ res=$(fetch "$api/get" --data-urlencode "artist_name=$artist" --data-urlencode "
     --data-urlencode "album_name=$album" --data-urlencode "duration=$duration")
 json=$(echo "$res" | jq -c "if type == \"object\" and (.id // null) != null then $pick else empty end" 2>/dev/null)
 
-# 2) Búsqueda por título y artista: la de duración más parecida, prefiriendo las sincronizadas
+# 2) Búsqueda por título y artista: la de duración más parecida, prefiriendo las sincronizadas.
+# Con duración conocida, solo las que difieren 15 s o menos: si no, es otra canción (o un vídeo)
 if [ -z "$json" ]; then
     res=$(fetch "$api/search" --data-urlencode "track_name=$title" --data-urlencode "artist_name=$artist")
     json=$(echo "$res" | jq -c --argjson d "${duration:-0}" \
-        "if type == \"array\" and length > 0 then (sort_by((if .syncedLyrics then 0 else 1 end), (((.duration // 0) - \$d) | fabs)) | .[0] | $pick) else empty end" 2>/dev/null)
+        "if type == \"array\" then (map(select(\$d <= 0 or (((.duration // 0) - \$d) | fabs) <= 15)) | if length > 0 then (sort_by((if .syncedLyrics then 0 else 1 end), (((.duration // 0) - \$d) | fabs)) | .[0] | $pick) else empty end) else empty end" 2>/dev/null)
 fi
 
 # Sin respuesta (red caída) o servidor aún saturado: no se guarda en caché, para reintentarlo

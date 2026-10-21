@@ -24,6 +24,10 @@ Singleton {
         lines = [];
         plain = "";
         instrumental = false;
+        // Sin artista no se busca: son vídeos del navegador (Netflix manda solo "Netflix") y la
+        // búsqueda por título traía la letra de otra canción
+        if (artist.trim() === "")
+            return;
         loading = true;
         proc.exec([Quickshell.shellDir + "/../scripts/lyrics.sh", artist, title, album, String(Math.round(length))]);
     }

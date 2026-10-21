@@ -42,13 +42,44 @@ Singleton {
     onArtUrlChanged: fetchArt()
     Component.onCompleted: fetchArt()
     function fetchArt(): void {
+        if (artUrl === "") {
+            artPath = siteIcon; // sin portada: el icono del sitio, si es uno conocido
+            return;
+        }
         if (!artUrl.startsWith("http")) {
-            artPath = artUrl; // vacía o ya local (file://)
+            artPath = artUrl; // ya local (file://)
             return;
         }
         artPath = "";
         artProc.exec(["sh", "-c", 'd="${XDG_CACHE_HOME:-$HOME/.cache}/salchipapa-shell/art"; mkdir -p "$d"; f="$d/$(printf %s "$1" | sha1sum | cut -c1-40)"; if [ ! -s "$f" ]; then curl -sfL --max-time 15 -o "$f.tmp" "$1" && mv -f "$f.tmp" "$f"; rm -f "$f.tmp"; fi; find "$d" -type f -mtime +30 -delete 2>/dev/null; [ -s "$f" ] && echo "$f"', "_", artUrl]);
     }
+    // Webs que no mandan portada al navegador (Netflix solo manda el título "Netflix"): su icono de
+    // Papirus según el dominio de la URL que reproduce
+    readonly property string trackUrl: active?.metadata?.["xesam:url"] ?? ""
+    readonly property var siteIcons: ({
+        "netflix.com": "netflix",
+        "primevideo.com": "amazon", // Papirus no trae el de Prime Video
+        "amazon.com": "amazon",
+        "music.youtube.com": "solstice-google-youtube-music",
+        "youtube.com": "youtube",
+        "youtu.be": "youtube",
+        "crunchyroll.com": "crunchyroll",
+        "twitch.tv": "gnome-twitch",
+        "open.spotify.com": "spotify",
+        "soundcloud.com": "soundcloud",
+        "deezer.com": "deezer",
+        "tidal.com": "tidal"
+    })
+    readonly property string siteIcon: {
+        const host = (trackUrl.match(/^https?:\/\/([^\/?#]+)/)?.[1] ?? "").replace(/^www\./, "");
+        for (const domain in siteIcons)
+            if (host === domain || host.endsWith("." + domain))
+                return "file:///usr/share/icons/Papirus-Dark/64x64/apps/" + siteIcons[domain] + ".svg";
+        return "";
+    }
+    onSiteIconChanged: if (artUrl === "")
+        artPath = siteIcon
+
     Process {
         id: artProc
         stdout: StdioCollector {
