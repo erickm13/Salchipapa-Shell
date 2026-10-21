@@ -163,9 +163,9 @@ Item {
                     height: 36
                     glyph: "brightness_6"
                     accent: Theme.peach
-                    value: Brightness.value
-                    enabled: Brightness.available
-                    onMoved: v => Brightness.setValue(v)
+                    value: Brightness.valueFor(mon.modelData.name)
+                    enabled: Brightness.availableFor(mon.modelData.name)
+                    onMoved: v => Brightness.setValueFor(mon.modelData.name, v)
                 }
 
                 // --- Botones de escala ---

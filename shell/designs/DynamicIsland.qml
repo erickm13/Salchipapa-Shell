@@ -202,7 +202,8 @@ PanelWindow {
         }
         Connections {
             target: Brightness
-            function onValueChanged(): void {
+            // Solo cambios del usuario: el valor también cambia al pasar a otro monitor
+            function onAdjusted(): void {
                 if (island.ready && Brightness.available)
                     island.showPeek("brightness");
             }
