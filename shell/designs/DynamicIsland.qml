@@ -116,13 +116,23 @@ PanelWindow {
         readonly property bool inSpecial: (Hyprland.focusedMonitor?.lastIpcObject?.specialWorkspace?.name ?? "") !== ""
 
         // Datos del peek de notificación
-        property var notifObj: null
-        property string notifApp: ""
-        property string notifSummary: ""
-        property string notifBody: ""
-        property string notifIcon: ""
-        property string notifImage: ""
-        property bool notifUrgent: false
+        // Cola de notificaciones, la más nueva primero: la primera en grande, las 2 siguientes en
+        // filas compactas y el resto en el "+N". Al acabar su tiempo, la de arriba se va y sube la
+        // siguiente. Se conserva al ocultarse para que no se vacíe mientras se desvanece.
+        property var notifQueue: []
+        readonly property var notifTop: notifQueue.length > 0 ? notifQueue[0] : null
+        readonly property var notifObj: notifTop?.obj ?? null
+        readonly property string notifApp: notifTop?.app ?? ""
+        readonly property string notifSummary: notifTop?.summary ?? ""
+        readonly property string notifBody: notifTop?.body ?? ""
+        readonly property string notifIcon: notifTop?.icon ?? ""
+        readonly property string notifImage: notifTop?.image ?? ""
+        readonly property bool notifUrgent: notifTop?.urgent ?? false
+        readonly property var notifOlder: notifQueue.slice(1, 3)
+        readonly property int notifExtra: Math.max(0, notifQueue.length - 3)
+        property real notifShift: 0 // desplazamiento al subir la siguiente (anima a 0)
+        readonly property int notifMainHeight: notifBody !== "" ? 104 : 86
+        readonly property int notifRowHeight: 50
         property real notifProgress: 1 // barra de tiempo restante del peek
         readonly property color notifAccent: notifUrgent ? Theme.red : Theme.mauve
 
@@ -171,7 +181,35 @@ PanelWindow {
 
         Timer {
             id: peekTimer
-            onTriggered: island.peek = ""
+            onTriggered: {
+                if (island.peek === "notif" && island.notifQueue.length > 1)
+                    island.removeNotif(0);
+                else
+                    island.peek = "";
+            }
+        }
+
+        // Quita una de la cola. Si era la de arriba, sube la siguiente con su tiempo completo.
+        function removeNotif(i: int): void {
+            if (notifQueue.length <= 1) {
+                peek = "";
+                return;
+            }
+            notifQueue = notifQueue.filter((_, j) => j !== i);
+            if (i === 0) {
+                notifRiseAnim.restart();
+                showPeek("notif");
+            }
+        }
+
+        NumberAnimation {
+            id: notifRiseAnim
+            target: island
+            property: "notifShift"
+            from: island.notifRowHeight
+            to: 0
+            duration: Theme.movementDuration
+            easing.type: Easing.OutCubic
         }
 
         // Tamaños por modo. Los paneles usan solo tres anchos (pequeño, mediano, grande) para que
@@ -181,7 +219,7 @@ PanelWindow {
         readonly property int widthLarge: 760
         width: ["power", "polkit", "control", "display", "sound", "media"].includes(mode) ? widthSmall : ["clipboard", "emoji", "expanded"].includes(mode) ? widthMedium : ["themes", "wallpaper", "perf", "music"].includes(mode) ? widthLarge : mode === "launcher" ? Config.launcherWidth : mode === "notif" ? Config.notificationWidth : mode === "calendar" || mode === "volume" || mode === "brightness" ? 300 : Math.max(Config.collapsedWidth, idleRow.implicitWidth + Config.innerPadding * 2)
         // Alto final del modo (sin animar): la ventana se ajusta a él una sola vez
-        readonly property real targetHeight: mode === "power" ? (powerMenu.confirmAction === "" ? 110 : 200) : mode === "polkit" ? 250 : mode === "control" ? Math.min(controlContent.preferredHeight + 32, (win.screen?.height ?? 1080) - Config.topMargin - 60) : mode === "display" ? (142 + (Hyprland.monitors?.values?.length ?? 1) * 206) : mode === "sound" ? (213 + Math.min(Audio.sinks?.length ?? 1, 5) * 42 + Math.min(Audio.sources?.length ?? 1, 4) * 42 + Math.max(1, Math.min(Audio.apps?.length ?? 0, 4)) * 62) : mode === "launcher" ? (85 + Config.launcherRowsBeforeScrolling * Config.launcherRowHeight + (Config.launcherRowsBeforeScrolling - 1) * 2) : mode === "clipboard" ? 470 : mode === "emoji" ? 440 : mode === "perf" ? 704 : mode === "music" ? 300 : mode === "themes" ? 210 : mode === "wallpaper" ? 250 : mode === "calendar" ? 250 : mode === "expanded" ? 149 : mode === "notif" ? (notifBody !== "" ? 104 : 86) : mode === "media" ? (Config.mediaShowControls ? 124 : 80) : mode === "volume" || mode === "brightness" ? 42 : Config.barHeight
+        readonly property real targetHeight: mode === "power" ? (powerMenu.confirmAction === "" ? 110 : 200) : mode === "polkit" ? 250 : mode === "control" ? Math.min(controlContent.preferredHeight + 32, (win.screen?.height ?? 1080) - Config.topMargin - 60) : mode === "display" ? (142 + (Hyprland.monitors?.values?.length ?? 1) * 206) : mode === "sound" ? (213 + Math.min(Audio.sinks?.length ?? 1, 5) * 42 + Math.min(Audio.sources?.length ?? 1, 4) * 42 + Math.max(1, Math.min(Audio.apps?.length ?? 0, 4)) * 62) : mode === "launcher" ? (85 + Config.launcherRowsBeforeScrolling * Config.launcherRowHeight + (Config.launcherRowsBeforeScrolling - 1) * 2) : mode === "clipboard" ? 470 : mode === "emoji" ? 440 : mode === "perf" ? 704 : mode === "music" ? 300 : mode === "themes" ? 210 : mode === "wallpaper" ? 250 : mode === "calendar" ? 250 : mode === "expanded" ? 149 : mode === "notif" ? notifMainHeight + notifOlder.length * notifRowHeight : mode === "media" ? (Config.mediaShowControls ? 124 : 80) : mode === "volume" || mode === "brightness" ? 42 : Config.barHeight
         height: targetHeight
 
         Behavior on width {
@@ -236,14 +274,19 @@ PanelWindow {
             function onReceived(notif: var, appName: string, summary: string, body: string, urgent: bool): void {
                 if (Quick.silenced) // Focus / Game mode: no molestar
                     return;
-                island.notifObj = notif;
-                island.notifApp = appName;
-                // Sin título, el cuerpo hace de título
-                island.notifSummary = summary.length > 0 ? summary : body;
-                island.notifBody = Config.notificationShowBody && summary.length > 0 ? body.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim() : "";
-                island.notifIcon = notif?.appIcon ?? "";
-                island.notifImage = notif?.image ?? "";
-                island.notifUrgent = urgent;
+                const entry = {
+                    obj: notif,
+                    app: appName,
+                    // Sin título, el cuerpo hace de título
+                    summary: summary.length > 0 ? summary : body,
+                    body: Config.notificationShowBody && summary.length > 0 ? body.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim() : "",
+                    icon: notif?.appIcon ?? "",
+                    image: notif?.image ?? "",
+                    urgent: urgent
+                };
+                // Si ya se está viendo alguna, la nueva se pone delante
+                island.notifQueue = island.peek === "notif" ? [entry].concat(island.notifQueue) : [entry];
+                island.notifShift = 0;
                 island.showPeek("notif");
             }
         }
@@ -964,9 +1007,10 @@ PanelWindow {
             }
 
             // ---------- notif (peek) ----------
-            // Icono (imagen de la notificación > icono de la app > inicial), cabecera con app y
-            // hora, título y cuerpo, y una barra con el tiempo que le queda. Clic: acción por
-            // defecto; clic derecho: ocultar.
+            // La última arriba en grande y hasta 2 anteriores debajo en filas compactas; las demás
+            // cuentan en el "+N" (ver notifQueue). Icono (imagen de la notificación > icono de la app > inicial),
+            // cabecera con app y hora, título y cuerpo, y una barra con el tiempo que le queda.
+            // Clic: su acción por defecto y la quita; clic derecho: solo la quita.
             Item {
                 anchors.fill: parent
                 anchors.leftMargin: 18
@@ -979,123 +1023,268 @@ PanelWindow {
                     }
                 }
 
-                MouseArea {
-                    anchors.fill: parent
-                    acceptedButtons: Qt.LeftButton | Qt.RightButton
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: mouse => {
-                        if (mouse.button === Qt.LeftButton && island.notifObj)
-                            Notifs.activate(island.notifObj);
-                        island.peek = "";
-                    }
-                }
-
-                ClippingRectangle {
-                    id: notifIconBox
-                    width: 54
-                    height: 54
-                    radius: 15
+                // La última, en grande
+                Item {
+                    id: notifMain
+                    anchors.top: parent.top
                     anchors.left: parent.left
-                    anchors.verticalCenter: parent.verticalCenter
-                    anchors.verticalCenterOffset: -2
-                    color: Theme.alpha(island.notifAccent, 16)
-                    border.width: island.notifUrgent ? 1 : 0
-                    border.color: Theme.alpha(Theme.red, 70)
-
-                    Image {
-                        id: notifImg
-                        anchors.fill: parent
-                        visible: island.notifImage !== "" && status === Image.Ready
-                        source: island.notifImage
-                        sourceSize: Qt.size(108, 108)
-                        fillMode: Image.PreserveAspectCrop
-                        asynchronous: true
-                        smooth: true
-                    }
-                    AppIcon {
-                        anchors.centerIn: parent
-                        size: 36
-                        icon: island.notifIcon
-                        visible: !notifImg.visible && island.notifIcon !== ""
-                    }
-                    Text {
-                        anchors.centerIn: parent
-                        visible: !notifImg.visible && island.notifIcon === ""
-                        text: (island.notifApp || "?").charAt(0).toUpperCase()
-                        color: island.notifAccent
-                        font.family: Theme.bodyFontFamily
-                        font.pixelSize: Theme.fontPx(24)
-                        font.bold: true
-                    }
-                }
-
-                Column {
-                    anchors.left: notifIconBox.right
-                    anchors.leftMargin: 14
                     anchors.right: parent.right
-                    anchors.verticalCenter: notifIconBox.verticalCenter
-                    spacing: 2
+                    height: island.notifMainHeight
+                    opacity: 1 - island.notifShift / island.notifRowHeight * 0.6
+                    transform: Translate {
+                        y: island.notifShift
+                    }
 
-                    Item {
-                        width: parent.width
-                        height: notifAppText.implicitHeight
+                    MouseArea {
+                        anchors.fill: parent
+                        acceptedButtons: Qt.LeftButton | Qt.RightButton
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: mouse => {
+                            if (mouse.button === Qt.LeftButton && island.notifObj)
+                                Notifs.activate(island.notifObj);
+                            island.removeNotif(0);
+                        }
+                    }
+
+                    ClippingRectangle {
+                        id: notifIconBox
+                        width: 54
+                        height: 54
+                        radius: 15
+                        anchors.left: parent.left
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.verticalCenterOffset: -2
+                        color: Theme.alpha(island.notifAccent, 16)
+                        border.width: island.notifUrgent ? 1 : 0
+                        border.color: Theme.alpha(Theme.red, 70)
+
+                        Image {
+                            id: notifImg
+                            anchors.fill: parent
+                            visible: island.notifImage !== "" && status === Image.Ready
+                            source: island.notifImage
+                            sourceSize: Qt.size(108, 108)
+                            fillMode: Image.PreserveAspectCrop
+                            asynchronous: true
+                            smooth: true
+                        }
+                        AppIcon {
+                            anchors.centerIn: parent
+                            size: 36
+                            icon: island.notifIcon
+                            visible: !notifImg.visible && island.notifIcon !== ""
+                        }
                         Text {
-                            id: notifAppText
-                            anchors.left: parent.left
-                            anchors.right: notifTime.left
-                            anchors.rightMargin: 8
-                            font.family: Theme.bodyFontFamily
-                            text: island.notifUrgent ? (island.notifApp || "Notification") + "  ·  urgent" : (island.notifApp || "Notification")
+                            anchors.centerIn: parent
+                            visible: !notifImg.visible && island.notifIcon === ""
+                            text: (island.notifApp || "?").charAt(0).toUpperCase()
                             color: island.notifAccent
-                            font.pixelSize: Theme.fontPx(13)
+                            font.family: Theme.bodyFontFamily
+                            font.pixelSize: Theme.fontPx(24)
                             font.bold: true
-                            font.letterSpacing: 0.3
-                            elide: Text.ElideRight
+                        }
+                    }
+
+                    Column {
+                        anchors.left: notifIconBox.right
+                        anchors.leftMargin: 14
+                        anchors.right: parent.right
+                        anchors.verticalCenter: notifIconBox.verticalCenter
+                        spacing: 2
+
+                        Item {
+                            width: parent.width
+                            height: notifAppText.implicitHeight
+                            Text {
+                                id: notifAppText
+                                anchors.left: parent.left
+                                anchors.right: notifMeta.left
+                                anchors.rightMargin: 8
+                                font.family: Theme.bodyFontFamily
+                                text: island.notifUrgent ? (island.notifApp || "Notification") + "  ·  urgent" : (island.notifApp || "Notification")
+                                color: island.notifAccent
+                                font.pixelSize: Theme.fontPx(13)
+                                font.bold: true
+                                font.letterSpacing: 0.3
+                                elide: Text.ElideRight
+                            }
+                            Row {
+                                id: notifMeta
+                                anchors.right: parent.right
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: 8
+
+                                // "+N": clic abre el historial (centro de control)
+                                Rectangle {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    visible: island.notifExtra > 0
+                                    width: notifExtraText.implicitWidth + 14
+                                    height: notifExtraText.implicitHeight + 4
+                                    radius: height / 2
+                                    color: Theme.alpha(island.notifAccent, 18)
+                                    Text {
+                                        id: notifExtraText
+                                        anchors.centerIn: parent
+                                        font.family: Theme.bodyFontFamily
+                                        text: "+" + island.notifExtra
+                                        color: island.notifAccent
+                                        font.pixelSize: Theme.fontPx(12)
+                                        font.bold: true
+                                    }
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: {
+                                            island.peek = "";
+                                            Overlay.mode = "control";
+                                        }
+                                    }
+                                }
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    font.family: Theme.bodyFontFamily
+                                    text: "now"
+                                    color: Theme.tertiaryText
+                                    font.pixelSize: Theme.fontPx(13)
+                                }
+                            }
                         }
                         Text {
-                            id: notifTime
-                            anchors.right: parent.right
-                            anchors.verticalCenter: parent.verticalCenter
                             font.family: Theme.bodyFontFamily
-                            text: "now"
-                            color: Theme.tertiaryText
-                            font.pixelSize: Theme.fontPx(13)
+                            width: parent.width
+                            text: island.notifSummary
+                            textFormat: Text.PlainText
+                            color: "#ffffff"
+                            font.pixelSize: Theme.fontPx(18)
+                            font.weight: Font.DemiBold
+                            elide: Text.ElideRight
+                            maximumLineCount: 1
+                        }
+                        Text {
+                            font.family: Theme.bodyFontFamily
+                            width: parent.width
+                            visible: island.notifBody !== ""
+                            text: island.notifBody
+                            textFormat: Text.PlainText
+                            color: Theme.secondaryText
+                            font.pixelSize: Theme.fontPx(15)
+                            elide: Text.ElideRight
+                            maximumLineCount: 1
                         }
                     }
-                    Text {
-                        font.family: Theme.bodyFontFamily
-                        width: parent.width
-                        text: island.notifSummary
-                        textFormat: Text.PlainText
-                        color: "#ffffff"
-                        font.pixelSize: Theme.fontPx(18)
-                        font.weight: Font.DemiBold
-                        elide: Text.ElideRight
-                        maximumLineCount: 1
-                    }
-                    Text {
-                        font.family: Theme.bodyFontFamily
-                        width: parent.width
-                        visible: island.notifBody !== ""
-                        text: island.notifBody
-                        textFormat: Text.PlainText
-                        color: Theme.secondaryText
-                        font.pixelSize: Theme.fontPx(15)
-                        elide: Text.ElideRight
-                        maximumLineCount: 1
+
+                    // Tiempo restante
+                    Rectangle {
+                        anchors.left: notifIconBox.right
+                        anchors.leftMargin: 14
+                        anchors.bottom: parent.bottom
+                        anchors.bottomMargin: 8
+                        width: (parent.width - notifIconBox.width - 14) * island.notifProgress
+                        height: 3
+                        radius: 1.5
+                        color: Theme.alpha(island.notifAccent, 55)
                     }
                 }
 
-                // Tiempo restante
-                Rectangle {
-                    anchors.left: notifIconBox.right
-                    anchors.leftMargin: 14
-                    anchors.bottom: parent.bottom
-                    anchors.bottomMargin: 8
-                    width: (parent.width - notifIconBox.width - 14) * island.notifProgress
-                    height: 3
-                    radius: 1.5
-                    color: Theme.alpha(island.notifAccent, 55)
+                // Anteriores: fila compacta con icono, app y título. Clic: su acción; clic derecho: quitarla.
+                Column {
+                    anchors.top: notifMain.bottom
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    transform: Translate {
+                        y: island.notifShift
+                    }
+
+                    Repeater {
+                        model: island.notifOlder
+
+                        Item {
+                            id: olderRow
+                            required property var modelData
+                            required property int index
+                            readonly property color accent: modelData.urgent ? Theme.red : Theme.mauve
+                            width: parent.width
+                            height: island.notifRowHeight
+
+                            Rectangle {
+                                anchors.top: parent.top
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                height: 1
+                                color: Theme.divider
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: mouse => {
+                                    if (mouse.button === Qt.LeftButton && olderRow.modelData.obj)
+                                        Notifs.activate(olderRow.modelData.obj);
+                                    island.removeNotif(olderRow.index + 1);
+                                }
+                            }
+                            ClippingRectangle {
+                                id: olderIcon
+                                width: 32
+                                height: 32
+                                radius: 9
+                                anchors.left: parent.left
+                                anchors.leftMargin: 11
+                                anchors.verticalCenter: parent.verticalCenter
+                                color: Theme.alpha(olderRow.accent, 16)
+
+                                Image {
+                                    id: olderImg
+                                    anchors.fill: parent
+                                    visible: olderRow.modelData.image !== "" && status === Image.Ready
+                                    source: olderRow.modelData.image
+                                    sourceSize: Qt.size(64, 64)
+                                    fillMode: Image.PreserveAspectCrop
+                                    asynchronous: true
+                                }
+                                AppIcon {
+                                    anchors.centerIn: parent
+                                    size: 22
+                                    icon: olderRow.modelData.icon
+                                    visible: !olderImg.visible && olderRow.modelData.icon !== ""
+                                }
+                                Text {
+                                    anchors.centerIn: parent
+                                    visible: !olderImg.visible && olderRow.modelData.icon === ""
+                                    text: (olderRow.modelData.app || "?").charAt(0).toUpperCase()
+                                    color: olderRow.accent
+                                    font.family: Theme.bodyFontFamily
+                                    font.pixelSize: Theme.fontPx(15)
+                                    font.bold: true
+                                }
+                            }
+                            Text {
+                                id: olderApp
+                                anchors.left: olderIcon.right
+                                anchors.leftMargin: 25
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: Math.min(implicitWidth, 140)
+                                font.family: Theme.bodyFontFamily
+                                text: olderRow.modelData.app || "Notification"
+                                color: olderRow.accent
+                                font.pixelSize: Theme.fontPx(13)
+                                font.bold: true
+                                elide: Text.ElideRight
+                            }
+                            Text {
+                                anchors.left: olderApp.right
+                                anchors.leftMargin: 10
+                                anchors.right: parent.right
+                                anchors.verticalCenter: parent.verticalCenter
+                                font.family: Theme.bodyFontFamily
+                                text: olderRow.modelData.summary
+                                textFormat: Text.PlainText
+                                color: "#ffffff"
+                                font.pixelSize: Theme.fontPx(14)
+                                elide: Text.ElideRight
+                            }
+                        }
+                    }
                 }
             }
 
