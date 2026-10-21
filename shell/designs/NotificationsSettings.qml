@@ -19,13 +19,15 @@ Item {
             SettingSliderRow {
                 label: "Popup timeout"
                 value: Config.opt.notificationPopupTimeout
-                from: 500; to: 10000; unit: " ms"
+                from: 500; to: 10000; unit: " s"
+                divisor: 1000; decimals: 1; snap: 500
                 onMoved: v => Config.opt.notificationPopupTimeout = v
             }
             SettingSliderRow {
                 label: "Urgent timeout"
                 value: Config.opt.notificationUrgentTimeout
-                from: 1000; to: 30000; unit: " ms"
+                from: 1000; to: 30000; unit: " s"
+                divisor: 1000; decimals: 1; snap: 500
                 onMoved: v => Config.opt.notificationUrgentTimeout = v
             }
             SettingSliderRow {
@@ -33,6 +35,31 @@ Item {
                 value: Config.opt.notificationWidth
                 from: 320; to: 900; unit: " px"
                 onMoved: v => Config.opt.notificationWidth = v
+            }
+            SettingSliderRow {
+                label: "Visible at once"
+                value: Config.opt.notificationMaxVisible
+                from: 1; to: 3
+                onMoved: v => Config.opt.notificationMaxVisible = v
+            }
+            SettingToggleRow {
+                label: "Queue hidden notifications"
+                sublabel: "Ones in the +N badge move up when the visible ones leave"
+                checked: Config.opt.notificationQueueHidden
+                onToggled: Config.opt.notificationQueueHidden = !Config.opt.notificationQueueHidden
+            }
+            SettingSliderRow {
+                label: "Wait for progress (0 = off)"
+                value: Config.opt.notificationProgressWait
+                from: 0; to: 120; unit: " s"
+                snap: 5
+                onMoved: v => Config.opt.notificationProgressWait = v
+            }
+            SettingToggleRow {
+                label: "Show time left"
+                sublabel: "Bar under the notification that empties until it hides"
+                checked: Config.opt.notificationTimeoutBar
+                onToggled: Config.opt.notificationTimeoutBar = !Config.opt.notificationTimeoutBar
             }
             SettingToggleRow {
                 label: "Show body text"
@@ -58,7 +85,8 @@ Item {
             SettingSliderRow {
                 label: "Duration"
                 value: Config.opt.osdOnScreenTime
-                from: 300; to: 10000; unit: " ms"
+                from: 300; to: 10000; unit: " s"
+                divisor: 1000; decimals: 1; snap: 100
                 onMoved: v => Config.opt.osdOnScreenTime = v
             }
             SettingSliderRow {

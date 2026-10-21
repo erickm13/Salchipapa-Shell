@@ -26,6 +26,14 @@ Item {
         const list = [];
         for (const d of ["/usr/share/icons/Papirus-Dark/64x64/apps", "/usr/share/icons/Papirus-Dark/48x48/apps"])
             list.push("file://" + d + "/" + icon + ".svg");
+        // Las notificaciones también usan iconos que no son de apps (folder-download, battery…)
+        for (const c of ["places", "devices", "categories", "mimetypes"])
+            list.push("file:///usr/share/icons/Papirus-Dark/64x64/" + c + "/" + icon + ".svg");
+        for (const c of ["status", "actions"])
+            list.push("file:///usr/share/icons/Papirus-Dark/48x48/" + c + "/" + icon + ".svg");
+        // Los clásicos de estado (battery-caution…) que Papirus ya no trae; Qt los "encuentra" pero
+        // los pinta como un cuadro magenta
+        list.push("file:///usr/share/icons/AdwaitaLegacy/48x48/legacy/" + icon + ".png");
         const themed = Quickshell.iconPath(icon, true);
         if (themed !== "")
             list.push(themed);

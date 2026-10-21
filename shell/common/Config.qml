@@ -89,6 +89,10 @@ Singleton {
     readonly property int notificationPopupTimeout: settings.notificationPopupTimeout
     readonly property int notificationUrgentTimeout: settings.notificationUrgentTimeout
     readonly property int notificationWidth: settings.notificationWidth
+    readonly property int notificationMaxVisible: Math.max(1, Math.min(3, settings.notificationMaxVisible))
+    readonly property bool notificationQueueHidden: settings.notificationQueueHidden
+    readonly property bool notificationTimeoutBar: settings.notificationTimeoutBar
+    readonly property int notificationProgressWait: settings.notificationProgressWait
     readonly property bool notificationShowBody: settings.notificationShowBody
     readonly property bool notificationSound: settings.notificationSound
     readonly property int notificationHistoryHeight: settings.notificationHistoryHeight
@@ -220,6 +224,10 @@ Singleton {
             property int notificationPopupTimeout: 4000
             property int notificationUrgentTimeout: 8000
             property int notificationWidth: 580
+            property int notificationMaxVisible: 3 // a la vez en la isla (1-3); el resto va al "+N"
+            property bool notificationQueueHidden: true // las del "+N" también suben al irse las de arriba
+            property bool notificationTimeoutBar: true
+            property int notificationProgressWait: 30 // s que espera a una descarga en curso (0 = nada)
             property bool notificationShowBody: true
             property bool notificationSound: true
             property int notificationHistoryHeight: 200

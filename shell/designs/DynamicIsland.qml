@@ -9,6 +9,7 @@ import QtQuick
 import QtQuick.Shapes
 import QtQuick.Effects
 import Quickshell.Widgets
+import Quickshell.Services.Notifications
 import "../common"
 import "../services"
 
@@ -52,7 +53,7 @@ PanelWindow {
         onTriggered: win.windowHeight = win.neededHeight
     }
     WlrLayershell.layer: WlrLayer.Top
-    WlrLayershell.keyboardFocus: (Overlay.mode !== "" || island.showPolkit) ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    WlrLayershell.keyboardFocus: (Overlay.mode !== "" || island.showPolkit || island.notifReplying) ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
     // -10: Hyprland ya deja 10 px de gaps_out arriba (lua/general.lua)
     exclusiveZone: Math.max(0, 34 + Config.topMargin - 10)
 
@@ -116,22 +117,53 @@ PanelWindow {
         readonly property bool inSpecial: (Hyprland.focusedMonitor?.lastIpcObject?.specialWorkspace?.name ?? "") !== ""
 
         // Datos del peek de notificación
-        // Cola de notificaciones, la más nueva primero: la primera en grande, las 2 siguientes en
-        // filas compactas y el resto en el "+N". Al acabar su tiempo, la de arriba se va y sube la
-        // siguiente. Se conserva al ocultarse para que no se vacíe mientras se desvanece.
+        // Cola de notificaciones por prioridad (críticas, normales, bajas) y, dentro de cada una, la
+        // más nueva primero: la primera en grande, las siguientes en filas compactas (hasta
+        // Config.notificationMaxVisible en total) y el resto en el "+N". Al acabar su tiempo, la
+        // de arriba se va y sube la siguiente. Sin notificationQueueHidden, las del "+N" no
+        // esperan en la cola: solo se cuentan (notifDropped) y siguen en el historial.
+        // Se conserva al ocultarse para que no se vacíe mientras se desvanece.
         property var notifQueue: []
+        property int notifSeq: 0
         readonly property var notifTop: notifQueue.length > 0 ? notifQueue[0] : null
+        // La de arriba se lee en vivo de la notificación: las apps la actualizan en el sitio
+        // (descargas: mismo id, otro "value"). Si ya se cerró, queda la copia de la cola.
         readonly property var notifObj: notifTop?.obj ?? null
-        readonly property string notifApp: notifTop?.app ?? ""
-        readonly property string notifSummary: notifTop?.summary ?? ""
-        readonly property string notifBody: notifTop?.body ?? ""
+        readonly property string notifApp: notifObj ? notifObj.appName : (notifTop?.app ?? "")
+        readonly property string notifSummary: notifObj ? summaryOf(notifObj.summary, notifObj.body) : (notifTop?.summary ?? "")
+        readonly property string notifBody: notifObj ? bodyOf(notifObj.summary, notifObj.body) : (notifTop?.body ?? "")
         readonly property string notifIcon: notifTop?.icon ?? ""
         readonly property string notifImage: notifTop?.image ?? ""
-        readonly property bool notifUrgent: notifTop?.urgent ?? false
-        readonly property var notifOlder: notifQueue.slice(1, 3)
-        readonly property int notifExtra: Math.max(0, notifQueue.length - 3)
+        readonly property bool notifUrgent: notifTop?.urgency === NotificationUrgency.Critical
+        // Botones: las acciones que no son la del clic (como mucho 3) y "Reply" si admite respuesta
+        readonly property var notifActions: notifObj ? notifObj.actions.filter(a => a.identifier !== "default").slice(0, 3) : []
+        readonly property bool notifCanReply: notifObj?.hasInlineReply ?? false
+        property bool notifReplying: false
+        // Con progreso en marcha, la de arriba espera a que termine (hasta notificationProgressWait)
+        property bool notifWaiting: false
+        property bool notifWaitDone: false
+        onNotifTopChanged: {
+            notifWaiting = false;
+            notifWaitDone = false;
+            progressWaitTimer.stop();
+        }
+        onNotifValueChanged: checkProgress()
+        // Progreso (pista "value", 0-100) o -1 si no trae
+        readonly property int notifValue: {
+            const v = notifObj?.hints?.value;
+            return typeof v === "number" ? Math.max(0, Math.min(100, Math.round(v))) : -1;
+        }
+        property int notifDropped: 0
+        readonly property var notifOlder: notifQueue.slice(1, Config.notificationMaxVisible)
+        readonly property int notifExtra: Math.max(0, notifQueue.length - Config.notificationMaxVisible) + notifDropped
         property real notifShift: 0 // desplazamiento al subir la siguiente (anima a 0)
-        readonly property int notifMainHeight: notifBody !== "" ? 104 : 86
+        // Sin la barra de tiempo, la parte de arriba se encoge lo que ocupaba (si no, los botones
+        // quedan separados del texto)
+        readonly property int notifHeadHeight: (notifBody !== "" ? 104 : 86) - (Config.notificationTimeoutBar ? 0 : 14)
+        // Sin la barra de tiempo, los botones y el progreso suben a ocupar su sitio
+        readonly property int notifExtrasLift: Config.notificationTimeoutBar ? 0 : 10
+        readonly property int notifExtrasHeight: (notifValue >= 0 ? 22 : 0) + (notifActions.length > 0 || notifCanReply ? 46 : 0)
+        readonly property int notifMainHeight: notifHeadHeight + Math.max(0, notifExtrasHeight - (notifExtrasHeight > 0 ? notifExtrasLift : 0))
         readonly property int notifRowHeight: 50
         property real notifProgress: 1 // barra de tiempo restante del peek
         readonly property color notifAccent: notifUrgent ? Theme.red : Theme.mauve
@@ -168,6 +200,43 @@ PanelWindow {
             if (name === "notif") {
                 notifProgressAnim.duration = peekTimer.interval;
                 notifProgressAnim.restart();
+                if (notifWaiting)
+                    pauseNotif();
+                else
+                    checkProgress();
+            }
+        }
+
+        // Mientras la de arriba avanza (0-99 %), su tiempo se para; al llegar al 100 % se ve con su
+        // tiempo completo. Si tarda más del límite, sigue el tiempo normal y se irá: volverá a salir
+        // al terminar (Notifs.progressDone).
+        function checkProgress(): void {
+            if (peek !== "notif")
+                return;
+            const busy = notifValue >= 0 && notifValue < 100 && Config.notificationProgressWait > 0;
+            if (busy && !notifWaiting && !notifWaitDone) {
+                notifWaiting = true;
+                pauseNotif();
+                progressWaitTimer.restart();
+            } else if (!busy && notifWaiting) {
+                notifWaiting = false;
+                progressWaitTimer.stop();
+                peekTimer.interval = notifUrgent ? Config.notificationUrgentTimeout : Config.notificationPopupTimeout;
+                notifProgressAnim.duration = peekTimer.interval;
+                notifProgressAnim.restart();
+                peekTimer.restart();
+                if (hovered || notifReplying)
+                    pauseNotif();
+            }
+        }
+
+        Timer {
+            id: progressWaitTimer
+            interval: Config.notificationProgressWait * 1000
+            onTriggered: {
+                island.notifWaiting = false;
+                island.notifWaitDone = true;
+                island.resumeNotif();
             }
         }
 
@@ -182,15 +251,37 @@ PanelWindow {
         Timer {
             id: peekTimer
             onTriggered: {
-                if (island.peek === "notif" && island.notifQueue.length > 1)
+                if (island.peek === "notif")
                     island.removeNotif(0);
                 else
                     island.peek = "";
             }
         }
 
+        function summaryOf(summary: string, body: string): string {
+            // Sin título, el cuerpo hace de título
+            return summary.length > 0 ? summary : cleanBody(body);
+        }
+        function bodyOf(summary: string, body: string): string {
+            return Config.notificationShowBody && summary.length > 0 ? cleanBody(body) : "";
+        }
+        function cleanBody(body: string): string {
+            return body.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+        }
+
+        // Críticas primero y, con la misma urgencia, la más nueva primero
+        function sortNotifs(q: var): var {
+            return q.slice().sort((a, b) => (b.urgency - a.urgency) || (b.seq - a.seq));
+        }
+
         // Quita una de la cola. Si era la de arriba, sube la siguiente con su tiempo completo.
+        // Las transitorias (las que piden no quedarse en el historial) se cierran al quitarlas.
         function removeNotif(i: int): void {
+            const gone = notifQueue[i];
+            if (gone?.obj?.transient)
+                gone.obj.expire();
+            if (i === 0)
+                notifReplying = false;
             if (notifQueue.length <= 1) {
                 peek = "";
                 return;
@@ -199,7 +290,46 @@ PanelWindow {
             if (i === 0) {
                 notifRiseAnim.restart();
                 showPeek("notif");
+                if (hovered)
+                    pauseNotif();
             }
+        }
+
+        // Con el ratón encima (o escribiendo una respuesta) el tiempo se para; al salir sigue
+        // con lo que le quedaba.
+        function pauseNotif(): void {
+            peekTimer.stop();
+            notifProgressAnim.pause();
+        }
+        function resumeNotif(): void {
+            if (peek !== "notif" || notifReplying || hovered || notifWaiting)
+                return;
+            peekTimer.interval = Math.max(800, notifProgressAnim.duration * notifProgress);
+            peekTimer.restart();
+            notifProgressAnim.resume();
+        }
+        onHoveredChanged: {
+            if (peek !== "notif")
+                return;
+            if (hovered)
+                pauseNotif();
+            else
+                resumeNotif();
+        }
+
+        function startReply(): void {
+            notifReplying = true;
+            pauseNotif();
+        }
+        function sendReply(text: string): void {
+            if (text.trim() === "")
+                return;
+            notifObj?.sendInlineReply(text);
+            removeNotif(0);
+        }
+        function cancelReply(): void {
+            notifReplying = false;
+            resumeNotif();
         }
 
         NumberAnimation {
@@ -271,23 +401,51 @@ PanelWindow {
         }
         Connections {
             target: Notifs
-            function onReceived(notif: var, appName: string, summary: string, body: string, urgent: bool): void {
-                if (Quick.silenced) // Focus / Game mode: no molestar
+            function onReceived(notif: var): void {
+                if (!Quick.silenced) // Focus / Game mode: no molestar
+                    island.addNotif(notif);
+            }
+            // Una descarga que se dejó de mostrar antes de acabar vuelve a salir al terminar
+            function onProgressDone(notif: var): void {
+                if (Quick.silenced || (island.peek === "notif" && island.notifQueue.some(e => e.obj === notif)))
                     return;
-                const entry = {
-                    obj: notif,
-                    app: appName,
-                    // Sin título, el cuerpo hace de título
-                    summary: summary.length > 0 ? summary : body,
-                    body: Config.notificationShowBody && summary.length > 0 ? body.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim() : "",
-                    icon: notif?.appIcon ?? "",
-                    image: notif?.image ?? "",
-                    urgent: urgent
-                };
-                // Si ya se está viendo alguna, la nueva se pone delante
-                island.notifQueue = island.peek === "notif" ? [entry].concat(island.notifQueue) : [entry];
-                island.notifShift = 0;
-                island.showPeek("notif");
+                island.addNotif(notif);
+            }
+        }
+
+        function addNotif(notif: var): void {
+            const entry = {
+                obj: notif,
+                app: notif.appName,
+                summary: summaryOf(notif.summary, notif.body),
+                body: bodyOf(notif.summary, notif.body),
+                // Un nombre de icono (notify-send -i firefox) llega como imagen "image://icon/…": se
+                // busca como icono de app, que prueba Papirus y otras carpetas antes de rendirse
+                // (el proveedor de Qt devuelve un cuadro magenta si no lo encuentra).
+                icon: (notif?.image ?? "").startsWith("image://icon/") ? notif.image.slice(13) : (notif?.appIcon ?? ""),
+                image: (notif?.image ?? "").startsWith("image://icon/") ? "" : (notif?.image ?? ""),
+                urgency: notif?.urgency ?? NotificationUrgency.Normal,
+                seq: ++notifSeq
+            };
+            // Si ya se está viendo alguna, la nueva entra en su sitio por prioridad. Mientras se
+            // escribe una respuesta, la de arriba no cambia.
+            const showing = peek === "notif";
+            const prevTop = showing ? notifQueue[0] : null;
+            let queue = showing ? notifQueue.concat([entry]) : [entry];
+            queue = notifReplying && prevTop ? [prevTop].concat(sortNotifs(queue.slice(1))) : sortNotifs(queue);
+            if (!showing)
+                notifDropped = 0;
+            if (!Config.notificationQueueHidden && queue.length > Config.notificationMaxVisible) {
+                notifDropped += queue.length - Config.notificationMaxVisible;
+                queue = queue.slice(0, Config.notificationMaxVisible);
+            }
+            notifQueue = queue;
+            // Solo si cambia la de arriba se reinicia su tiempo
+            if (queue[0] !== prevTop) {
+                notifShift = 0;
+                showPeek("notif");
+                if (hovered)
+                    pauseNotif();
             }
         }
 
@@ -1029,7 +1187,7 @@ PanelWindow {
                     anchors.top: parent.top
                     anchors.left: parent.left
                     anchors.right: parent.right
-                    height: island.notifMainHeight
+                    height: island.notifHeadHeight
                     opacity: 1 - island.notifShift / island.notifRowHeight * 0.6
                     transform: Translate {
                         y: island.notifShift
@@ -1175,6 +1333,7 @@ PanelWindow {
 
                     // Tiempo restante
                     Rectangle {
+                        visible: Config.notificationTimeoutBar
                         anchors.left: notifIconBox.right
                         anchors.leftMargin: 14
                         anchors.bottom: parent.bottom
@@ -1186,9 +1345,155 @@ PanelWindow {
                     }
                 }
 
+                // Progreso y botones (acciones y respuesta) de la de arriba, alineados con su texto
+                Column {
+                    id: notifExtras
+                    anchors.top: notifMain.bottom
+                    anchors.topMargin: island.notifExtrasHeight > 0 ? -island.notifExtrasLift : 0
+                    anchors.left: parent.left
+                    anchors.leftMargin: 68
+                    anchors.right: parent.right
+                    height: island.notifExtrasHeight
+                    opacity: notifMain.opacity
+                    transform: Translate {
+                        y: island.notifShift
+                    }
+
+                    Item {
+                        width: parent.width
+                        height: 22
+                        visible: island.notifValue >= 0
+                        Rectangle {
+                            id: valueTrack
+                            anchors.left: parent.left
+                            anchors.right: valueText.left
+                            anchors.rightMargin: 10
+                            anchors.verticalCenter: parent.verticalCenter
+                            height: 6
+                            radius: 3
+                            color: Theme.panelCardHi
+                            Rectangle {
+                                width: parent.width * Math.max(0, island.notifValue) / 100
+                                height: parent.height
+                                radius: 3
+                                color: island.notifAccent
+                                Behavior on width {
+                                    NumberAnimation {
+                                        duration: Theme.movementDuration
+                                        easing.type: Easing.OutCubic
+                                    }
+                                }
+                            }
+                        }
+                        Text {
+                            id: valueText
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+                            font.family: Theme.bodyFontFamily
+                            text: island.notifValue + "%"
+                            color: Theme.secondaryText
+                            font.pixelSize: Theme.fontPx(13)
+                            font.bold: true
+                        }
+                    }
+
+                    Item {
+                        width: parent.width
+                        height: 46
+                        visible: island.notifActions.length > 0 || island.notifCanReply
+
+                        // Pegados arriba (al texto); el hueco sobrante queda como margen inferior
+                        Row {
+                            id: actionRow
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            anchors.topMargin: 2
+                            spacing: 8
+                            visible: !island.notifReplying
+                            readonly property int count: island.notifActions.length + (island.notifCanReply ? 1 : 0)
+                            readonly property real maxButton: (width - spacing * (count - 1)) / Math.max(1, count)
+
+                            NotifButton {
+                                visible: island.notifCanReply
+                                icon: "reply"
+                                text: "Reply"
+                                accent: island.notifAccent
+                                maxWidth: actionRow.maxButton
+                                onClicked: {
+                                    island.startReply();
+                                    replyInput.text = "";
+                                    replyInput.forceActiveFocus();
+                                }
+                            }
+                            Repeater {
+                                model: island.notifActions
+                                NotifButton {
+                                    required property var modelData
+                                    text: modelData.text
+                                    maxWidth: actionRow.maxButton
+                                    onClicked: {
+                                        modelData.invoke();
+                                        island.removeNotif(0);
+                                    }
+                                }
+                            }
+                        }
+
+                        // Respuesta: Enter envía, Esc cancela
+                        Rectangle {
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            height: 34
+                            radius: 10
+                            visible: island.notifReplying
+                            color: Theme.panelCardHi
+                            border.width: 1
+                            border.color: Theme.alpha(island.notifAccent, 60)
+
+                            TextInput {
+                                id: replyInput
+                                anchors.left: parent.left
+                                anchors.right: sendButton.left
+                                anchors.leftMargin: 12
+                                anchors.rightMargin: 8
+                                anchors.verticalCenter: parent.verticalCenter
+                                font.family: Theme.bodyFontFamily
+                                font.pixelSize: Theme.fontPx(14)
+                                color: "#ffffff"
+                                selectionColor: Theme.alpha(island.notifAccent, 50)
+                                clip: true
+                                Keys.onReturnPressed: island.sendReply(text)
+                                Keys.onEnterPressed: island.sendReply(text)
+                                Keys.onEscapePressed: island.cancelReply()
+
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    visible: replyInput.text === ""
+                                    font: replyInput.font
+                                    text: island.notifObj?.inlineReplyPlaceholder || "Reply…"
+                                    color: Theme.tertiaryText
+                                }
+                            }
+                            NotifButton {
+                                id: sendButton
+                                anchors.right: parent.right
+                                anchors.rightMargin: 3
+                                anchors.verticalCenter: parent.verticalCenter
+                                height: 28
+                                icon: "send"
+                                text: "Send"
+                                accent: island.notifAccent
+                                onClicked: island.sendReply(replyInput.text)
+                            }
+                        }
+                    }
+                }
+
                 // Anteriores: fila compacta con icono, app y título. Clic: su acción; clic derecho: quitarla.
                 Column {
-                    anchors.top: notifMain.bottom
+                    anchors.top: notifExtras.bottom
                     anchors.left: parent.left
                     anchors.right: parent.right
                     transform: Translate {
@@ -1202,7 +1507,7 @@ PanelWindow {
                             id: olderRow
                             required property var modelData
                             required property int index
-                            readonly property color accent: modelData.urgent ? Theme.red : Theme.mauve
+                            readonly property color accent: modelData.urgency === NotificationUrgency.Critical ? Theme.red : Theme.mauve
                             width: parent.width
                             height: island.notifRowHeight
 
@@ -1453,6 +1758,55 @@ PanelWindow {
     }
 
     // --- Componentes internos reutilizables ---
+
+    // Botón de una notificación (acciones, Reply, Send). Con `accent`, relleno de ese color.
+    component NotifButton: Rectangle {
+        id: nb
+        property string text: ""
+        property string icon: ""
+        property color accent: "transparent"
+        property real maxWidth: 1000
+        signal clicked
+        readonly property bool filled: accent.a > 0
+        // Medidas a mano (no con implicitWidth de la Row: el texto se recorta según el ancho del botón)
+        readonly property real iconWidth: icon !== "" ? Theme.iconPx(16) + 6 : 0
+
+        width: Math.min(maxWidth, iconWidth + nbLabel.implicitWidth + 24)
+        height: 32
+        radius: height / 2
+        color: filled ? Theme.alpha(accent, nbMouse.containsMouse ? 32 : 20) : (nbMouse.containsMouse ? Theme.panelCardHi : Theme.panelCard)
+
+        Row {
+            anchors.centerIn: parent
+            spacing: 6
+            Text {
+                visible: nb.icon !== ""
+                anchors.verticalCenter: parent.verticalCenter
+                text: nb.icon
+                font.family: "Material Symbols Outlined"
+                font.pixelSize: Theme.iconPx(16)
+                color: nb.filled ? nb.accent : "#ffffff"
+            }
+            Text {
+                id: nbLabel
+                anchors.verticalCenter: parent.verticalCenter
+                width: Math.min(implicitWidth, nb.width - 24 - nb.iconWidth)
+                text: nb.text
+                font.family: Theme.bodyFontFamily
+                font.pixelSize: Theme.fontPx(13)
+                font.bold: true
+                color: nb.filled ? nb.accent : "#ffffff"
+                elide: Text.ElideRight
+            }
+        }
+        MouseArea {
+            id: nbMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: nb.clicked()
+        }
+    }
 
     // Workspaces persistentes 1..N como barras de carga VERTICALES (sin número).
     // Activo = barra alta (acento); ocupado = barra media; vacío = corta.
