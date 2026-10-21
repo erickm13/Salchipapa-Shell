@@ -2,6 +2,8 @@
 # Perfiles de monitor automáticos: al conectar/desconectar pantallas aplica el perfil guardado
 # para esa combinación (p. ej. HDMI conectado -> apagar la pantalla interna).
 # Lo lanza lua/autostart.lua; log en /tmp/monitor-autodetect.log.
+# También tras `hyprctl reload`: la recarga vuelve a ejecutar lua/monitors.lua (enciende eDP-2 y
+# deja los demás en automático), así que con varios monitores se reaplica su perfil.
 #
 # Perfiles: ~/.config/salchipapa-shell/display-profiles.json, con la clave = nombres de los monitores
 # ordenados y unidos con "|":
@@ -91,6 +93,18 @@ apply_profile() {
     wake
 }
 
+# Recargas de Hyprland: un escuchador del socket de eventos deja una marca y el bucle reaplica el
+# perfil. No hereda el candado (9>&-) y muere con el script.
+reload_flag="${XDG_RUNTIME_DIR:-/tmp}/salchipapa-monitor-reload"
+rm -f "$reload_flag"
+events="${XDG_RUNTIME_DIR:-/tmp}/hypr/${HYPRLAND_INSTANCE_SIGNATURE:-}/.socket2.sock"
+if command -v socat >/dev/null && [ -S "$events" ]; then
+    socat -U - "UNIX-CONNECT:$events" 2>/dev/null | while IFS= read -r ev; do
+        [[ "$ev" == configreloaded* ]] && touch "$reload_flag"
+    done 9>&- &
+    trap 'kill $(jobs -p) 2>/dev/null' EXIT
+fi
+
 log "=== monitor-autodetect iniciado ==="
 sleep 2 9>&-
 last=$(current_key)
@@ -99,6 +113,16 @@ apply_profile "$last"
 while sleep 3 9>&-; do
     key=$(current_key)
     [ -n "$key" ] || continue
+    # Con un solo monitor no: apply_profile hace `hyprctl reload` y se repetiría sin fin
+    if [ -e "$reload_flag" ]; then
+        rm -f "$reload_flag"
+        if [[ "$key" == *"|"* ]]; then
+            log "Hyprland recargado: se reaplica el perfil"
+            last=$key
+            apply_profile "$key"
+            continue
+        fi
+    fi
     if [ "$key" != "$last" ]; then
         last=$key
         apply_profile "$key"
