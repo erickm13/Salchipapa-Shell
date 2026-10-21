@@ -104,6 +104,15 @@ Singleton {
     readonly property bool lockShowMusic: settings.lockShowMusic
     readonly property int lockBackgroundBlur: settings.lockBackgroundBlur
     readonly property int lockBackgroundDim: settings.lockBackgroundDim
+    readonly property int lockAvatarSize: settings.lockAvatarSize
+    readonly property int lockAvatarWaves: settings.lockAvatarWaves
+    readonly property int lockAvatarWaveDepth: settings.lockAvatarWaveDepth
+    readonly property real lockAvatarZoom: settings.lockAvatarZoom
+    readonly property real lockAvatarCropX: settings.lockAvatarCropX
+    readonly property real lockAvatarCropY: settings.lockAvatarCropY
+    readonly property bool lockAvatarSpin: settings.lockAvatarSpin
+    readonly property int lockAvatarSpinSeconds: settings.lockAvatarSpinSeconds
+    readonly property int lockAvatarBreathe: settings.lockAvatarBreathe
     readonly property bool idleLockEnabled: settings.idleLockEnabled
     readonly property int idleLockMinutes: settings.idleLockMinutes
     readonly property bool idleSuspendEnabled: settings.idleSuspendEnabled
@@ -228,6 +237,17 @@ Singleton {
             property bool lockShowMusic: true
             property int lockBackgroundBlur: 100
             property int lockBackgroundDim: 40
+            // Foto de perfil (~/.face) en la pantalla de bloqueo
+            property int lockAvatarSize: 220
+            property int lockAvatarWaves: 9 // 0 = círculo
+            property int lockAvatarWaveDepth: 10 // % del radio
+            // Encuadre (editor de Lock Screen): zoom 1..4 y punto de la foto (0..1) en el centro
+            property real lockAvatarZoom: 1
+            property real lockAvatarCropX: 0.5
+            property real lockAvatarCropY: 1 // por defecto, abajo
+            property bool lockAvatarSpin: true
+            property int lockAvatarSpinSeconds: 24 // segundos por vuelta
+            property int lockAvatarBreathe: 10 // % que crece al respirar (0 = sin respirar)
             property bool idleLockEnabled: true
             property int idleLockMinutes: 5
             property bool idleSuspendEnabled: true

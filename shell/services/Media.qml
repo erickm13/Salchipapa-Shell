@@ -8,10 +8,16 @@ Singleton {
     id: root
 
     readonly property list<MprisPlayer> players: Mpris.players.values
-    // El que esté reproduciendo; si ninguno, el primero disponible
+    // El elegido en el panel de música (mientras exista); si no, el que esté reproduciendo y, si
+    // ninguno, el primero disponible
+    property string preferred: "" // dbusName
     readonly property MprisPlayer active: {
+        const chosen = preferred !== "" ? players.find(p => p.dbusName === preferred) : undefined;
         const playing = players.find(p => p.isPlaying);
-        return playing ?? players[0] ?? null;
+        return chosen ?? playing ?? players[0] ?? null;
+    }
+    function select(player: MprisPlayer): void {
+        preferred = player?.dbusName ?? "";
     }
 
     readonly property bool hasPlayer: active !== null

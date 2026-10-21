@@ -14,7 +14,8 @@ import "../services"
 PanelWindow {
     id: win
 
-    // Fuente oficial actualizada: incluye los glifos de batería con sufijo _2.
+    // Fuente oficial actualizada (más glifos que la del sistema; ojo: se llaman igual y Qt puede
+    // usar cualquiera de las dos, así que solo se usan glifos que estén en ambas).
     FontLoader {
         id: batterySymbols
         source: "file://" + Quickshell.env("HOME") + "/.local/share/fonts/SalchipapaShell/MaterialSymbolsOutlined.ttf"
@@ -100,7 +101,10 @@ PanelWindow {
         // Una notificación nueva también debe verse si el dashboard está abierto.
         // El resto de overlays conserva prioridad sobre los peeks normales.
         readonly property string mode: showPolkit ? "polkit" : (peek === "notif" ? "notif" : (Overlay.mode !== "" ? Overlay.mode : (hovered ? "expanded" : (peek !== "" ? peek : "idle"))))
-        readonly property string batteryGlyph: Battery.charging ? (Battery.percent >= 95 ? "battery_charging_full_2" : Battery.percent >= 65 ? "battery_charging_80_2" : Battery.percent >= 35 ? "battery_charging_50_2" : "battery_charging_20_2") : Battery.percent >= 95 ? "battery_android_full" : Battery.percent >= 80 ? "battery_android_6" : Battery.percent >= 65 ? "battery_android_5" : Battery.percent >= 50 ? "battery_android_4" : Battery.percent >= 35 ? "battery_android_3" : Battery.percent >= 20 ? "battery_android_2" : Battery.percent >= 5 ? "battery_android_1" : "battery_android_0"
+        // Nivel con battery_android_* (están en la fuente del sistema y en la de la shell); al cargar
+        // se añade un rayo al lado. Los battery_charging_*_2 solo existen en la fuente nueva y, como
+        // las dos se llaman igual, tras reiniciar qs a veces se usaba la del sistema y salía "_2".
+        readonly property string batteryGlyph: Battery.percent >= 95 ? "battery_android_full" : Battery.percent >= 80 ? "battery_android_6" : Battery.percent >= 65 ? "battery_android_5" : Battery.percent >= 50 ? "battery_android_4" : Battery.percent >= 35 ? "battery_android_3" : Battery.percent >= 20 ? "battery_android_2" : Battery.percent >= 5 ? "battery_android_1" : "battery_android_0"
         readonly property string networkGlyph: Net.type === "ethernet" ? "lan" : Net.type === "wifi" ? (Net.wifiSignal >= 80 ? "signal_wifi_4_bar" : Net.wifiSignal >= 60 ? "network_wifi_3_bar" : Net.wifiSignal >= 35 ? "network_wifi_2_bar" : Net.wifiSignal >= 10 ? "network_wifi_1_bar" : "signal_wifi_0_bar") : "wifi_off"
 
         // Notch: fondo negro + alas laterales. Solo en reposo/peeks (no expandido/overlay).
@@ -156,9 +160,9 @@ PanelWindow {
         readonly property int widthSmall: 480
         readonly property int widthMedium: 600
         readonly property int widthLarge: 760
-        width: ["power", "polkit", "control", "display", "sound", "media"].includes(mode) ? widthSmall : ["clipboard", "emoji", "expanded"].includes(mode) ? widthMedium : ["themes", "wallpaper", "perf"].includes(mode) ? widthLarge : mode === "launcher" ? Config.launcherWidth : mode === "notif" ? Config.notificationWidth : mode === "calendar" || mode === "volume" || mode === "brightness" ? 300 : Math.max(Config.collapsedWidth, idleRow.implicitWidth + Config.innerPadding * 2)
+        width: ["power", "polkit", "control", "display", "sound", "media"].includes(mode) ? widthSmall : ["clipboard", "emoji", "expanded"].includes(mode) ? widthMedium : ["themes", "wallpaper", "perf", "music"].includes(mode) ? widthLarge : mode === "launcher" ? Config.launcherWidth : mode === "notif" ? Config.notificationWidth : mode === "calendar" || mode === "volume" || mode === "brightness" ? 300 : Math.max(Config.collapsedWidth, idleRow.implicitWidth + Config.innerPadding * 2)
         // Alto final del modo (sin animar): la ventana se ajusta a él una sola vez
-        readonly property real targetHeight: mode === "power" ? (powerMenu.confirmAction === "" ? 110 : 176) : mode === "polkit" ? 250 : mode === "control" ? Math.min(controlContent.preferredHeight + 32, (win.screen?.height ?? 1080) - Config.topMargin - 60) : mode === "display" ? (142 + (Hyprland.monitors?.values?.length ?? 1) * 206) : mode === "sound" ? (213 + Math.min(Audio.sinks?.length ?? 1, 5) * 42 + Math.min(Audio.sources?.length ?? 1, 4) * 42 + Math.max(1, Math.min(Audio.apps?.length ?? 0, 4)) * 62) : mode === "launcher" ? (85 + Config.launcherRowsBeforeScrolling * Config.launcherRowHeight + (Config.launcherRowsBeforeScrolling - 1) * 2) : mode === "clipboard" ? 470 : mode === "emoji" ? 440 : mode === "perf" ? 704 : mode === "themes" ? 210 : mode === "wallpaper" ? 250 : mode === "calendar" ? 250 : mode === "expanded" ? 142 : mode === "notif" ? 74 : mode === "media" ? 58 : mode === "volume" || mode === "brightness" ? 42 : Config.barHeight
+        readonly property real targetHeight: mode === "power" ? (powerMenu.confirmAction === "" ? 110 : 176) : mode === "polkit" ? 250 : mode === "control" ? Math.min(controlContent.preferredHeight + 32, (win.screen?.height ?? 1080) - Config.topMargin - 60) : mode === "display" ? (142 + (Hyprland.monitors?.values?.length ?? 1) * 206) : mode === "sound" ? (213 + Math.min(Audio.sinks?.length ?? 1, 5) * 42 + Math.min(Audio.sources?.length ?? 1, 4) * 42 + Math.max(1, Math.min(Audio.apps?.length ?? 0, 4)) * 62) : mode === "launcher" ? (85 + Config.launcherRowsBeforeScrolling * Config.launcherRowHeight + (Config.launcherRowsBeforeScrolling - 1) * 2) : mode === "clipboard" ? 470 : mode === "emoji" ? 440 : mode === "perf" ? 704 : mode === "music" ? 300 : mode === "themes" ? 210 : mode === "wallpaper" ? 250 : mode === "calendar" ? 250 : mode === "expanded" ? 149 : mode === "notif" ? 74 : mode === "media" ? (Config.mediaShowControls ? 124 : 80) : mode === "volume" || mode === "brightness" ? 42 : Config.barHeight
         height: targetHeight
 
         Behavior on width {
@@ -247,7 +251,7 @@ PanelWindow {
                 y: pillShadow.pad
                 width: pillShadow.width - pillShadow.pad * 2
                 height: pillShadow.height - pillShadow.pad * 2
-                readonly property real uni: (island.mode === "power" || island.mode === "polkit" || island.mode === "expanded" || island.mode === "calendar" || island.mode === "launcher" || island.mode === "clipboard" || island.mode === "emoji" || island.mode === "perf" || island.mode === "themes" || island.mode === "wallpaper" || island.mode === "control" || island.mode === "display" || island.mode === "sound") ? Theme.radiusLarge : (Config.notchMode ? Theme.radiusMedium : height / 2)
+                readonly property real uni: (island.mode === "power" || island.mode === "media" || island.mode === "music" || island.mode === "polkit" || island.mode === "expanded" || island.mode === "calendar" || island.mode === "launcher" || island.mode === "clipboard" || island.mode === "emoji" || island.mode === "perf" || island.mode === "themes" || island.mode === "wallpaper" || island.mode === "control" || island.mode === "display" || island.mode === "sound") ? Theme.radiusLarge : (Config.notchMode ? Theme.radiusMedium : height / 2)
                 topLeftRadius: Config.notchMode ? 0 : uni
                 topRightRadius: Config.notchMode ? 0 : uni
                 bottomLeftRadius: uni
@@ -276,7 +280,7 @@ PanelWindow {
             id: pill
             anchors.fill: parent
             // Radio base (uniforme). En notch, las esquinas superiores van rectas (pegadas al borde).
-                readonly property real uni: (island.mode === "power" || island.mode === "polkit" || island.mode === "expanded" || island.mode === "calendar" || island.mode === "launcher" || island.mode === "clipboard" || island.mode === "emoji" || island.mode === "perf" || island.mode === "themes" || island.mode === "wallpaper" || island.mode === "control" || island.mode === "display" || island.mode === "sound") ? Theme.radiusLarge : (Config.notchMode ? Theme.radiusMedium : height / 2)
+                readonly property real uni: (island.mode === "power" || island.mode === "media" || island.mode === "music" || island.mode === "polkit" || island.mode === "expanded" || island.mode === "calendar" || island.mode === "launcher" || island.mode === "clipboard" || island.mode === "emoji" || island.mode === "perf" || island.mode === "themes" || island.mode === "wallpaper" || island.mode === "control" || island.mode === "display" || island.mode === "sound") ? Theme.radiusLarge : (Config.notchMode ? Theme.radiusMedium : height / 2)
             topLeftRadius: Config.notchMode ? 0 : uni
             topRightRadius: Config.notchMode ? 0 : uni
             bottomLeftRadius: uni
@@ -497,11 +501,25 @@ PanelWindow {
                             visible: Battery.available
                             spacing: 4
 
-                            Icon {
-                                text: island.batteryGlyph
-                                iconFontFamily: batterySymbols.name !== "" ? batterySymbols.name : "Material Symbols Outlined"
-                                px: 22
-                                color: Theme.green
+                            // Batería y, si carga, el rayo pegado a su derecha
+                            Row {
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: -2
+                                Icon {
+                                    text: island.batteryGlyph
+                                    iconFontFamily: batterySymbols.name !== "" ? batterySymbols.name : "Material Symbols Outlined"
+                                    px: 22
+                                    color: Theme.green
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
+                                Icon {
+                                    visible: Battery.charging
+                                    text: "bolt"
+                                    iconFontFamily: batterySymbols.name !== "" ? batterySymbols.name : "Material Symbols Outlined"
+                                    px: 15
+                                    color: Theme.green
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
                             }
 
                             Text {
@@ -613,101 +631,18 @@ PanelWindow {
                         }
                     }
 
-                    Rectangle {
+                    // Música: la misma tarjeta que la pantalla de bloqueo, en una fila (variante mini)
+                    Item {
                         width: parent.width
-                        height: 43
-                        radius: 13
-                        color: Theme.surface0
+                        height: 50
                         visible: Config.clockExpandedMedia
-
-                        Row {
+                        MediaCard {
                             anchors.fill: parent
-                            anchors.leftMargin: 8
-                            anchors.rightMargin: 9
-                            spacing: 7
-
-                            Rectangle {
-                                width: 31
-                                height: 31
-                                radius: 8
-                                color: Theme.surface1
-                                anchors.verticalCenter: parent.verticalCenter
-                                clip: true
-                                Image {
-                                    anchors.fill: parent
-                                    source: Media.active?.trackArtUrl ?? ""
-                                    fillMode: Image.PreserveAspectCrop
-                                    visible: status === Image.Ready
-                                }
-                                Icon {
-                                    anchors.centerIn: parent
-                                    text: "music_note"
-                                    px: 14
-                                    color: Theme.green
-                                    visible: !(Media.active?.trackArtUrl)
-                                }
-                            }
-                            Column {
-                                anchors.verticalCenter: parent.verticalCenter
-                                width: parent.width - 31 - 60 - 14
-                                spacing: 2
-                                Text {
-                                    font.family: Theme.bodyFontFamily
-                                    width: parent.width
-                                    text: Media.title || "Nothing playing"
-                                    color: "#ffffff"
-                                    font.pixelSize: Theme.fontPx(13)
-                                    font.bold: true
-                                    elide: Text.ElideRight
-                                }
-                                Text {
-                                    font.family: Theme.bodyFontFamily
-                                    width: parent.width
-                                    text: Media.artist || Media.album
-                                    color: Theme.secondaryText
-                                    font.pixelSize: Theme.fontPx(11)
-                                    elide: Text.ElideRight
-                                }
-                            }
-                            Item {
-                                width: 60
-                                height: parent.height
-                                anchors.verticalCenter: parent.verticalCenter
-                                Row {
-                                    anchors.centerIn: parent
-                                    spacing: 2
-                                    Repeater {
-                                        model: ["skip_previous", Media.isPlaying ? "pause" : "play_arrow", "skip_next"]
-                                        delegate: Item {
-                                            required property int index
-                                            required property string modelData
-                                            width: 18
-                                            height: 24
-                                            Icon {
-                                                anchors.centerIn: parent
-                                                text: modelData
-                                                px: 17
-                                                color: Theme.text
-                                            }
-                                            MouseArea {
-                                                anchors.fill: parent
-                                                cursorShape: Qt.PointingHandCursor
-                                                onClicked: {
-                                                    if (index === 0) Media.prev();
-                                                    else if (index === 1) Media.toggle();
-                                                    else Media.next();
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        MouseArea {
-                            z: -1
-                            anchors.fill: parent
-                            onClicked: Media.toggle()
-                            cursorShape: Qt.PointingHandCursor
+                            mini: true
+                            radius: 14
+                            player: Media.active
+                            title: Media.title
+                            artist: Media.artist || Media.album
                         }
                         WheelHandler {
                             enabled: Config.mediaScrollToChangeTrack
@@ -755,12 +690,24 @@ PanelWindow {
                             color: Net.online ? Theme.green : Theme.tertiaryText
                             anchors.verticalCenter: parent.verticalCenter
                         }
-                        Icon {
-                            text: island.batteryGlyph
-                            iconFontFamily: batterySymbols.name !== "" ? batterySymbols.name : "Material Symbols Outlined"
-                            px: 21
-                            color: Battery.percent <= 20 && !Battery.charging ? Theme.red : Theme.green
+                        Row {
                             anchors.verticalCenter: parent.verticalCenter
+                            spacing: -2
+                            Icon {
+                                text: island.batteryGlyph
+                                iconFontFamily: batterySymbols.name !== "" ? batterySymbols.name : "Material Symbols Outlined"
+                                px: 21
+                                color: Battery.percent <= 20 && !Battery.charging ? Theme.red : Theme.green
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                            Icon {
+                                visible: Battery.charging
+                                text: "bolt"
+                                iconFontFamily: batterySymbols.name !== "" ? batterySymbols.name : "Material Symbols Outlined"
+                                px: 15
+                                color: Theme.green
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
                         }
                     }
                 }
@@ -870,82 +817,21 @@ PanelWindow {
             }
 
             // ---------- media (peek) ----------
-            Item {
+            // La misma tarjeta que la pantalla de bloqueo, en versión compacta
+            MediaCard {
                 anchors.fill: parent
-                anchors.leftMargin: 16
-                anchors.rightMargin: 16
+                anchors.margins: 6
+                radius: Theme.radiusLarge - 6
+                compact: true
+                player: Media.active
+                title: Media.title
+                artist: [Config.mediaShowArtist ? Media.artist : "", Config.mediaShowAlbum ? Media.album : ""].filter(x => x !== "").join(" · ")
+                showControls: Config.mediaShowControls
                 opacity: island.mode === "media" ? 1 : 0
                 visible: opacity > 0
                 Behavior on opacity {
                     NumberAnimation {
                         duration: Theme.fadeDuration
-                    }
-                }
-
-                Rectangle {
-                    id: mediaDot
-                    width: 10
-                    height: 10
-                    radius: 5
-                    anchors.left: parent.left
-                    anchors.verticalCenter: parent.verticalCenter
-                    color: Media.isPlaying ? Theme.green : Theme.tertiaryText
-                }
-
-                Column {
-                    anchors.left: mediaDot.right
-                    anchors.leftMargin: 10
-                    anchors.right: mediaControls.visible ? mediaControls.left : parent.right
-                    anchors.rightMargin: mediaControls.visible ? 10 : 0
-                    anchors.verticalCenter: parent.verticalCenter
-                    spacing: 1
-                    Text {
-                        font.family: Theme.bodyFontFamily
-                        width: parent.width
-                        text: Media.title || "Nothing playing"
-                        color: "#ffffff"
-                        font.pixelSize: Theme.fontPx(12)
-                        font.bold: true
-                        elide: Text.ElideRight
-                    }
-                    Text {
-                        font.family: Theme.bodyFontFamily
-                        width: parent.width
-                        text: Media.album
-                        color: Theme.secondaryText
-                        font.pixelSize: Theme.fontPx(10)
-                        elide: Text.ElideRight
-                        visible: Config.mediaShowAlbum && Media.album !== ""
-                    }
-                    Text {
-                        font.family: Theme.bodyFontFamily
-                        width: parent.width
-                        text: Media.artist
-                        color: Theme.secondaryText
-                        font.pixelSize: Theme.fontPx(10)
-                        elide: Text.ElideRight
-                        visible: Config.mediaShowArtist && Media.artist !== ""
-                    }
-                }
-
-                Row {
-                    id: mediaControls
-                    anchors.right: parent.right
-                    anchors.verticalCenter: parent.verticalCenter
-                    spacing: 10
-                    visible: Config.mediaShowControls
-
-                    IslandButton {
-                        glyph: "◁"
-                        onTapped: Media.prev()
-                    }
-                    IslandButton {
-                        glyph: Media.isPlaying ? "❚❚" : "▷"
-                        onTapped: Media.toggle()
-                    }
-                    IslandButton {
-                        glyph: "▷|"
-                        onTapped: Media.next()
                     }
                 }
             }
@@ -1128,6 +1014,19 @@ PanelWindow {
             }
 
             // ---------- wallpaper (selector de fondos dentro de la isla) ----------
+            // ---------- music (panel de música, Super+A) ----------
+            MusicContent {
+                anchors.fill: parent
+                anchors.margins: 8
+                opacity: island.mode === "music" ? 1 : 0
+                visible: opacity > 0
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: Theme.fadeDuration
+                    }
+                }
+            }
+
             PerfContent {
                 anchors.fill: parent
                 anchors.margins: 8

@@ -15,6 +15,8 @@ Singleton {
     property bool settings: false
     property string settingsMonitor: ""
     property int settingsCategory: 0
+    // Sube al cambiar ~/.face desde Ajustes: las imágenes que la muestran la recargan (sin caché)
+    property int faceVersion: 0
     // Índice del buscador de ajustes ([{ cat, label }]): se arma la primera vez que se abre el panel
     property var settingsIndex: []
 
@@ -67,6 +69,12 @@ Singleton {
         name: "emoji"
         description: "Abrir/cerrar el selector de emojis (dentro de la isla)"
         onPressed: root.mode = root.mode === "emoji" ? "" : "emoji"
+    }
+    GlobalShortcut {
+        appid: "salchipapa"
+        name: "music"
+        description: "Abrir/cerrar el panel de música (dentro de la isla)"
+        onPressed: root.mode = root.mode === "music" ? "" : "music"
     }
     GlobalShortcut {
         appid: "salchipapa"

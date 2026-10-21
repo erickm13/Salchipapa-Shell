@@ -14,3 +14,4 @@ singleton PowerProfiles PowerProfiles.qml
 singleton Idle Idle.qml
 singleton Touchpad Touchpad.qml
 singleton Recorder Recorder.qml
+singleton Lyrics Lyrics.qml

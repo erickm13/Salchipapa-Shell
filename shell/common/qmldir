@@ -4,3 +4,7 @@ singleton Overlay Overlay.qml
 singleton Wallpaper Wallpaper.qml
 singleton WindowShadowSync WindowShadowSync.qml
 singleton KeyNav KeyNav.qml
+FacePhoto 1.0 FacePhoto.qml
+MediaCard 1.0 MediaCard.qml
+WavyProgress 1.0 WavyProgress.qml
+MarqueeText 1.0 MarqueeText.qml

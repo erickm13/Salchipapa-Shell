@@ -2,9 +2,12 @@ pragma Singleton
 // Bloqueo real de la sesión Wayland con autenticación PAM.
 import QtQuick
 import QtQuick.Effects
+import QtQuick.Shapes
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
+import Quickshell.Services.Mpris
+import Quickshell.Widgets
 import Quickshell.Services.Pam
 import "../common"
 
@@ -143,79 +146,17 @@ Singleton {
                     }
                 }
 
-                Rectangle {
+                MediaCard {
                     id: musicCard
                     anchors.horizontalCenter: parent.horizontalCenter
                     anchors.verticalCenter: parent.verticalCenter
-                    width: Math.min(440, parent.width - 48)
-                    height: 110
-                    radius: 20
-                    color: "#b8101816"
-                    border.color: "#35ffffff"
-                    visible: Config.lockShowMusic && !!root.mediaService?.active
-                    clip: true
-
-                    Row {
-                        anchors.fill: parent
-                        anchors.margins: 15
-                        spacing: 16
-
-                        Rectangle {
-                            width: 80
-                            height: 80
-                            radius: 9
-                            color: "#333b4945"
-                            anchors.verticalCenter: parent.verticalCenter
-                            clip: true
-
-                            Image {
-                                anchors.fill: parent
-                                source: root.mediaService?.active?.trackArtUrl ?? ""
-                                fillMode: Image.PreserveAspectCrop
-                                asynchronous: true
-                                visible: status === Image.Ready
-                            }
-                            Text {
-                                anchors.centerIn: parent
-                                text: "♫"
-                                color: Theme.green
-                                font.pixelSize: 34
-                                visible: !(root.mediaService?.active?.trackArtUrl)
-                            }
-                        }
-
-                        Column {
-                            anchors.verticalCenter: parent.verticalCenter
-                            width: parent.width - 80 - parent.spacing
-                            spacing: 7
-
-                            Text {
-                                width: parent.width
-                                text: root.mediaService?.title || "Sin reproducción"
-                                color: "#f5f7f6"
-                                font.family: Theme.displayFontFamily
-                                font.pixelSize: 16
-                                font.bold: true
-                                elide: Text.ElideRight
-                            }
-                            Text {
-                                width: parent.width
-                                text: root.mediaService?.artist || root.mediaService?.album || ""
-                                color: "#c0cfcc"
-                                font.family: Theme.bodyFontFamily
-                                font.pixelSize: 13
-                                elide: Text.ElideRight
-                                visible: text.length > 0
-                            }
-                            Text {
-                                text: root.mediaService?.isPlaying ? "▶  Reproduciendo" : "Ⅱ  En pausa"
-                                color: Theme.green
-                                font.family: Theme.bodyFontFamily
-                                font.pixelSize: 11
-                                opacity: 0.9
-                            }
-                        }
-                    }
+                    width: Math.min(460, parent.width - 48)
+                    height: 200
+                    visible: Config.lockShowMusic && !!player
+                    player: root.mediaService?.active ?? null
+                    title: root.mediaService?.title ?? ""
+                    artist: root.mediaService?.artist || root.mediaService?.album || ""
+                    sinkName: Audio.sink?.description || Audio.sink?.nickname || ""
                 }
 
                 Column {
@@ -225,32 +166,80 @@ Singleton {
                     width: Math.min(360, parent.width * 0.8)
                     spacing: 12
 
-                    Rectangle {
+                    // Foto de ~/.face con forma ondulada suave (N ondas, una centrada arriba; 0 = círculo):
+                    // el radio oscila entre `inner` y `outer` con (1 + cos N(θ + 90°)) / 2. La forma se
+                    // rellena con la foto (fillItem, sin máscara: un MultiEffect con maskSource fuera de
+                    // la escena la dejaba transparente).
+                    Item {
                         id: avatarFrame
                         anchors.horizontalCenter: parent.horizontalCenter
-                        width: 68
-                        height: 68
-                        radius: width / 2
-                        color: "#334b4a"
-                        border.color: "#80ffffff"
-                        border.width: 1
-                        clip: true
+                        // Tamaño, ondas, encuadre y animación: Ajustes > Lock Screen > Profile picture
+                        width: Config.lockAvatarSize
+                        height: Config.lockAvatarSize
 
-                        Image {
-                            id: avatar
-                            anchors.fill: parent
-                            source: "file://" + Quickshell.env("HOME") + "/.face"
-                            fillMode: Image.PreserveAspectCrop
-                            asynchronous: true
+                        // Animación: la forma gira y "respira" (crece lockAvatarBreathe %); la foto no gira
+                        // ni se amplía, la forma deja ver más o menos de ella. En reposo la forma mide
+                        // 1/breatheTo del cuadro para que al crecer no se salga. Sin animación con Reduce motion.
+                        property real spin: 0 // radianes que gira la forma
+                        NumberAnimation on spin {
+                            from: 0
+                            to: 2 * Math.PI
+                            duration: Config.lockAvatarSpinSeconds * 1000
+                            loops: Animation.Infinite
+                            running: !Theme.reduceMotion && Config.lockAvatarSpin && Config.lockAvatarWaves > 0
+                        }
+                        readonly property real breatheTo: 1 + Config.lockAvatarBreathe / 100
+                        property real breathe: 1
+                        SequentialAnimation on breathe {
+                            loops: Animation.Infinite
+                            running: !Theme.reduceMotion && Config.lockAvatarBreathe > 0
+                            NumberAnimation { from: 1; to: avatarFrame.breatheTo; duration: 2500; easing.type: Easing.InOutSine }
+                            NumberAnimation { from: avatarFrame.breatheTo; to: 1; duration: 2500; easing.type: Easing.InOutSine }
+                        }
+
+                        readonly property var outline: {
+                            const pts = [];
+                            const c = width / 2, outer = (width / 2 - 2) / breatheTo * breathe, steps = 240;
+                            const waves = Config.lockAvatarWaves, inner = outer * (1 - Config.lockAvatarWaveDepth / 100);
+                            for (let i = 0; i <= steps; i++) {
+                                const t = 2 * Math.PI * i / steps;
+                                const r = waves > 0 ? inner + (outer - inner) * (1 + Math.cos(waves * (t + Math.PI / 2 - spin))) / 2 : outer;
+                                pts.push(Qt.point(c + r * Math.cos(t), c + r * Math.sin(t)));
+                            }
+                            return pts;
+                        }
+
+                        // Textura de la foto ya recortada al cuadrado de la forma. Al doble de
+                        // resolución y suavizada: al "respirar" se agranda y a 1× se veían los píxeles
+                        Item {
+                            id: avatarPhoto
+                            width: avatarFrame.width
+                            height: avatarFrame.height
+                            visible: false
                             layer.enabled: true
-                            layer.effect: MultiEffect {
-                                maskEnabled: true
-                                maskSource: Rectangle {
-                                    width: avatar.width
-                                    height: avatar.height
-                                    radius: width / 2
-                                    color: "white"
-                                }
+                            layer.smooth: true
+                            layer.textureSize: Qt.size(width * 2, height * 2)
+                            Rectangle {
+                                anchors.fill: parent
+                                color: "#334b4a" // si la foto no carga
+                            }
+                            // Encuadre de Ajustes > Lock Screen (zoom y punto central)
+                            FacePhoto {
+                                anchors.fill: parent
+                            }
+                        }
+                        Shape {
+                            anchors.fill: parent
+                            preferredRendererType: Shape.CurveRenderer
+                            ShapePath {
+                                fillItem: avatarPhoto
+                                // La textura es del doble de tamaño (nitidez al "respirar") y fillItem
+                                // la pega píxel a píxel: sin escalarla a la mitad solo se veía su
+                                // esquina superior izquierda
+                                fillTransform: PlanarTransform.fromScale(0.5, 0.5)
+                                strokeColor: "#80ffffff"
+                                strokeWidth: 2
+                                PathPolyline { path: avatarFrame.outline }
                             }
                         }
                     }
@@ -260,7 +249,7 @@ Singleton {
                         text: Quickshell.env("USER") || "user"
                         color: "#f5f7f6"
                         font.family: Theme.displayFontFamily
-                        font.pixelSize: 16
+                        font.pixelSize: 24
                         font.weight: Font.DemiBold
                     }
 
