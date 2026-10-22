@@ -16,3 +16,4 @@ singleton Touchpad Touchpad.qml
 singleton Recorder Recorder.qml
 singleton Lyrics Lyrics.qml
 singleton Downloads Downloads.qml
+singleton KeyCast KeyCast.qml

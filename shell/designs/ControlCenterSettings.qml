@@ -16,6 +16,7 @@ Item {
         { id: "focus", label: "Focus", icon: "do_not_disturb_on", kind: "toggle" },
         { id: "bluetooth", label: "Bluetooth", icon: "bluetooth", kind: "toggle" },
         { id: "gameMode", label: "Game Mode", icon: "sports_esports", kind: "toggle" },
+        { id: "keys", label: "Show keys", icon: "keyboard", kind: "toggle" },
         { id: "sound", label: "Sound", icon: "volume_up", kind: "card" },
         { id: "display", label: "Display", icon: "brightness_6", kind: "card" },
         { id: "record", label: "Screen recording", icon: "screen_record", kind: "card" },

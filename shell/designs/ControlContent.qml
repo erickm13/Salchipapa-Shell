@@ -29,7 +29,7 @@ Item {
             return defaultControlLayout;
         }
     }
-    readonly property var toggleIds: ["wifi", "focus", "bluetooth", "gameMode"]
+    readonly property var toggleIds: ["wifi", "focus", "bluetooth", "gameMode", "keys"]
     readonly property var cardIds: ["sound", "display", "record"]
     readonly property var activeToggles: activeControls.filter(item => toggleIds.includes(item.id))
     function hasControl(id: string): bool { return activeControls.some(item => item.id === id); }
@@ -151,16 +151,17 @@ Item {
                     required property var modelData
                     width: grid.cellW
                     height: modelData.size >= 2 ? 72 : 56
-                    glyph: modelData.id === "wifi" ? (Net.wifiEnabled ? "wifi" : "wifi_off") : modelData.id === "focus" ? (Quick.dnd ? "do_not_disturb_on" : "do_not_disturb_off") : modelData.id === "bluetooth" ? "bluetooth" : "sports_esports"
-                    title: modelData.id === "gameMode" ? "Game Mode" : modelData.id === "wifi" ? "Wi-Fi" : modelData.id === "bluetooth" ? "Bluetooth" : "Focus"
-                    subtitle: modelData.id === "wifi" ? (Net.type === "wifi" ? (Net.connectedSsid || Net.name || "On") : (Net.wifiEnabled ? (Net.type === "ethernet" ? "Ethernet" : "On") : "Off")) : modelData.id === "bluetooth" ? (Bluetooth.enabled ? (Bluetooth.connectedCount > 0 ? Bluetooth.connectedCount + " connected" + (Bluetooth.connectedCount > 1 ? "s" : "") : "On") : "Off") : modelData.id === "focus" ? (Quick.dnd ? "On" : "Off") : (Quick.gameMode ? "On" : "Off")
-                    accent: modelData.id === "focus" ? Theme.peach : modelData.id === "bluetooth" ? Theme.blue : modelData.id === "gameMode" ? Theme.yellow : Theme.green
-                    on: modelData.id === "wifi" ? Net.wifiEnabled : modelData.id === "bluetooth" ? Bluetooth.enabled : modelData.id === "focus" ? Quick.dnd : Quick.gameMode
+                    glyph: modelData.id === "wifi" ? (Net.wifiEnabled ? "wifi" : "wifi_off") : modelData.id === "focus" ? (Quick.dnd ? "do_not_disturb_on" : "do_not_disturb_off") : modelData.id === "bluetooth" ? "bluetooth" : modelData.id === "keys" ? "keyboard" : "sports_esports"
+                    title: modelData.id === "gameMode" ? "Game Mode" : modelData.id === "wifi" ? "Wi-Fi" : modelData.id === "bluetooth" ? "Bluetooth" : modelData.id === "keys" ? "Show keys" : "Focus"
+                    subtitle: modelData.id === "wifi" ? (Net.type === "wifi" ? (Net.connectedSsid || Net.name || "On") : (Net.wifiEnabled ? (Net.type === "ethernet" ? "Ethernet" : "On") : "Off")) : modelData.id === "bluetooth" ? (Bluetooth.enabled ? (Bluetooth.connectedCount > 0 ? Bluetooth.connectedCount + " connected" + (Bluetooth.connectedCount > 1 ? "s" : "") : "On") : "Off") : modelData.id === "focus" ? (Quick.dnd ? "On" : "Off") : modelData.id === "keys" ? (KeyCast.active ? "On" : "Off") : (Quick.gameMode ? "On" : "Off")
+                    accent: modelData.id === "focus" ? Theme.peach : modelData.id === "bluetooth" ? Theme.blue : modelData.id === "gameMode" ? Theme.yellow : modelData.id === "keys" ? Theme.red : Theme.green
+                    on: modelData.id === "wifi" ? Net.wifiEnabled : modelData.id === "bluetooth" ? Bluetooth.enabled : modelData.id === "focus" ? Quick.dnd : modelData.id === "keys" ? KeyCast.active : Quick.gameMode
                     splitAction: modelData.id === "wifi" || modelData.id === "bluetooth"
                     onClicked: {
                         if (modelData.id === "wifi") Net.toggleWifi();
                         else if (modelData.id === "bluetooth") Bluetooth.toggle();
                         else if (modelData.id === "focus") Quick.toggleDnd();
+                        else if (modelData.id === "keys") KeyCast.toggle();
                         else Quick.toggleGameMode();
                     }
                     onDetailsClicked: {

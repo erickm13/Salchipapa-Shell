@@ -201,7 +201,7 @@ hl.bind("CTRL + ALT + C", hl.dsp.global("salchipapa:clearNotifs")) -- borrar not
 hl.bind("CTRL + ALT + Delete", hl.dsp.global("salchipapa:power")) -- menú de energía (como Super+Alt+P)
 hl.bind(mod .. " + ALT + F", hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" })) -- maximizar (con bordes)
 hl.bind(mod .. " + SHIFT + P", hl.dsp.window.pin({ action = "toggle" })) -- fijar en todos los workspaces (flotantes)
-hl.bind(mod .. " + ALT + SHIFT + K", hl.dsp.exec_cmd("pkill -x showmethekey-gtk || showmethekey-gtk -k -A")) -- mostrar teclas (Super+Alt+K ya redimensiona)
+hl.bind(mod .. " + ALT + SHIFT + K", hl.dsp.global("salchipapa:keys")) -- mostrar teclas en la isla (Super+Alt+K ya redimensiona)
 hl.bind(mod .. " + ALT + I", v.app(v.terminal .. " --working-directory=$HOME -e fish -i -c opencode")) -- opencode
 -- Pegado alternativo: escribe lo último copiado (para campos que no aceptan pegar)
 hl.bind("CTRL + SHIFT + ALT + V", hl.dsp.exec_cmd("sleep 0.5; wtype -- \"$(cliphist list | head -1 | cliphist decode)\""))

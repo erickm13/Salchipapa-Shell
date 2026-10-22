@@ -93,7 +93,9 @@ PanelWindow {
 
         property bool ready: false
         property bool hovered: false
-        property string peek: "" // "", "media", "volume", "notif"
+        property string peek: "" // "", "media", "volume", "notif", "keys"
+        onPeekChanged: if (peek !== "keys")
+            KeyCast.clearChips()
         readonly property bool showPolkit: PolicyAuth.active && (Hyprland.focusedMonitor?.name ? Hyprland.focusedMonitor.name === win.screen?.name : Quickshell.screens[0] === win.screen)
         readonly property string focusedApp: {
             const appId = ToplevelManager.activeToplevel?.appId || Hyprland.activeToplevel?.wayland?.appId || Hyprland.activeToplevel?.lastIpcObject?.["class"] || "";
@@ -111,7 +113,7 @@ PanelWindow {
 
         // Notch: fondo negro + alas laterales. Solo en reposo/peeks (no expandido/overlay).
         readonly property color notchBg: Theme.panelBg
-        readonly property bool notchResting: Config.notchMode && (mode === "idle" || mode === "media" || mode === "volume" || mode === "brightness" || mode === "notif")
+        readonly property bool notchResting: Config.notchMode && (mode === "idle" || mode === "media" || mode === "volume" || mode === "brightness" || mode === "notif" || mode === "keys")
 
         // ¿Hay un scratchpad (workspace especial) mostrándose ahora?
         readonly property bool inSpecial: (Hyprland.focusedMonitor?.lastIpcObject?.specialWorkspace?.name ?? "") !== ""
@@ -195,7 +197,7 @@ PanelWindow {
 
         function showPeek(name: string): void {
             peek = name;
-            peekTimer.interval = name === "notif" ? (notifUrgent ? Config.notificationUrgentTimeout : Config.notificationPopupTimeout) : (name === "volume" || name === "brightness") ? Config.osdOnScreenTime : (name === "media" ? 3000 : 1400);
+            peekTimer.interval = name === "notif" ? (notifUrgent ? Config.notificationUrgentTimeout : Config.notificationPopupTimeout) : (name === "volume" || name === "brightness") ? Config.osdOnScreenTime : name === "keys" ? 2000 : (name === "media" ? 3000 : 1400);
             peekTimer.restart();
             if (name === "notif") {
                 notifProgressAnim.duration = peekTimer.interval;
@@ -356,9 +358,9 @@ PanelWindow {
         readonly property int widthSmall: 480
         readonly property int widthMedium: 600
         readonly property int widthLarge: 760
-        width: ["power", "polkit", "control", "display", "sound", "media"].includes(mode) ? widthSmall : ["clipboard", "emoji", "expanded"].includes(mode) ? widthMedium : ["themes", "wallpaper", "perf", "music"].includes(mode) ? widthLarge : mode === "launcher" ? Config.launcherWidth : mode === "notif" ? Config.notificationWidth : mode === "calendar" || mode === "volume" || mode === "brightness" ? 300 : Math.max(Config.collapsedWidth, idleRow.implicitWidth + Config.innerPadding * 2)
+        width: ["power", "polkit", "control", "display", "sound", "media"].includes(mode) ? widthSmall : ["clipboard", "emoji", "expanded"].includes(mode) ? widthMedium : ["themes", "wallpaper", "perf", "music"].includes(mode) ? widthLarge : mode === "launcher" ? Config.launcherWidth : mode === "notif" ? Config.notificationWidth : mode === "calendar" || mode === "volume" || mode === "brightness" ? 300 : mode === "keys" ? Math.max(160, keysRow.implicitWidth + 40) : Math.max(Config.collapsedWidth, idleRow.implicitWidth + Config.innerPadding * 2)
         // Alto final del modo (sin animar): la ventana se ajusta a él una sola vez
-        readonly property real targetHeight: mode === "power" ? (powerMenu.confirmAction === "" ? 110 : 200) : mode === "polkit" ? 250 : mode === "control" ? Math.min(controlContent.preferredHeight + 32, (win.screen?.height ?? 1080) - Config.topMargin - 60) : mode === "display" ? (142 + (Hyprland.monitors?.values?.length ?? 1) * 206) : mode === "sound" ? (213 + Math.min(Audio.sinks?.length ?? 1, 5) * 42 + Math.min(Audio.sources?.length ?? 1, 4) * 42 + Math.max(1, Math.min(Audio.apps?.length ?? 0, 4)) * 62) : mode === "launcher" ? (85 + Config.launcherRowsBeforeScrolling * Config.launcherRowHeight + (Config.launcherRowsBeforeScrolling - 1) * 2) : mode === "clipboard" ? 470 : mode === "emoji" ? 440 : mode === "perf" ? 704 : mode === "music" ? 300 : mode === "themes" ? 210 : mode === "wallpaper" ? 250 : mode === "calendar" ? 250 : mode === "expanded" ? 149 : mode === "notif" ? notifMainHeight + notifOlder.length * notifRowHeight : mode === "media" ? (Config.mediaShowControls ? 124 : 80) : mode === "volume" || mode === "brightness" ? 42 : Config.barHeight
+        readonly property real targetHeight: mode === "power" ? (powerMenu.confirmAction === "" ? 110 : 200) : mode === "polkit" ? 250 : mode === "control" ? Math.min(controlContent.preferredHeight + 32, (win.screen?.height ?? 1080) - Config.topMargin - 60) : mode === "display" ? (142 + (Hyprland.monitors?.values?.length ?? 1) * 206) : mode === "sound" ? (213 + Math.min(Audio.sinks?.length ?? 1, 5) * 42 + Math.min(Audio.sources?.length ?? 1, 4) * 42 + Math.max(1, Math.min(Audio.apps?.length ?? 0, 4)) * 62) : mode === "launcher" ? (85 + Config.launcherRowsBeforeScrolling * Config.launcherRowHeight + (Config.launcherRowsBeforeScrolling - 1) * 2) : mode === "clipboard" ? 470 : mode === "emoji" ? 440 : mode === "perf" ? 704 : mode === "music" ? 300 : mode === "themes" ? 210 : mode === "wallpaper" ? 250 : mode === "calendar" ? 250 : mode === "expanded" ? 149 : mode === "notif" ? notifMainHeight + notifOlder.length * notifRowHeight : mode === "media" ? (Config.mediaShowControls ? 124 : 80) : mode === "volume" || mode === "brightness" ? 42 : mode === "keys" ? 56 : Config.barHeight
         height: targetHeight
 
         Behavior on width {
@@ -382,6 +384,14 @@ PanelWindow {
         }
 
         // --- Disparadores de peeks contextuales ---
+        Connections {
+            target: KeyCast
+            // Las teclas no tapan una notificación
+            function onPressed(): void {
+                if (island.peek !== "notif")
+                    island.showPeek("keys");
+            }
+        }
         Connections {
             target: Audio
             function onVolumeChanged(): void {
@@ -599,6 +609,16 @@ PanelWindow {
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 4
                         visible: !Quick.gameMode
+
+                        // Mostrando teclas (KeyCast): está leyendo el teclado
+                        Text {
+                            visible: KeyCast.active
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: "keyboard"
+                            font.family: "Material Symbols Rounded"
+                            font.pixelSize: Theme.fontPx(15)
+                            color: Theme.red
+                        }
 
                         // Grabando (scripts/record.sh): punto rojo que late + tiempo
                         Row {
@@ -1074,6 +1094,49 @@ PanelWindow {
                 Behavior on opacity {
                     NumberAnimation {
                         duration: Theme.fadeDuration
+                    }
+                }
+            }
+
+            // ---------- keys (peek): teclas pulsadas ----------
+            Row {
+                id: keysRow
+                anchors.centerIn: parent
+                spacing: 8
+                opacity: island.mode === "keys" ? 1 : 0
+                visible: opacity > 0
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: Theme.fadeDuration
+                    }
+                }
+
+                Repeater {
+                    model: KeyCast.chips
+                    Rectangle {
+                        required property var modelData
+                        required property int index
+                        readonly property bool latest: index === KeyCast.chips.length - 1
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: keyText.implicitWidth + 22
+                        height: 40
+                        radius: 11
+                        color: modelData.kind === "combo" ? Theme.panelCardHi : "transparent"
+                        border.width: modelData.kind === "combo" ? 1 : 0
+                        border.color: Theme.alpha(Theme.green, latest ? 60 : 20)
+                        opacity: latest ? 1 : 0.55
+                        Text {
+                            id: keyText
+                            anchors.centerIn: parent
+                            text: modelData.text + (modelData.count > 1 ? "  ×" + modelData.count : "")
+                            textFormat: Text.PlainText
+                            color: "#ffffff"
+                            font.family: Theme.bodyFontFamily
+                            font.pixelSize: Theme.fontPx(20)
+                            font.bold: modelData.kind === "combo"
+                            // Lo escrito, con las letras bien separadas para leer cada tecla
+                            font.letterSpacing: modelData.kind === "text" ? 8 : 2
+                        }
                     }
                 }
             }
