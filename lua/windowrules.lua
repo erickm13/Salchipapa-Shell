@@ -8,6 +8,9 @@ hl.window_rule({ match = { title = "(Open|Save) (File|Folder).*" }, float = true
 hl.window_rule({ match = { title = "Save As" }, float = true })
 hl.window_rule({ match = { float = true, xwayland = false }, center = true })
 hl.window_rule({ match = { fullscreen = true }, no_shadow = true })
+-- Cualquier app a pantalla completa (Stremio, mpv, juegos…) frena el bloqueo por inactividad,
+-- aunque no pida idle-inhibit por su cuenta.
+hl.window_rule({ match = { class = ".*" }, idle_inhibit = "fullscreen" })
 
 -- El picker no anima al cerrarse: grim debe capturar la ventana sin el freeze superpuesto.
 hl.layer_rule({ match = { namespace = "salchipapa-picker" }, no_anim = true })
