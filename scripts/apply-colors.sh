@@ -6,8 +6,8 @@
 #   apply-colors.sh scheme <nombre> [flavour]   -> de shell/themes/schemes.json (temas de caelestia guardados)
 #   apply-colors.sh file <palette.json>         -> un JSON { "role": "hex", ... } (p.ej. salida de matugen)
 #
-# Tras escribir el estado, la shell se recolorea sola (FileView). Para el glow de ventanas
-# se recarga Hyprland.
+# Tras escribir el estado, la shell se recolorea sola (FileView). Los colores de Hyprland
+# se actualizan en vivo sin recargar la configuración ni reajustar los monitores.
 set -euo pipefail
 
 repo="${SALCHIPAPA_SHELL_DIR:-$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)}"
@@ -366,9 +366,32 @@ PY
     # para no retrasar el recoloreado de las apps (Thunar/terminal/shell).
 fi
 
-# Recargar Hyprland para el glow (si hay sesión)
+# Actualizar solo los colores de Hyprland (si hay sesión). Una recarga completa ejecutaba
+# lua/monitors.lua y hacía que monitor-autodetect reaplicara el perfil de pantallas:
+# la isla y el fondo parpadeaban como si Quickshell se hubiera reiniciado.
+# Mantener estos roles alineados con lua/group.lua y lua/misc.lua. Las sombras las aplica
+# WindowShadowSync.qml al cambiar Theme.shadow, conservando Appearance y Game Mode.
 if command -v hyprctl >/dev/null && [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
-    hyprctl reload >/dev/null 2>&1 || true
+    hyprctl eval "hl.config({
+        group = {
+            col = {
+                border_active = { colors = { 'rgba($(c primary)ee)', 'rgba($(c tertiary)ee)' }, angle = 45 },
+                border_inactive = 'rgba($(c onSurfaceVariant)11)',
+                border_locked_active = 'rgba($(c primary)ee)',
+                border_locked_inactive = 'rgba($(c onSurfaceVariant)11)',
+            },
+            groupbar = {
+                text_color = 'rgb($(c onPrimary))',
+                col = {
+                    active = 'rgba($(c primary)d4)',
+                    inactive = 'rgba($(c outlineVariant)d4)',
+                    locked_active = 'rgba($(c primary)d4)',
+                    locked_inactive = 'rgba($(c secondary)d4)',
+                },
+            },
+        },
+        misc = { background_color = 'rgb($(c surfaceContainer))' },
+    })" >/dev/null 2>&1 || true
 fi
 
 # ------------------------------------------------------------------ Live-reload
