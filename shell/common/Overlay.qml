@@ -84,6 +84,12 @@ Singleton {
     }
     GlobalShortcut {
         appid: "salchipapa"
+        name: "binds"
+        description: "Abrir/cerrar el glosario de atajos (dentro de la isla)"
+        onPressed: root.mode = root.mode === "binds" ? "" : "binds"
+    }
+    GlobalShortcut {
+        appid: "salchipapa"
         name: "control"
         description: "Abrir/cerrar el centro de control (dentro de la isla)"
         onPressed: root.mode = root.mode === "control" ? "" : "control"

@@ -358,9 +358,9 @@ PanelWindow {
         readonly property int widthSmall: 480
         readonly property int widthMedium: 600
         readonly property int widthLarge: 760
-        width: ["power", "polkit", "control", "display", "sound", "media"].includes(mode) ? widthSmall : ["clipboard", "emoji", "expanded"].includes(mode) ? widthMedium : ["themes", "wallpaper", "perf", "music"].includes(mode) ? widthLarge : mode === "launcher" ? Config.launcherWidth : mode === "notif" ? Config.notificationWidth : mode === "calendar" || mode === "volume" || mode === "brightness" ? 300 : mode === "keys" ? Math.max(160, keysRow.implicitWidth + 40) : Math.max(Config.collapsedWidth, idleRow.implicitWidth + Config.innerPadding * 2)
+        width: ["power", "polkit", "control", "display", "sound", "media"].includes(mode) ? widthSmall : ["clipboard", "emoji", "expanded"].includes(mode) ? widthMedium : ["themes", "wallpaper", "perf", "music", "binds"].includes(mode) ? widthLarge : mode === "launcher" ? Config.launcherWidth : mode === "notif" ? Config.notificationWidth : mode === "calendar" || mode === "volume" || mode === "brightness" ? 300 : mode === "keys" ? Math.max(160, keysRow.implicitWidth + 40) : Math.max(Config.collapsedWidth, idleRow.implicitWidth + Config.innerPadding * 2)
         // Alto final del modo (sin animar): la ventana se ajusta a él una sola vez
-        readonly property real targetHeight: mode === "power" ? (powerMenu.confirmAction === "" ? 110 : 200) : mode === "polkit" ? 250 : mode === "control" ? Math.min(controlContent.preferredHeight + 32, (win.screen?.height ?? 1080) - Config.topMargin - 60) : mode === "display" ? (142 + (Hyprland.monitors?.values?.length ?? 1) * 206) : mode === "sound" ? (213 + Math.min(Audio.sinks?.length ?? 1, 5) * 42 + Math.min(Audio.sources?.length ?? 1, 4) * 42 + Math.max(1, Math.min(Audio.apps?.length ?? 0, 4)) * 62) : mode === "launcher" ? (85 + Config.launcherRowsBeforeScrolling * Config.launcherRowHeight + (Config.launcherRowsBeforeScrolling - 1) * 2) : mode === "clipboard" ? 470 : mode === "emoji" ? 440 : mode === "perf" ? 704 : mode === "music" ? 300 : mode === "themes" ? 210 : mode === "wallpaper" ? 250 : mode === "calendar" ? 250 : mode === "expanded" ? 149 : mode === "notif" ? notifMainHeight + notifOlder.length * notifRowHeight : mode === "media" ? (Config.mediaShowControls ? 124 : 80) : mode === "volume" || mode === "brightness" ? 42 : mode === "keys" ? 56 : Config.barHeight
+        readonly property real targetHeight: mode === "power" ? (powerMenu.confirmAction === "" ? 110 : 200) : mode === "polkit" ? 250 : mode === "control" ? Math.min(controlContent.preferredHeight + 32, (win.screen?.height ?? 1080) - Config.topMargin - 60) : mode === "display" ? (142 + (Hyprland.monitors?.values?.length ?? 1) * 206) : mode === "sound" ? (213 + Math.min(Audio.sinks?.length ?? 1, 5) * 42 + Math.min(Audio.sources?.length ?? 1, 4) * 42 + Math.max(1, Math.min(Audio.apps?.length ?? 0, 4)) * 62) : mode === "launcher" ? (85 + Config.launcherRowsBeforeScrolling * Config.launcherRowHeight + (Config.launcherRowsBeforeScrolling - 1) * 2) : mode === "clipboard" ? 470 : mode === "emoji" ? 440 : mode === "perf" ? 704 : mode === "binds" ? 640 : mode === "music" ? 300 : mode === "themes" ? 210 : mode === "wallpaper" ? 250 : mode === "calendar" ? 250 : mode === "expanded" ? 149 : mode === "notif" ? notifMainHeight + notifOlder.length * notifRowHeight : mode === "media" ? (Config.mediaShowControls ? 124 : 80) : mode === "volume" || mode === "brightness" ? 42 : mode === "keys" ? 56 : Config.barHeight
         height: targetHeight
 
         Behavior on width {
@@ -501,7 +501,7 @@ PanelWindow {
                 y: pillShadow.pad
                 width: pillShadow.width - pillShadow.pad * 2
                 height: pillShadow.height - pillShadow.pad * 2
-                readonly property real uni: (island.mode === "power" || island.mode === "media" || island.mode === "music" || island.mode === "polkit" || island.mode === "expanded" || island.mode === "calendar" || island.mode === "launcher" || island.mode === "clipboard" || island.mode === "emoji" || island.mode === "perf" || island.mode === "themes" || island.mode === "wallpaper" || island.mode === "control" || island.mode === "display" || island.mode === "sound") ? Theme.radiusLarge : (Config.notchMode ? Theme.radiusMedium : height / 2)
+                readonly property real uni: (island.mode === "power" || island.mode === "media" || island.mode === "music" || island.mode === "polkit" || island.mode === "expanded" || island.mode === "calendar" || island.mode === "launcher" || island.mode === "clipboard" || island.mode === "emoji" || island.mode === "perf" || island.mode === "binds" || island.mode === "themes" || island.mode === "wallpaper" || island.mode === "control" || island.mode === "display" || island.mode === "sound") ? Theme.radiusLarge : (Config.notchMode ? Theme.radiusMedium : height / 2)
                 topLeftRadius: Config.notchMode ? 0 : uni
                 topRightRadius: Config.notchMode ? 0 : uni
                 bottomLeftRadius: uni
@@ -530,7 +530,7 @@ PanelWindow {
             id: pill
             anchors.fill: parent
             // Radio base (uniforme). En notch, las esquinas superiores van rectas (pegadas al borde).
-                readonly property real uni: (island.mode === "power" || island.mode === "media" || island.mode === "music" || island.mode === "polkit" || island.mode === "expanded" || island.mode === "calendar" || island.mode === "launcher" || island.mode === "clipboard" || island.mode === "emoji" || island.mode === "perf" || island.mode === "themes" || island.mode === "wallpaper" || island.mode === "control" || island.mode === "display" || island.mode === "sound") ? Theme.radiusLarge : (Config.notchMode ? Theme.radiusMedium : height / 2)
+                readonly property real uni: (island.mode === "power" || island.mode === "media" || island.mode === "music" || island.mode === "polkit" || island.mode === "expanded" || island.mode === "calendar" || island.mode === "launcher" || island.mode === "clipboard" || island.mode === "emoji" || island.mode === "perf" || island.mode === "binds" || island.mode === "themes" || island.mode === "wallpaper" || island.mode === "control" || island.mode === "display" || island.mode === "sound") ? Theme.radiusLarge : (Config.notchMode ? Theme.radiusMedium : height / 2)
             topLeftRadius: Config.notchMode ? 0 : uni
             topRightRadius: Config.notchMode ? 0 : uni
             bottomLeftRadius: uni
@@ -1734,6 +1734,18 @@ PanelWindow {
                 anchors.fill: parent
                 anchors.margins: 8
                 opacity: island.mode === "perf" ? 1 : 0
+                visible: opacity > 0
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: Theme.fadeDuration
+                    }
+                }
+            }
+
+            BindsContent {
+                anchors.fill: parent
+                anchors.margins: 8
+                opacity: island.mode === "binds" ? 1 : 0
                 visible: opacity > 0
                 Behavior on opacity {
                     NumberAnimation {
