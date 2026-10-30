@@ -74,7 +74,7 @@ Singleton {
     readonly property int appearanceShadowBlur: settings.appearanceShadowBlur
     readonly property int appearanceShadowOffset: settings.appearanceShadowOffset
     readonly property int appearanceShadowSpread: settings.appearanceShadowSpread
-    readonly property int appearanceWallpaperCrossfade: settings.appearanceWallpaperCrossfade
+    readonly property int appearanceWallpaperCrossfade: Math.max(500, Math.min(3000, settings.appearanceWallpaperCrossfade))
     // Motion
     readonly property bool motionReduce: settings.motionReduce
     readonly property int motionMovementDuration: motionReduce ? 0 : settings.motionMovementDuration
@@ -207,7 +207,7 @@ Singleton {
             property int appearanceShadowBlur: 100
             property int appearanceShadowOffset: 8
             property int appearanceShadowSpread: 74
-            property int appearanceWallpaperCrossfade: 450
+            property int appearanceWallpaperCrossfade: 500
 
             // Motion
             property bool motionReduce: false

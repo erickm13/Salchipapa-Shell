@@ -1412,7 +1412,7 @@ FloatingWindow {
                         visible: win.category === 0
                         text: "Wallpaper"
                     }
-                    PxSlider { visible: win.category === 0; width: parent.width; label: "Wallpaper crossfade"; from: 0; to: 1000; value: Config.appearanceWallpaperCrossfade; unit: "s"; divisor: 1000; decimals: 2; snap: 50; onMoved: v => Config.opt.appearanceWallpaperCrossfade = v }
+                    PxSlider { visible: win.category === 0; width: parent.width; label: "Wallpaper transition"; from: 500; to: 3000; value: Config.appearanceWallpaperCrossfade; unit: "s"; divisor: 1000; decimals: 2; snap: 50; onMoved: v => Config.opt.appearanceWallpaperCrossfade = v }
 
                     // ---- Otras categorías (placeholder) ----
                     Item {
