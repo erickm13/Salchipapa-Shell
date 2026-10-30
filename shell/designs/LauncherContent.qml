@@ -97,6 +97,13 @@ Item {
 
             Keys.onDownPressed: root.sel = Math.min(root.sel + 1, root.results.length - 1)
             Keys.onUpPressed: root.sel = Math.max(root.sel - 1, 0)
+            // Ctrl+J / Ctrl+K como en vim (j y k a secas se escriben en el buscador)
+            Keys.onPressed: event => {
+                if (event.modifiers & Qt.ControlModifier && (event.key === Qt.Key_J || event.key === Qt.Key_K)) {
+                    root.sel = Math.max(0, Math.min(root.results.length - 1, root.sel + (event.key === Qt.Key_J ? 1 : -1)));
+                    event.accepted = true;
+                }
+            }
             Keys.onReturnPressed: root.launch()
             Keys.onEnterPressed: root.launch()
             Keys.onEscapePressed: Overlay.close()
@@ -116,6 +123,7 @@ Item {
 
     // --- Lista ---
     ListView {
+        id: list
         anchors.top: divider.bottom
         anchors.left: parent.left
         anchors.right: parent.right
@@ -130,6 +138,13 @@ Item {
         highlightMoveVelocity: -1
         highlightMoveDuration: 100
         boundsBehavior: Flickable.StopAtBounds
+        // Filas ya creadas por encima y por debajo de lo visible (se crean sin bloquear, al abrir):
+        // crear una fila al desplazar busca y rasteriza su icono, y eso daba tirones
+        cacheBuffer: 3000
+
+        SmoothWheel {
+            flickable: list
+        }
 
         delegate: Rectangle {
             id: item
