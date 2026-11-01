@@ -42,7 +42,17 @@ stop_engine() {
     local pids
     pids=$(pgrep -x linux-wallpaper || true) # el nombre del proceso se corta a 15 letras
     [ -n "$pids" ] || pids=$(pgrep -f '^(prime-run )?linux-wallpaperengine( |$)' || true)
-    [ -n "$pids" ] && kill $pids 2>/dev/null
+    [ -n "$pids" ] || return 0
+    kill $pids 2>/dev/null
+    # A veces se cuelga al cerrar (escribe "Stopping" y no sale) y el fondo viejo sigue debajo
+    # del nuevo: si en 2 s no ha salido, SIGKILL
+    local i p
+    for i in $(seq 20); do
+        for p in $pids; do kill -0 "$p" 2>/dev/null && break; p=; done
+        [ -z "$p" ] && return 0
+        sleep 0.1
+    done
+    kill -9 $pids 2>/dev/null
     return 0
 }
 
