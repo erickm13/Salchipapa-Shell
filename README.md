@@ -88,7 +88,7 @@ Desde una TTY libre (`Ctrl+Alt+F3`): `Hyprland -c <repo>/hyprland.lua`. `Super +
 | `Super + Alt + P` | Menú de energía de la isla (flechas/Tab eligen, Enter/Espacio activan, Esc vuelve/cierra) |
 | `Super + V` | Historial del portapapeles (en la isla; Enter copia, Supr borra) |
 | `Super + .` | Selector de emojis (en la isla; español o inglés) |
-| `Super + /` | Glosario de atajos (en la isla; se lee de `lua/keybinds.lua`, con buscador). `Tab` / `Shift+Tab` cambian a los de VS Code (`keybindings.json`, extensiones, los básicos y los comandos de Vim de VSCodeVim) y a los de Neovim (los reales de tu config, LazyVim y plugins, sacados con `nvim --headless`) |
+| `Super + /` | Glosario de atajos (en la isla, con buscador). `Tab` / `Shift+Tab` cambian de app: Hyprland (`lua/keybinds.lua`), VS Code, Neovim, herdr, foot, zellij, Ghostty, yazi, Firefox y Obsidian. En *Ajustes > Shortcuts* eliges cuáles se ven |
 | `Super + Shift + Esc` | Rendimiento: CPU, GPU, RAM, discos, ventiladores y red (en la isla) |
 | `Super + Alt + Space` / `Super + F` | Flotar / pantalla completa |
 | `Super + [1-0]` | Workspace |

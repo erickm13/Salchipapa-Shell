@@ -2,9 +2,9 @@ pragma ComponentBehavior: Bound
 // Glosario de atajos, DENTRO de la isla (modo "binds", Super+/). Lee lua/keybinds.lua en vivo:
 // cada comentario suelto arriba de un bloque es una sección, y la descripción de un atajo es su
 // comentario al final de la línea (o el de la línea anterior); si no tiene, se deduce de la acción.
-// Tab / Shift+Tab cambian de pestaña: Hyprland → VS Code (scripts/vscode-keybinds.py: keybindings.json,
-// extensiones, básicos y Vim; se regenera al abrirla) → Neovim (scripts/nvim-keybinds.sh: los atajos
-// reales de la config, LazyVim y plugins, con caché hasta que cambie ~/.config/nvim).
+// Tab / Shift+Tab cambian de pestaña entre las apps de Config.keybindTabs (Ajustes > Shortcuts elige
+// cuáles): VS Code (scripts/vscode-keybinds.py), Neovim (scripts/nvim-keybinds.sh, con caché) y el
+// resto con scripts/app-keybinds.py <app>. Cada pestaña se regenera al abrirla.
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -14,11 +14,12 @@ Item {
     id: root
 
     property var all: [] // [{ section, keys: [string], desc }]
-    property var vscode: [] // lo mismo, de VS Code
-    property var nvim: [] // y de Neovim
-    readonly property var tabs: ["hyprland", "vscode", "nvim"]
-    property string tab: "hyprland"
-    readonly property var source: tab === "vscode" ? vscode : tab === "nvim" ? nvim : all
+    property var appData: ({}) // { app: [{ section, keys, desc }] } de las pestañas que no son Hyprland
+    readonly property var tabs: Config.keybindTabs.map(a => a.id)
+    property string tab: tabs[0]
+    readonly property var tabInfo: Config.keybindApps.find(a => a.id === tab) ?? Config.keybindApps[0]
+    readonly property var source: tab === "hyprland" ? all : (appData[tab] ?? [])
+    property string loading: "" // app cuyo script está corriendo
     property string query: ""
     property int sel: 0 // fila seleccionada de `rows` (nunca una cabecera)
     property point mousePos: Qt.point(-1, -1)
@@ -106,10 +107,12 @@ Item {
 
     function setTab(t: string): void {
         tab = t;
-        if (t === "vscode")
-            vscodeProc.running = true; // al día con keybindings.json y las extensiones
-        else if (t === "nvim")
-            nvimProc.running = true; // de la caché, o regenerado si cambió la config
+        if (t !== "hyprland") {
+            // Al día con la config de la app (Neovim sale de su caché si no cambió)
+            const dir = Quickshell.shellDir + "/../scripts/";
+            loading = t;
+            appProc.exec(t === "vscode" ? ["python3", dir + "vscode-keybinds.py"] : t === "nvim" ? [dir + "nvim-keybinds.sh"] : ["python3", dir + "app-keybinds.py", t]);
+        }
         sel = firstRow();
         list.positionViewAtBeginning();
     }
@@ -351,7 +354,7 @@ Item {
             if (Overlay.mode === "binds") {
                 root.query = "";
                 searchInput.text = "";
-                root.tab = "hyprland";
+                root.setTab(root.tabs[0]);
                 root.sel = root.firstRow();
                 list.positionViewAtBeginning();
                 searchInput.forceActiveFocus();
@@ -367,34 +370,21 @@ Item {
     }
 
     Process {
-        id: vscodeProc
-        command: ["python3", Quickshell.shellDir + "/../scripts/vscode-keybinds.py"]
+        id: appProc
         stdout: StdioCollector {
-            id: vscodeOut
+            id: appOut
             onStreamFinished: {
+                const app = root.loading;
+                let rows;
                 try {
-                    root.vscode = JSON.parse(vscodeOut.text);
+                    rows = JSON.parse(appOut.text);
                 } catch (e) {
                     return;
                 }
-                if (root.tab === "vscode")
-                    root.sel = root.firstRow();
-            }
-        }
-    }
-
-    Process {
-        id: nvimProc
-        command: [Quickshell.shellDir + "/../scripts/nvim-keybinds.sh"]
-        stdout: StdioCollector {
-            id: nvimOut
-            onStreamFinished: {
-                try {
-                    root.nvim = JSON.parse(nvimOut.text);
-                } catch (e) {
-                    return;
-                }
-                if (root.tab === "nvim")
+                const d = Object.assign({}, root.appData);
+                d[app] = rows;
+                root.appData = d;
+                if (root.tab === app)
                     root.sel = root.firstRow();
             }
         }
@@ -437,7 +427,7 @@ Item {
             }
             Text {
                 anchors.verticalCenter: parent.verticalCenter
-                text: root.tab === "vscode" ? "Search VS Code shortcuts…" : root.tab === "nvim" ? "Search Neovim shortcuts…" : "Search shortcuts (action or key)…"
+                text: root.tab === "hyprland" ? "Search shortcuts (action or key)…" : "Search " + root.tabInfo.label + " shortcuts…"
                 color: Theme.tertiaryText
                 font: parent.font
                 visible: parent.text.length === 0
@@ -456,7 +446,8 @@ Item {
             Keys.onBacktabPressed: root.cycleTab(-1)
         }
 
-        // Pestañas: Hyprland / VS Code / Neovim (Tab, Shift+Tab o clic)
+        // Pestañas de Config.keybindTabs (Tab, Shift+Tab o clic): la activa con su nombre, el resto solo
+        // con el icono (son hasta 10)
         Rectangle {
             id: tabBar
             anchors.right: parent.right
@@ -471,12 +462,12 @@ Item {
                 anchors.centerIn: parent
                 spacing: 2
                 Repeater {
-                    model: [{ label: "Hyprland", icon: "keyboard", id: "hyprland" }, { label: "VS Code", icon: "code", id: "vscode" }, { label: "Neovim", icon: "terminal", id: "nvim" }]
+                    model: Config.keybindTabs
                     delegate: Rectangle {
                         id: tab
                         required property var modelData
                         readonly property bool on: root.tab === modelData.id
-                        width: tabContent.implicitWidth + 14
+                        width: tabContent.implicitWidth + (on ? 14 : 10)
                         height: 20
                         radius: 10
                         color: on ? Theme.green : "transparent"
@@ -497,6 +488,7 @@ Item {
                                 anchors.verticalCenter: parent.verticalCenter
                             }
                             Text {
+                                visible: tab.on || tabMouse.containsMouse
                                 text: tab.modelData.label
                                 font.family: Theme.bodyFontFamily
                                 font.pixelSize: Theme.fontPx(11)
@@ -506,7 +498,9 @@ Item {
                             }
                         }
                         MouseArea {
+                            id: tabMouse
                             anchors.fill: parent
+                            hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
                                 if (!tab.on)
@@ -639,7 +633,7 @@ Item {
         Text {
             anchors.centerIn: parent
             visible: root.results.length === 0
-            text: root.source.length === 0 ? "Loading…" : "No matching shortcut"
+            text: root.source.length === 0 ? (root.loading === root.tab && appProc.running ? "Loading…" : root.tab === "hyprland" ? "Loading…" : "No shortcuts found for " + root.tabInfo.label) : "No matching shortcut"
             color: Theme.tertiaryText
             font.family: Theme.bodyFontFamily
             font.pixelSize: Theme.fontPx(13)
@@ -657,7 +651,7 @@ Item {
             anchors.left: parent.left
             anchors.leftMargin: 18
             anchors.verticalCenter: parent.verticalCenter
-            text: root.results.length + " shortcuts · from " + (root.tab === "vscode" ? "keybindings.json, extensions and VS Code defaults" : root.tab === "nvim" ? "your Neovim config, LazyVim and plugins" : "lua/keybinds.lua")
+            text: root.tabInfo.label + " · " + root.results.length + " shortcuts · " + root.tabInfo.sub
             color: Theme.overlay1
             font.family: Theme.bodyFontFamily
             font.pixelSize: Theme.fontPx(11)

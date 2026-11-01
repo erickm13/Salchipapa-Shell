@@ -125,6 +125,24 @@ Singleton {
     // Hyprland window blur
     readonly property bool windowBlurEnabled: settings.windowBlurEnabled
     readonly property bool touchpadEnabled: settings.touchpadEnabled
+    // Glosario de atajos (Super+/): pestañas por app; Ajustes > Shortcuts elige cuáles se ven
+    readonly property var keybindApps: [
+        { id: "hyprland", label: "Hyprland", icon: "keyboard", sub: "lua/keybinds.lua" },
+        { id: "vscode", label: "VS Code", icon: "code", sub: "keybindings.json, extensions, defaults and Vim" },
+        { id: "nvim", label: "Neovim", icon: "edit_note", sub: "Your config, LazyVim and plugins" },
+        { id: "herdr", label: "herdr", icon: "smart_toy", sub: "~/.config/herdr/config.toml" },
+        { id: "foot", label: "foot", icon: "terminal", sub: "Defaults + ~/.config/foot/foot.ini" },
+        { id: "zellij", label: "zellij", icon: "grid_view", sub: "~/.config/zellij/config.kdl" },
+        { id: "ghostty", label: "Ghostty", icon: "web_asset", sub: "ghostty +list-keybinds" },
+        { id: "yazi", label: "yazi", icon: "folder", sub: "Defaults (+ keymap.toml)" },
+        { id: "firefox", label: "Firefox", icon: "public", sub: "Most useful defaults" },
+        { id: "obsidian", label: "Obsidian", icon: "diamond", sub: "Defaults + hotkeys.json" }
+    ]
+    readonly property var keybindHidden: settings.keybindHiddenTabs.split(",").filter(x => x !== "")
+    readonly property var keybindTabs: {
+        const v = keybindApps.filter(a => !keybindHidden.includes(a.id));
+        return v.length > 0 ? v : [keybindApps[0]];
+    }
     readonly property string appearanceMatugenType: settings.appearanceMatugenType
     readonly property int appearanceMatugenIntensity: settings.appearanceMatugenIntensity
     readonly property bool recordSound: settings.recordSound
@@ -266,6 +284,7 @@ Singleton {
             // Hyprland window blur
             property bool windowBlurEnabled: true
             property bool touchpadEnabled: true
+            property string keybindHiddenTabs: "" // ids separados por comas (las apps nuevas salen visibles)
             // Colores desde el fondo (scripts/wallpaper.sh): estilo de matugen e intensidad 0 pastel, 1 media, 2 viva
             property string appearanceMatugenType: "scheme-tonal-spot"
             property int appearanceMatugenIntensity: 0

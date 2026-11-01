@@ -88,6 +88,11 @@ FloatingWindow {
             name: "Login & Boot",
             icon: "login",
             desc: "Login (SDDM) and boot (GRUB) themes."
+        },
+        {
+            name: "Shortcuts",
+            icon: "keyboard",
+            desc: "Which apps appear in the shortcuts glossary (Super + /)."
         }
     ]
 
@@ -863,6 +868,11 @@ FloatingWindow {
                     }
                     BootThemesSettings {
                         visible: win.category === 11
+                        width: parent.width
+                        height: visible ? implicitHeight : 0
+                    }
+                    KeybindsSettings {
+                        visible: win.category === 12
                         width: parent.width
                         height: visible ? implicitHeight : 0
                     }
