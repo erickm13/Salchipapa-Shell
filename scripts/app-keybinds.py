@@ -9,7 +9,8 @@ Leídos de la config real (en vivo):
   ghostty  `ghostty +list-keybinds` (los efectivos: defaults + tu config)
 Escritos a mano (no guardan sus atajos por defecto en ningún archivo legible):
   yazi     los por defecto + los de ~/.config/yazi/keymap.toml si existe
-  firefox  los más útiles
+  firefox  los más útiles + Surfingkeys si está instalada (sus atajos por defecto, sacados del .xpi
+           instalado: cada mapkey("tecla", "#<grupo>Descripción") de content.js)
   obsidian los por defecto + los de <bóveda>/.obsidian/hotkeys.json
 """
 
@@ -437,6 +438,76 @@ FIREFOX = [
                       ("ctrl+shift+m", "Diseño adaptable (móvil)"), ("ctrl+shift+a", "Complementos")]),
 ]
 
+# ---------------------------------------------------------------- Surfingkeys (extensión de Firefox)
+SURFINGKEYS_ID = "{a8332c60-5b6d-41ee-bfc8-e9bb331d34ad}"
+SK_GROUPS = ["Ayuda", "Clic en enlaces", "Desplazarse", "Pestañas", "Navegar por la página", "Sesiones",
+             "Buscar la selección con", "Portapapeles", "Omnibar", "Modo visual", "Marcas (como Vim)", "Ajustes",
+             "URLs del navegador", "Proxy", "Otros", "Modo inserción", "Modo lurk", "Pistas por regiones"]
+
+
+def firefox_profiles():
+    import configparser
+    out = []
+    for base in (os.path.join(CONF, "mozilla", "firefox"), os.path.join(HOME, ".mozilla", "firefox")):
+        ini = configparser.ConfigParser()
+        if not ini.read(os.path.join(base, "profiles.ini")):
+            continue
+        for sec in ini.sections():
+            path = ini[sec].get("Path")
+            if path:
+                full = path if ini[sec].get("IsRelative", "1") == "0" else os.path.join(base, path)
+                if os.path.isdir(full):
+                    out.append(full)
+    return out
+
+
+def sk_caps(k):
+    """'<Ctrl-Alt-i>' -> ['Ctrl', 'Alt', 'i'];  ';ql' -> [';ql'];  'g<Ctrl-x>' -> ['g', 'Ctrl', 'x']"""
+    caps = []
+    for tok in re.findall(r"<[^>]+>|[^<]+", k):
+        if tok.startswith("<") and len(tok) > 2:
+            parts = tok[1:-1].split("-")
+            key = parts.pop() or "-"
+            caps += [cap(p) for p in parts] + [NAMES.get(key.lower(), key) if len(key) > 1 else key]
+        else:
+            caps.append(tok)
+    return caps
+
+
+def surfingkeys():
+    import zipfile
+    for prof in firefox_profiles():
+        try:
+            addons = json.load(open(os.path.join(prof, "extensions.json"), encoding="utf-8")).get("addons", [])
+        except (OSError, ValueError):
+            continue
+        sk = next((a for a in addons if a.get("id") == SURFINGKEYS_ID and a.get("active")), None)
+        if not sk or not sk.get("path"):
+            continue
+        try:
+            with zipfile.ZipFile(sk["path"]) as z:
+                js = z.read("content.js").decode("utf-8", "replace")
+        except (OSError, KeyError, zipfile.BadZipFile):
+            continue
+        out, seen = [], set()
+        found = re.findall(r'\("((?:[^"\\]|\\.){1,16})",\s*"#(\d+)((?:[^"\\]|\\.)+)"', js)
+        # Los de desplazarse y cambiar de modo: mappings.add("j",{annotation:"Scroll down",feature_group:2,…})
+        found += [(k, g, d) for k, d, g in re.findall(
+            r'mappings\.add\("((?:[^"\\]|\\.){1,16})",\{annotation:"((?:[^"\\]|\\.)+)",feature_group:(\d+)', js)]
+        for key, group, desc in found:
+            key = key.encode().decode("unicode_escape")
+            desc = desc.encode().decode("unicode_escape")
+            g = int(group)
+            if (key, desc) in seen:
+                continue
+            seen.add((key, desc))
+            name = SK_GROUPS[g] if g < len(SK_GROUPS) else f"Grupo {g}"
+            out.append((g, row("Surfingkeys · " + name, sk_caps(key), desc)))
+        out.sort(key=lambda x: x[0])
+        return [r for _, r in out]
+    return []
+
+
 # ---------------------------------------------------------------- obsidian (escritos a mano)
 OBSIDIAN = [
     ("General", [("ctrl+p", "Paleta de comandos"), ("ctrl+o", "Abrir nota (quick switcher)"), ("ctrl+n", "Nota nueva"),
@@ -472,7 +543,7 @@ def obsidian():
 
 APPS = {
     "herdr": herdr, "foot": foot, "zellij": zellij, "ghostty": ghostty, "yazi": yazi,
-    "firefox": lambda: curated("Firefox", FIREFOX), "obsidian": obsidian,
+    "firefox": lambda: curated("Firefox", FIREFOX) + surfingkeys(), "obsidian": obsidian,
 }
 
 if __name__ == "__main__":

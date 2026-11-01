@@ -135,7 +135,7 @@ Singleton {
         { id: "zellij", label: "zellij", icon: "grid_view", sub: "~/.config/zellij/config.kdl" },
         { id: "ghostty", label: "Ghostty", icon: "web_asset", sub: "ghostty +list-keybinds" },
         { id: "yazi", label: "yazi", icon: "folder", sub: "Defaults (+ keymap.toml)" },
-        { id: "firefox", label: "Firefox", icon: "public", sub: "Most useful defaults" },
+        { id: "firefox", label: "Firefox", icon: "public", sub: "Most useful defaults + Surfingkeys (from the installed extension)" },
         { id: "obsidian", label: "Obsidian", icon: "diamond", sub: "Defaults + hotkeys.json" }
     ]
     readonly property var keybindHidden: settings.keybindHiddenTabs.split(",").filter(x => x !== "")
