@@ -494,6 +494,12 @@ def surfingkeys():
         # Los de desplazarse y cambiar de modo: mappings.add("j",{annotation:"Scroll down",feature_group:2,…})
         found += [(k, g, d) for k, d, g in re.findall(
             r'mappings\.add\("((?:[^"\\]|\\.){1,16})",\{annotation:"((?:[^"\\]|\\.)+)",feature_group:(\d+)', js)]
+        # Buscadores: addSearchAlias("g","google",url,"s",…) crea "og" (omnibar para buscar en Google)
+        # y "sg" (buscar la selección en Google)
+        for alias, engine, prefix in re.findall(r'\("([a-z])","([a-z]+)","https?://[^"]+","([a-z])"', js):
+            name = {"duckduckgo": "DuckDuckGo", "github": "GitHub", "youtube": "YouTube"}.get(engine, engine.capitalize())
+            found.append(("o" + alias, "8", f"Buscar en {name} (abre el omnibar)"))
+            found.append((prefix + alias, "6", f"Buscar el texto seleccionado en {name}"))
         for key, group, desc in found:
             key = key.encode().decode("unicode_escape")
             desc = desc.encode().decode("unicode_escape")
