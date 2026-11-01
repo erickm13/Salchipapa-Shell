@@ -147,13 +147,28 @@ start() {
         done < <(jq -r '.preset // {} | to_entries[] | select(.value != null) | "\(.key)=\(.value)"' "$pj")
     fi
     # Un motor por monitor, para poder pausar cada pantalla por separado
-    for m in $(hyprctl monitors -j | jq -r '.[].name'); do
-        setsid -f "${args[@]}" --screen-root "$m" --bg "$bg" >>"$log" 2>&1
+    local mons missing try
+    mons=$(hyprctl monitors -j | jq -r '.[].name')
+    missing=$mons
+    # A veces un motor se cae al arrancar (segfault intermitente en stb_image al cargar una textura
+    # que en el otro monitor carga bien): se relanza el del monitor que falte, hasta 2 veces
+    for try in 1 2 3; do
+        for m in $missing; do
+            setsid -f "${args[@]}" --screen-root "$m" --bg "$bg" >>"$log" 2>&1
+        done
+        sleep 2
+        missing=
+        for m in $mons; do
+            [ -n "$(engine_for "$m")" ] || missing="$missing $m"
+        done
+        [ -z "$missing" ] && break
+        # Si no arrancó ninguno es un fallo del fondo (JSON, librería…): no insistir
+        [ -n "$(engine_pids)" ] || break
+        echo "animated-wallpaper: relanzando en$missing (intento $((try + 1)))" >>"$log"
     done
-    # Si muere al arrancar (p. ej. falta una librería tras actualizar ffmpeg), no dejar la shell
-    # sin fondo: el estado solo se escribe si sigue vivo
-    sleep 2
-    if ! pgrep -x linux-wallpaper >/dev/null && ! pgrep -f '^(prime-run )?linux-wallpaperengine( |$)' >/dev/null; then
+    # Si no arranca en ningún monitor (p. ej. falta una librería tras actualizar ffmpeg), no dejar la
+    # shell sin fondo: el estado solo se escribe si sigue vivo
+    if [ -z "$(engine_pids)" ]; then
         local err
         err=$(tail -n 3 "$log" | tr '\n' ' ')
         notify-send -u critical -i dialog-error "Fondo animado" "linux-wallpaperengine no arrancó: $err" 2>/dev/null || true
@@ -175,7 +190,16 @@ set)
         echo "no existe $workshop/$id" >&2
         exit 1
     }
-    start "$id" || exit 1
+    prev=$(cat "$state/animated" 2>/dev/null || true)
+    if ! start "$id"; then
+        # start() ya cerró el anterior: volver a ponerlo para no dejar la shell sin fondo
+        if [ -n "$prev" ] && [ "$prev" != "$id" ]; then
+            start "$prev" || : >"$state/animated"
+        else
+            : >"$state/animated"
+        fi
+        exit 1
+    fi
     printf '%s' "$id" >"$state/animated"
     if [ "$colors" = "colors" ]; then
         preview="$workshop/$id/$(jq -r '.preview // "preview.jpg"' "$workshop/$id/project.json")"
