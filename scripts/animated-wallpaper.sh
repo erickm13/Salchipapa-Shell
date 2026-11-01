@@ -47,14 +47,31 @@ stop_engine() {
 }
 
 start() {
-    local id="$1" args=() m
+    local id="$1" args=() m p bg="$1"
+    local pj="$workshop/$id/project.json"
+    # Preset: project.json sin "type", con "dependency" (el fondo base) y "preset" (sus ajustes).
+    # linux-wallpaperengine no los entiende ("Project type missing"): se lanza el fondo base y se
+    # le pasan los valores del preset como propiedades.
+    if [ -f "$pj" ] && [ -z "$(jq -r '.type // empty' "$pj")" ]; then
+        bg=$(jq -r '.dependency // empty' "$pj")
+        [ -n "$bg" ] && [ -d "$workshop/$bg" ] || {
+            notify-send -u critical -i dialog-error "Fondo animado" "El preset $id necesita el fondo $bg: suscríbete a él en la Workshop" 2>/dev/null || true
+            echo "preset $id: falta el fondo base $bg" >&2
+            return 1
+        }
+    fi
     stop_engine
     sleep 0.3
     # prime-run: lo renderiza la NVIDIA (si existe) y no carga la iGPU
     command -v prime-run >/dev/null && args+=(prime-run)
     args+=(linux-wallpaperengine --fps 165 --silent --no-audio-processing --fullscreen-pause-only-active --scaling fill)
+    if [ "$bg" != "$id" ]; then
+        while IFS= read -r p; do
+            args+=(--set-property "$p")
+        done < <(jq -r '.preset // {} | to_entries[] | select(.value != null) | "\(.key)=\(.value)"' "$pj")
+    fi
     for m in $(hyprctl monitors -j | jq -r '.[].name'); do
-        args+=(--screen-root "$m" --bg "$id")
+        args+=(--screen-root "$m" --bg "$bg")
     done
     setsid -f "${args[@]}" >>"$log" 2>&1
     # Si muere al arrancar (p. ej. falta una librería tras actualizar ffmpeg), no dejar la shell
