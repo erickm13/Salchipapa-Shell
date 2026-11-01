@@ -6,7 +6,7 @@
 #   animated-wallpaper.sh restore                 -> al iniciar sesión, vuelve a poner el último
 #   animated-wallpaper.sh watch                   -> (interno) pausa el motor de cada monitor tapado
 # Estado: ~/.local/state/salchipapa-shell/animated (el id, o vacío; con id la shell oculta su fondo).
-# Un motor por monitor, a WALLPAPER_FPS (30 por defecto). El vigilante pausa (SIGSTOP) el de cada
+# Un motor por monitor, a WALLPAPER_FPS (60 por defecto). El vigilante pausa (SIGSTOP) el de cada
 # monitor cuyo escritorio (o especial abierto) tiene una ventana en mosaico o a pantalla completa;
 # las flotantes no cuentan. Se compara por nombre: en Hyprland 0.57 los especiales no tienen id.
 # Pausado se queda el último fotograma: no se nota y no gasta GPU.
@@ -140,7 +140,7 @@ start() {
     sleep 0.3
     # prime-run: lo renderiza la NVIDIA (si existe) y no carga la iGPU
     command -v prime-run >/dev/null && args+=(prime-run)
-    args+=(linux-wallpaperengine --fps "${WALLPAPER_FPS:-30}" --silent --no-audio-processing --fullscreen-pause-only-active --scaling fill)
+    args+=(linux-wallpaperengine --fps "${WALLPAPER_FPS:-60}" --silent --no-audio-processing --fullscreen-pause-only-active --scaling fill)
     if [ "$bg" != "$id" ]; then
         while IFS= read -r p; do
             args+=(--set-property "$p")
