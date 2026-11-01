@@ -2,8 +2,9 @@ pragma ComponentBehavior: Bound
 // Glosario de atajos, DENTRO de la isla (modo "binds", Super+/). Lee lua/keybinds.lua en vivo:
 // cada comentario suelto arriba de un bloque es una sección, y la descripción de un atajo es su
 // comentario al final de la línea (o el de la línea anterior); si no tiene, se deduce de la acción.
-// Tab cambia a los atajos de VS Code (scripts/vscode-keybinds.py: keybindings.json, extensiones y
-// los básicos de VS Code), que se regeneran cada vez que se abre esa pestaña.
+// Tab / Shift+Tab cambian de pestaña: Hyprland → VS Code (scripts/vscode-keybinds.py: keybindings.json,
+// extensiones, básicos y Vim; se regenera al abrirla) → Neovim (scripts/nvim-keybinds.sh: los atajos
+// reales de la config, LazyVim y plugins, con caché hasta que cambie ~/.config/nvim).
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -14,8 +15,10 @@ Item {
 
     property var all: [] // [{ section, keys: [string], desc }]
     property var vscode: [] // lo mismo, de VS Code
-    property bool vscodeTab: false
-    readonly property var source: vscodeTab ? vscode : all
+    property var nvim: [] // y de Neovim
+    readonly property var tabs: ["hyprland", "vscode", "nvim"]
+    property string tab: "hyprland"
+    readonly property var source: tab === "vscode" ? vscode : tab === "nvim" ? nvim : all
     property string query: ""
     property int sel: 0 // fila seleccionada de `rows` (nunca una cabecera)
     property point mousePos: Qt.point(-1, -1)
@@ -101,12 +104,17 @@ Item {
             "touchpad": "Activar/desactivar el touchpad"
         })
 
-    function setTab(vs: bool): void {
-        vscodeTab = vs;
-        if (vs)
+    function setTab(t: string): void {
+        tab = t;
+        if (t === "vscode")
             vscodeProc.running = true; // al día con keybindings.json y las extensiones
+        else if (t === "nvim")
+            nvimProc.running = true; // de la caché, o regenerado si cambió la config
         sel = firstRow();
         list.positionViewAtBeginning();
+    }
+    function cycleTab(d: int): void {
+        setTab(tabs[(tabs.indexOf(tab) + d + tabs.length) % tabs.length]);
     }
 
     function firstRow(): int {
@@ -343,7 +351,7 @@ Item {
             if (Overlay.mode === "binds") {
                 root.query = "";
                 searchInput.text = "";
-                root.vscodeTab = false;
+                root.tab = "hyprland";
                 root.sel = root.firstRow();
                 list.positionViewAtBeginning();
                 searchInput.forceActiveFocus();
@@ -369,7 +377,24 @@ Item {
                 } catch (e) {
                     return;
                 }
-                if (root.vscodeTab)
+                if (root.tab === "vscode")
+                    root.sel = root.firstRow();
+            }
+        }
+    }
+
+    Process {
+        id: nvimProc
+        command: [Quickshell.shellDir + "/../scripts/nvim-keybinds.sh"]
+        stdout: StdioCollector {
+            id: nvimOut
+            onStreamFinished: {
+                try {
+                    root.nvim = JSON.parse(nvimOut.text);
+                } catch (e) {
+                    return;
+                }
+                if (root.tab === "nvim")
                     root.sel = root.firstRow();
             }
         }
@@ -398,7 +423,7 @@ Item {
             font.family: Theme.bodyFontFamily
             anchors.left: searchIcon.right
             anchors.leftMargin: 12
-            anchors.right: tabs.left
+            anchors.right: tabBar.left
             anchors.rightMargin: 12
             anchors.verticalCenter: parent.verticalCenter
             color: "#ffffff"
@@ -412,7 +437,7 @@ Item {
             }
             Text {
                 anchors.verticalCenter: parent.verticalCenter
-                text: root.vscodeTab ? "Search VS Code shortcuts…" : "Search shortcuts (action or key)…"
+                text: root.tab === "vscode" ? "Search VS Code shortcuts…" : root.tab === "nvim" ? "Search Neovim shortcuts…" : "Search shortcuts (action or key)…"
                 color: Theme.tertiaryText
                 font: parent.font
                 visible: parent.text.length === 0
@@ -427,13 +452,13 @@ Item {
                 }
             }
             Keys.onEscapePressed: Overlay.close()
-            Keys.onTabPressed: root.setTab(!root.vscodeTab)
-            Keys.onBacktabPressed: root.setTab(!root.vscodeTab)
+            Keys.onTabPressed: root.cycleTab(1)
+            Keys.onBacktabPressed: root.cycleTab(-1)
         }
 
-        // Pestañas: Hyprland / VS Code (Tab o clic)
+        // Pestañas: Hyprland / VS Code / Neovim (Tab, Shift+Tab o clic)
         Rectangle {
-            id: tabs
+            id: tabBar
             anchors.right: parent.right
             anchors.rightMargin: 16
             anchors.verticalCenter: parent.verticalCenter
@@ -446,11 +471,11 @@ Item {
                 anchors.centerIn: parent
                 spacing: 2
                 Repeater {
-                    model: [{ label: "Hyprland", icon: "keyboard", vs: false }, { label: "VS Code", icon: "code", vs: true }]
+                    model: [{ label: "Hyprland", icon: "keyboard", id: "hyprland" }, { label: "VS Code", icon: "code", id: "vscode" }, { label: "Neovim", icon: "terminal", id: "nvim" }]
                     delegate: Rectangle {
                         id: tab
                         required property var modelData
-                        readonly property bool on: root.vscodeTab === modelData.vs
+                        readonly property bool on: root.tab === modelData.id
                         width: tabContent.implicitWidth + 14
                         height: 20
                         radius: 10
@@ -485,7 +510,7 @@ Item {
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
                                 if (!tab.on)
-                                    root.setTab(tab.modelData.vs);
+                                    root.setTab(tab.modelData.id);
                                 searchInput.forceActiveFocus();
                             }
                         }
@@ -632,7 +657,7 @@ Item {
             anchors.left: parent.left
             anchors.leftMargin: 18
             anchors.verticalCenter: parent.verticalCenter
-            text: root.results.length + " shortcuts · from " + (root.vscodeTab ? "keybindings.json, extensions and VS Code defaults" : "lua/keybinds.lua")
+            text: root.results.length + " shortcuts · from " + (root.tab === "vscode" ? "keybindings.json, extensions and VS Code defaults" : root.tab === "nvim" ? "your Neovim config, LazyVim and plugins" : "lua/keybinds.lua")
             color: Theme.overlay1
             font.family: Theme.bodyFontFamily
             font.pixelSize: Theme.fontPx(11)
@@ -641,7 +666,7 @@ Item {
             anchors.right: parent.right
             anchors.rightMargin: 14
             anchors.verticalCenter: parent.verticalCenter
-            text: "Tab: Hyprland/VS Code · ↑/↓ or Ctrl+J/K: move · Esc: close"
+            text: "Tab: switch tab · ↑/↓ or Ctrl+J/K: move · Esc: close"
             color: Theme.overlay1
             font.family: Theme.bodyFontFamily
             font.pixelSize: Theme.fontPx(11)
