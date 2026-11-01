@@ -9,7 +9,9 @@ lua/keybinds.lua) con:
   - "VS Code · …": una selección de los atajos por defecto de Linux (VS Code no los guarda en
     ningún archivo legible)
 Las teclas que la extensión de Vim captura en el editor se marcan "(Vim en el editor)".
-Se omite la extensión de Vim: sus 75 atajos son las teclas que captura, no comandos.
+Se omite la extensión de Vim: sus 75 atajos son las teclas que captura, no comandos. En su lugar
+salen "Vim · …": los mapeos propios (vim.*ModeKeyBindings* de settings.json) y una selección de los
+comandos que entiende VSCodeVim (los extras como surround solo si están activados).
 """
 
 import glob
@@ -127,6 +129,105 @@ DEFAULTS = [
         ("f10", "Paso por encima"),
         ("f11", "Paso a paso (entrar)"),
         ("shift+f11", "Salir de la función"),
+    ]),
+]
+
+# Comandos de Vim que entiende VSCodeVim: (teclas tal cual, descripción[, ajuste que lo activa])
+VIM = [
+    ("Modos", [
+        ("i", "Insertar antes del cursor"),
+        ("a", "Insertar después del cursor"),
+        ("I", "Insertar al principio de la línea"),
+        ("A", "Insertar al final de la línea"),
+        ("o", "Línea nueva debajo"),
+        ("O", "Línea nueva encima"),
+        ("v", "Modo visual"),
+        ("V", "Modo visual por líneas"),
+        ("Ctrl+V", "Modo visual por bloques"),
+        ("Esc", "Volver al modo normal"),
+        (":", "Línea de comandos"),
+    ]),
+    ("Moverse", [
+        ("h j k l", "Izquierda, abajo, arriba, derecha"),
+        ("w", "Palabra siguiente"),
+        ("b", "Palabra anterior"),
+        ("e", "Final de la palabra"),
+        ("0", "Principio de la línea"),
+        ("^", "Primer carácter de la línea"),
+        ("$", "Final de la línea"),
+        ("gg", "Principio del archivo"),
+        ("G", "Final del archivo"),
+        ("{n}G", "Ir a la línea n"),
+        ("f{c}", "Saltar al carácter c en la línea"),
+        ("t{c}", "Saltar hasta antes del carácter c"),
+        ("%", "Ir al paréntesis o llave pareja"),
+        ("Ctrl+D", "Media pantalla abajo"),
+        ("Ctrl+U", "Media pantalla arriba"),
+        ("zz", "Centrar la línea en pantalla"),
+        ("Ctrl+O", "Volver a la posición anterior"),
+        ("Ctrl+I", "Ir a la posición siguiente"),
+    ]),
+    ("Editar", [
+        ("x", "Borrar carácter"),
+        ("dd", "Borrar (cortar) línea"),
+        ("D", "Borrar hasta el final de la línea"),
+        ("dw", "Borrar palabra"),
+        ("cc", "Cambiar línea"),
+        ("cw", "Cambiar palabra"),
+        ("r{c}", "Reemplazar el carácter por c"),
+        ("yy", "Copiar línea"),
+        ("yw", "Copiar palabra"),
+        ("p", "Pegar después"),
+        ("P", "Pegar antes"),
+        ("\"+y", "Copiar al portapapeles del sistema"),
+        ("\"+p", "Pegar del portapapeles del sistema"),
+        ("u", "Deshacer"),
+        ("Ctrl+R", "Rehacer"),
+        (".", "Repetir el último cambio"),
+        (">>", "Aumentar sangría"),
+        ("<<", "Reducir sangría"),
+        ("J", "Unir con la línea de abajo"),
+        ("~", "Cambiar mayúsculas/minúsculas"),
+    ]),
+    ("Objetos de texto", [
+        ("ciw", "Cambiar la palabra entera"),
+        ("diw", "Borrar la palabra entera"),
+        ("ci\"", "Cambiar dentro de comillas"),
+        ("ci(", "Cambiar dentro de paréntesis"),
+        ("ci{", "Cambiar dentro de llaves"),
+        ("dit", "Borrar dentro de la etiqueta HTML"),
+        ("da(", "Borrar paréntesis y su contenido"),
+        ("vip", "Seleccionar el párrafo"),
+    ]),
+    ("Buscar y reemplazar", [
+        ("/texto", "Buscar hacia delante"),
+        ("?texto", "Buscar hacia atrás"),
+        ("n", "Siguiente resultado"),
+        ("N", "Resultado anterior"),
+        ("*", "Buscar la palabra bajo el cursor"),
+        (":%s/a/b/g", "Reemplazar a por b en todo el archivo"),
+    ]),
+    ("Archivos y ventanas", [
+        (":w", "Guardar"),
+        (":q", "Cerrar"),
+        (":wq", "Guardar y cerrar"),
+        (":e archivo", "Abrir archivo"),
+        ("gt", "Pestaña siguiente"),
+        ("gT", "Pestaña anterior"),
+        (":vsp", "Dividir en vertical"),
+        ("Ctrl+W h/l", "Cambiar de panel dividido"),
+    ]),
+    ("Extras de VSCodeVim", [
+        ("gd", "Ir a la definición"),
+        ("gh", "Mostrar información (hover)"),
+        ("gb", "Cursor extra en la siguiente coincidencia"),
+        ("gcc", "Comentar/descomentar línea"),
+        ("gc{movimiento}", "Comentar el movimiento (gcip, gc2j…)"),
+        ("gC", "Comentario de bloque"),
+        ("ysiw)", "Rodear la palabra con ( )", "vim.surround"),
+        ("cs\"'", "Cambiar las comillas \" por '", "vim.surround"),
+        ("ds(", "Quitar los paréntesis de alrededor", "vim.surround"),
+        ("S)", "Rodear la selección (visual) con ( )", "vim.surround"),
     ]),
 ]
 
@@ -322,6 +423,43 @@ for b in load(os.path.join(USER, "keybindings.json"), []):
         desc += f" ({ctx})"
     add("Mis atajos", b["key"], desc, False)
 
+def vim_caps(keys):
+    """"Ctrl+W h/l" -> ['Ctrl', 'W', 'h/l'];  "gg" -> ['gg'] (sin pasar a mayúsculas: en Vim importa)"""
+    caps = []
+    for part in keys.split(" "):
+        if part.startswith("Ctrl+"):
+            caps += ["Ctrl", part[5:]]
+        else:
+            caps.append(part)
+    return caps
+
+
+def vim_sections():
+    rows = []
+    # Mapeos propios: vim.normalModeKeyBindings(NonRecursive), insertMode…, visualMode…
+    for name, value in settings.items():
+        m = re.match(r"vim\.(normal|insert|visual|operatorPending)ModeKeyBindings(NonRecursive)?$", name)
+        if not m or not isinstance(value, list):
+            continue
+        mode = {"normal": "normal", "insert": "insertar", "visual": "visual", "operatorPending": "operador"}[m.group(1)]
+        for b in value:
+            before = "".join(b.get("before", []))
+            if b.get("after"):
+                desc = "→ " + "".join(b["after"])
+            elif b.get("commands"):
+                desc = ", ".join(titles.get(c.get("command", c) if isinstance(c, dict) else c) or humanize(c.get("command", c) if isinstance(c, dict) else c) for c in b["commands"])
+            else:
+                continue
+            rows.append({"section": "Vim · Mis mapeos", "keys": [before], "desc": f"{desc[:1].upper()}{desc[1:]} (modo {mode})"})
+    for section, binds in VIM:
+        for b in binds:
+            keys, desc = b[0], b[1]
+            if len(b) > 2 and not setting(b[2]):
+                continue
+            rows.append({"section": "Vim · " + section, "keys": vim_caps(keys), "desc": desc})
+    return rows
+
+
 for pkg, d in sorted(extensions, key=lambda e: nls(e[1], e[0].get("displayName", e[0].get("name", ""))).lower()):
     if pkg is vim_pkg:
         continue
@@ -346,6 +484,9 @@ for pkg, d in sorted(extensions, key=lambda e: nls(e[1], e[0].get("displayName",
         seen_rows.add((norm_key(key), desc))
         # Vim solo le quita la tecla si el atajo es del editor de texto
         add(name, key, desc, check_vim=ctx == "" and "editorTextFocus" in (b.get("when") or ""))
+
+if vim_pkg:
+    out += vim_sections()
 
 for section, binds in DEFAULTS:
     for key, desc in binds:
