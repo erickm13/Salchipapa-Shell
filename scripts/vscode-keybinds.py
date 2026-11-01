@@ -49,7 +49,7 @@ DEFAULTS = [
         ("ctrl+pageup", "Pestaña anterior"),
         ("ctrl+pagedown", "Pestaña siguiente"),
         ("ctrl+\\", "Dividir el editor"),
-        ("ctrl+1", "Enfocar el primer grupo de editores"),
+        ("ctrl+1", "Volver al archivo (primer grupo de editores)"),
         ("ctrl+2", "Enfocar el segundo grupo de editores"),
     ]),
     ("Edición", [
@@ -106,7 +106,8 @@ DEFAULTS = [
     ]),
     ("Paneles", [
         ("ctrl+b", "Mostrar/ocultar la barra lateral"),
-        ("ctrl+shift+e", "Explorador"),
+        ("ctrl+shift+e", "Ir al explorador de archivos (izquierda)"),
+        ("ctrl+0", "Ir a la barra lateral"),
         ("ctrl+shift+g", "Control de código (Git)"),
         ("ctrl+shift+d", "Ejecutar y depurar"),
         ("ctrl+shift+x", "Extensiones"),
