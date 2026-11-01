@@ -2,6 +2,8 @@ pragma ComponentBehavior: Bound
 // Glosario de atajos, DENTRO de la isla (modo "binds", Super+/). Lee lua/keybinds.lua en vivo:
 // cada comentario suelto arriba de un bloque es una sección, y la descripción de un atajo es su
 // comentario al final de la línea (o el de la línea anterior); si no tiene, se deduce de la acción.
+// Tab cambia a los atajos de VS Code (scripts/vscode-keybinds.py: keybindings.json, extensiones y
+// los básicos de VS Code), que se regeneran cada vez que se abre esa pestaña.
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -11,13 +13,16 @@ Item {
     id: root
 
     property var all: [] // [{ section, keys: [string], desc }]
+    property var vscode: [] // lo mismo, de VS Code
+    property bool vscodeTab: false
+    readonly property var source: vscodeTab ? vscode : all
     property string query: ""
     property int sel: 0 // fila seleccionada de `rows` (nunca una cabecera)
     property point mousePos: Qt.point(-1, -1)
 
     readonly property var results: {
         const q = query.trim().toLowerCase();
-        return q === "" ? all : all.filter(b => b.desc.toLowerCase().includes(q) || b.section.toLowerCase().includes(q) || b.keys.join(" ").toLowerCase().includes(q));
+        return q === "" ? source : source.filter(b => b.desc.toLowerCase().includes(q) || b.section.toLowerCase().includes(q) || b.keys.join(" ").toLowerCase().includes(q));
     }
     // Lo que pinta la lista: los atajos con una cabecera { header } delante de cada sección
     readonly property var rows: {
@@ -95,6 +100,14 @@ Item {
             "mediaStop": "Detener reproducción",
             "touchpad": "Activar/desactivar el touchpad"
         })
+
+    function setTab(vs: bool): void {
+        vscodeTab = vs;
+        if (vs)
+            vscodeProc.running = true; // al día con keybindings.json y las extensiones
+        sel = firstRow();
+        list.positionViewAtBeginning();
+    }
 
     function firstRow(): int {
         return rows.findIndex(r => r.header === undefined);
@@ -330,6 +343,7 @@ Item {
             if (Overlay.mode === "binds") {
                 root.query = "";
                 searchInput.text = "";
+                root.vscodeTab = false;
                 root.sel = root.firstRow();
                 list.positionViewAtBeginning();
                 searchInput.forceActiveFocus();
@@ -342,6 +356,23 @@ Item {
         watchChanges: true
         onFileChanged: reload()
         onLoaded: root.all = root.parse(text())
+    }
+
+    Process {
+        id: vscodeProc
+        command: ["python3", Quickshell.shellDir + "/../scripts/vscode-keybinds.py"]
+        stdout: StdioCollector {
+            id: vscodeOut
+            onStreamFinished: {
+                try {
+                    root.vscode = JSON.parse(vscodeOut.text);
+                } catch (e) {
+                    return;
+                }
+                if (root.vscodeTab)
+                    root.sel = root.firstRow();
+            }
+        }
     }
 
     // --- Buscador ---
@@ -367,8 +398,8 @@ Item {
             font.family: Theme.bodyFontFamily
             anchors.left: searchIcon.right
             anchors.leftMargin: 12
-            anchors.right: parent.right
-            anchors.rightMargin: 20
+            anchors.right: tabs.left
+            anchors.rightMargin: 12
             anchors.verticalCenter: parent.verticalCenter
             color: "#ffffff"
             font.pixelSize: Theme.fontPx(15)
@@ -381,7 +412,7 @@ Item {
             }
             Text {
                 anchors.verticalCenter: parent.verticalCenter
-                text: "Search shortcuts (action or key)…"
+                text: root.vscodeTab ? "Search VS Code shortcuts…" : "Search shortcuts (action or key)…"
                 color: Theme.tertiaryText
                 font: parent.font
                 visible: parent.text.length === 0
@@ -396,6 +427,71 @@ Item {
                 }
             }
             Keys.onEscapePressed: Overlay.close()
+            Keys.onTabPressed: root.setTab(!root.vscodeTab)
+            Keys.onBacktabPressed: root.setTab(!root.vscodeTab)
+        }
+
+        // Pestañas: Hyprland / VS Code (Tab o clic)
+        Rectangle {
+            id: tabs
+            anchors.right: parent.right
+            anchors.rightMargin: 16
+            anchors.verticalCenter: parent.verticalCenter
+            width: tabRow.implicitWidth + 6
+            height: 24
+            radius: 12
+            color: Theme.surface0
+            Row {
+                id: tabRow
+                anchors.centerIn: parent
+                spacing: 2
+                Repeater {
+                    model: [{ label: "Hyprland", icon: "keyboard", vs: false }, { label: "VS Code", icon: "code", vs: true }]
+                    delegate: Rectangle {
+                        id: tab
+                        required property var modelData
+                        readonly property bool on: root.vscodeTab === modelData.vs
+                        width: tabContent.implicitWidth + 14
+                        height: 20
+                        radius: 10
+                        color: on ? Theme.green : "transparent"
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: Theme.hoverDuration
+                            }
+                        }
+                        Row {
+                            id: tabContent
+                            anchors.centerIn: parent
+                            spacing: 4
+                            Text {
+                                text: tab.modelData.icon
+                                font.family: "Material Symbols Rounded"
+                                font.pixelSize: 13
+                                color: tab.on ? Theme.islandBg : Theme.secondaryText
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                            Text {
+                                text: tab.modelData.label
+                                font.family: Theme.bodyFontFamily
+                                font.pixelSize: Theme.fontPx(11)
+                                font.bold: tab.on
+                                color: tab.on ? Theme.islandBg : Theme.secondaryText
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (!tab.on)
+                                    root.setTab(tab.modelData.vs);
+                                searchInput.forceActiveFocus();
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -481,11 +577,12 @@ Item {
                     delegate: Rectangle {
                         id: cap
                         required property string modelData
-                        width: Math.max(30, capText.implicitWidth + 16)
+                        readonly property bool sep: modelData === "·" // entre las teclas de un acorde
+                        width: sep ? capText.implicitWidth + 2 : Math.max(30, capText.implicitWidth + 16)
                         height: 30
                         radius: 7
-                        color: Theme.surface0
-                        border.width: 1
+                        color: sep ? "transparent" : Theme.surface0
+                        border.width: sep ? 0 : 1
                         border.color: Theme.surface1
                         Text {
                             id: capText
@@ -517,7 +614,7 @@ Item {
         Text {
             anchors.centerIn: parent
             visible: root.results.length === 0
-            text: root.all.length === 0 ? "Loading…" : "No matching shortcut"
+            text: root.source.length === 0 ? "Loading…" : "No matching shortcut"
             color: Theme.tertiaryText
             font.family: Theme.bodyFontFamily
             font.pixelSize: Theme.fontPx(13)
@@ -535,7 +632,7 @@ Item {
             anchors.left: parent.left
             anchors.leftMargin: 18
             anchors.verticalCenter: parent.verticalCenter
-            text: root.results.length + " shortcuts · from lua/keybinds.lua"
+            text: root.results.length + " shortcuts · from " + (root.vscodeTab ? "keybindings.json, extensions and VS Code defaults" : "lua/keybinds.lua")
             color: Theme.overlay1
             font.family: Theme.bodyFontFamily
             font.pixelSize: Theme.fontPx(11)
@@ -544,7 +641,7 @@ Item {
             anchors.right: parent.right
             anchors.rightMargin: 14
             anchors.verticalCenter: parent.verticalCenter
-            text: "↑/↓ or Ctrl+J/K: move · Esc: close"
+            text: "Tab: Hyprland/VS Code · ↑/↓ or Ctrl+J/K: move · Esc: close"
             color: Theme.overlay1
             font.family: Theme.bodyFontFamily
             font.pixelSize: Theme.fontPx(11)

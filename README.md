@@ -88,7 +88,7 @@ Desde una TTY libre (`Ctrl+Alt+F3`): `Hyprland -c <repo>/hyprland.lua`. `Super +
 | `Super + Alt + P` | Menú de energía de la isla (flechas/Tab eligen, Enter/Espacio activan, Esc vuelve/cierra) |
 | `Super + V` | Historial del portapapeles (en la isla; Enter copia, Supr borra) |
 | `Super + .` | Selector de emojis (en la isla; español o inglés) |
-| `Super + /` | Glosario de atajos (en la isla; se lee de `lua/keybinds.lua`, con buscador) |
+| `Super + /` | Glosario de atajos (en la isla; se lee de `lua/keybinds.lua`, con buscador). `Tab` cambia a los de VS Code (`keybindings.json`, extensiones y los básicos) |
 | `Super + Shift + Esc` | Rendimiento: CPU, GPU, RAM, discos, ventiladores y red (en la isla) |
 | `Super + Alt + Space` / `Super + F` | Flotar / pantalla completa |
 | `Super + [1-0]` | Workspace |
