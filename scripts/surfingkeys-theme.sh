@@ -183,6 +183,61 @@ settings.theme = \`
     font-family: '${font}', sans-serif;
 }
 .sk_theme .prompt, .sk_theme .resultPage { color: ${fg_dim}; }
+/* Ayuda (?): panel centrado con un mosaico de tarjetas, una por grupo */
+#sk_usage.sk_theme {
+    width: min(1500px, 92vw);
+    left: 50%;
+    transform: translateX(-50%);
+    top: 5%;
+    max-height: 88vh;
+    padding: 22px;
+    background: ${bg_base};
+    border: 1px solid ${border};
+    border-radius: 26px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .6), 0 2px 10px rgba(0, 0, 0, .4);
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 16px;
+    align-items: start;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: ${border} transparent;
+    font-family: '${font}', sans-serif;
+}
+#sk_usage.sk_theme > div {
+    display: block;
+    margin: 0;
+    padding: 14px 16px 12px;
+    background: ${bg_low};
+    border: 1px solid ${border};
+    border-radius: 18px;
+}
+#sk_usage.sk_theme .feature_name { text-align: left; padding: 0 0 10px 2px; }
+#sk_usage.sk_theme .feature_name > span {
+    border-bottom: none;
+    color: ${primary};
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+#sk_usage.sk_theme > div > div:not(.feature_name) { display: flex; align-items: center; gap: 12px; padding: 3px 0; }
+#sk_usage.sk_theme .kbd-span { width: 86px; flex-shrink: 0; text-align: right; }
+#sk_usage.sk_theme span.annotation { padding-left: 0; color: ${fg}; font-size: 13px; line-height: 1.35; }
+#sk_usage.sk_theme kbd {
+    padding: 4px 7px;
+    line-height: 14px;
+    font: 600 12px 'CaskaydiaCove Nerd Font Mono', 'CaskaydiaCove NFM', monospace;
+    background: ${bg_high};
+    color: ${primary};
+    border: 1px solid ${border};
+    border-radius: 7px;
+    box-shadow: inset 0 -2px 0 ${bg};
+}
+#sk_usage.sk_theme > p { grid-column: 1 / -1; margin: 0 4px; font-size: 12px; }
+#sk_usage.sk_theme > p a { color: ${tertiary} !important; text-decoration: none; }
+
 /* Resultado del traductor (Q en el omnibar, q en la burbuja) */
 .sk_tr { padding: 6px 4px; }
 .sk_tr_text { font-family: '${input_font}', '${font}', sans-serif; font-size: 22px; font-weight: 600; color: ${fg}; }
