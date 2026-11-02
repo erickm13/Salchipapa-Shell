@@ -593,8 +593,9 @@ def surfingkeys():
         for key, group, desc in re.findall(r'\("((?:[^"\\]|\\.){1,16})","[^"]*",0,"#(\d+)((?:[^"\\]|\\.)+)"', js):
             found.append((key, group, desc, ""))
         # Desplazarse y modos: mappings.add("j",{annotation:"Scroll down",feature_group:2,…})
+        # (los del grupo 9 son del modo visual: w, b, f, n… no deben pisar a los normales)
         for key, desc, group in re.findall(r'mappings\.add\("((?:[^"\\]|\\.){1,16})",\{annotation:"((?:[^"\\]|\\.)+)",feature_group:(\d+)', js):
-            found.append((key, group, desc, ""))
+            found.append((key, group, desc, "visual" if group == "9" else ""))
         # Buscadores: addSearchAlias("g","google",url,"s",…) crea "og" y "sg"
         for alias, engine, prefix in re.findall(r'\("([a-z])","([a-z]+)","https?://[^"]+","([a-z])"', js):
             name = {"duckduckgo": "DuckDuckGo", "github": "GitHub", "youtube": "YouTube"}.get(engine, engine.capitalize())
