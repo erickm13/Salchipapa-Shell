@@ -6,8 +6,8 @@
 #     --copy: al portapapeles (wl-copy) en vez de imprimirlo
 #   SURFINGKEYS_INPUT_FONT: letra del texto que escribes en el omnibar (por defecto Geist)
 #   SURFINGKEYS_TRANSLATE_TO: idioma al que traducen Q y q (por defecto es)
-# Además del tema registra el traductor de Q / q (registerInlineQuery: Surfingkeys no trae ninguno)
-# con el servicio de Google que usa su extensión de diccionario (sin clave).
+# Además del tema redefine Q / q como traductor (Surfingkeys no trae ninguno y en Firefox ignora
+# registerInlineQuery) con el servicio de Google que usa su extensión de diccionario (sin clave).
 # Se pega en Surfingkeys > Settings > Advanced mode y se pulsa Save. Firefox no deja que las
 # extensiones lean archivos locales, así que no se puede cargar desde un file:// y hay que volver
 # a pegarlo si cambias de tema o de fondo.
@@ -82,27 +82,33 @@ js=$(
 // Tema de Salchipapa-Shell para Surfingkeys (generado por scripts/surfingkeys-theme.sh).
 // Colores: ${scheme:-tema activo de la shell}${flavour:+ ($flavour)}.
 
-// Traductor de Q (escribes la palabra) y q en modo visual (la palabra bajo el cursor): al "${translate_to}"
-api.Front.registerInlineQuery({
-    url: function (q) {
-        return "https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=auto&tl=${translate_to}&q=" + encodeURIComponent(q);
-    },
-    parseResult: function (res) {
-        const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
-        let text, from;
-        try {
-            const r = JSON.parse(res.text);
-            const first = Array.isArray(r[0]) ? r[0] : r; // [["traducción","en"]] o ["traducción","en"]
-            text = first[0];
-            from = first[1];
-        } catch (e) {
-            return '<div class="sk_tr"><div class="sk_tr_note">No se pudo traducir</div></div>';
-        }
-        if (!text) return "";
-        const note = from === "${translate_to}" ? "Ya está en ${translate_to}" : esc(from || "?") + " → ${translate_to}";
-        return '<div class="sk_tr"><div class="sk_tr_text">' + esc(text) + '</div><div class="sk_tr_note">' + note + "</div></div>";
-    },
+// Traductor (al "${translate_to}"). Surfingkeys para Firefox ignora api.Front.registerInlineQuery (en
+// esta versión solo funciona en Chrome), así que Q y q (visual) se redefinen: piden la traducción
+// aquí mismo y la muestran en la ventana emergente del tema.
+//   Q: traduce lo seleccionado o, si no hay nada, pregunta qué traducir.   q (visual): la selección.
+const skEsc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+async function skTranslate(q) {
+    q = (q || "").trim();
+    if (!q) return;
+    try {
+        const res = await fetch("https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=auto&tl=${translate_to}&q=" + encodeURIComponent(q));
+        const r = await res.json();
+        const first = Array.isArray(r[0]) ? r[0] : r; // [["traducción","en"]] o ["traducción","en"]
+        const text = first[0], from = first[1];
+        const note = from === "${translate_to}" ? "Ya está en ${translate_to}" : skEsc(from || "?") + " → ${translate_to}";
+        api.Front.showPopup('<div class="sk_tr"><div class="sk_tr_src">' + skEsc(q) + '</div><div class="sk_tr_text">' + skEsc(text) + '</div><div class="sk_tr_note">' + note + '</div></div>');
+    } catch (e) {
+        api.Front.showBanner("No se pudo traducir: " + e);
+    }
+}
+api.mapkey("Q", "#8Traducir (lo seleccionado o lo que escribas) al ${translate_to}", function () {
+    const sel = window.getSelection().toString();
+    skTranslate(sel.trim() ? sel : window.prompt("Traducir al ${translate_to}:"));
 });
+api.vmapkey("q", "#9Traducir la selección al ${translate_to}", function () {
+    skTranslate(window.getSelection().toString());
+});
+api.unmap("cq"); // traducir con etiquetas: en Firefox solo abría la wiki
 
 // Etiquetas de \`f\` (abrir enlaces) y de los modos de texto
 api.Hints.style("border: none; border-radius: 6px; padding: 1px 5px; background: ${primary}; color: ${on_primary}; font-family: '${font}', sans-serif; font-size: 12px; font-weight: 700; box-shadow: 0 2px 6px rgba(0,0,0,.45);");
@@ -238,10 +244,22 @@ settings.theme = \`
 #sk_usage.sk_theme > p { grid-column: 1 / -1; margin: 0 4px; font-size: 12px; }
 #sk_usage.sk_theme > p a { color: ${tertiary} !important; text-decoration: none; }
 
-/* Resultado del traductor (Q en el omnibar, q en la burbuja) */
-.sk_tr { padding: 6px 4px; }
-.sk_tr_text { font-family: '${input_font}', '${font}', sans-serif; font-size: 22px; font-weight: 600; color: ${fg}; }
-.sk_tr_note { margin-top: 4px; font-size: 12px; color: ${primary}; text-transform: uppercase; letter-spacing: .06em; }
+/* Ventana emergente (la traducción de Q / q) */
+#sk_popup.sk_theme {
+    width: min(640px, 80vw);
+    left: 50%;
+    transform: translateX(-50%);
+    top: 20%;
+    padding: 22px 26px;
+    background: ${bg_base};
+    border: 1px solid ${border};
+    border-radius: 24px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .6), 0 2px 10px rgba(0, 0, 0, .4);
+    font-family: '${font}', sans-serif;
+}
+.sk_tr_src { font-size: 14px; color: ${fg_dim}; margin-bottom: 8px; }
+.sk_tr_text { font-family: '${input_font}', '${font}', sans-serif; font-size: 26px; font-weight: 600; line-height: 1.3; color: ${fg}; }
+.sk_tr_note { margin-top: 12px; font-size: 12px; font-weight: 700; color: ${primary}; text-transform: uppercase; letter-spacing: .08em; }
 #sk_bubble { background: ${bg_base}; color: ${fg}; border: 1px solid ${border}; border-radius: 14px; }
 #sk_bubble .sk_bubble_content { padding: 8px 14px; }
 #sk_status, #sk_find {
@@ -254,7 +272,20 @@ settings.theme = \`
 }
 #sk_keystroke { background: ${bg}; color: ${fg}; border-radius: 10px; }
 #sk_keystroke kbd { background: ${bg_high}; color: ${primary}; border: 1px solid ${border}; }
-#sk_banner { background: ${primary}; color: ${on_primary}; border-radius: 10px; font-family: '${font}', sans-serif; }
+/* Banner: los avisos que bajan desde arriba */
+#sk_banner.sk_theme, #sk_banner {
+    width: min(720px, 80vw);
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 20px;
+    background: ${bg_high};
+    color: ${fg};
+    border: 1px solid ${primary};
+    border-top-style: none;
+    border-radius: 0 0 16px 16px;
+    font-family: '${font}', sans-serif;
+    font-size: 14px;
+}
 \`;
 EOF
 )
