@@ -4,6 +4,7 @@
 #     sin --scheme: los colores del tema activo (~/.local/state/salchipapa-shell/colors.json)
 #     --scheme salchipapa: los de un tema guardado (shell/themes/schemes.json), aunque no esté activo
 #     --copy: al portapapeles (wl-copy) en vez de imprimirlo
+#   SURFINGKEYS_INPUT_FONT: letra del texto que escribes en el omnibar (por defecto Geist)
 # Se pega en Surfingkeys > Settings > Advanced mode y se pulsa Save. Firefox no deja que las
 # extensiones lean archivos locales, así que no se puede cargar desde un file:// y hay que volver
 # a pegarlo si cambias de tema o de fondo.
@@ -58,6 +59,8 @@ primary=${primary:-$(c primary ff5759)}
 font=$(jq -r '.appearanceBodyFont // ""' "$config" 2>/dev/null)
 font=${font:-Inter}
 
+input_font="${SURFINGKEYS_INPUT_FONT:-Geist}"
+bg_base=$(c background 131313) # el fondo de la paleta: el del omnibar
 bg=$(c surfaceContainer 1f1f1f)
 bg_low=$(c surfaceContainerLow 1b1b1b)
 bg_high=$(c surfaceContainerHigh 2a2a2a)
@@ -101,36 +104,48 @@ settings.theme = \`
 .sk_theme .omnibar_timestamp { color: ${secondary}; }
 .sk_theme .omnibar_visitcount { color: ${tertiary}; }
 .sk_theme .omnibar_folder { color: ${secondary}; }
-/* Omnibar (t, og, b…) como el lanzador de la isla: centrado, redondeado, filas en pastilla */
+/* Omnibar (t, og, b…) como el lanzador de la isla: grande, centrado, con el fondo de la paleta */
 #sk_omnibar.sk_theme {
-    width: min(720px, 76vw);
+    width: min(900px, 84vw);
     left: 50%;
     transform: translateX(-50%);
-    padding: 6px;
-    border-radius: 22px;
+    padding: 8px;
+    border-radius: 26px;
+    background: ${bg_base};
     border: 1px solid ${border};
-    box-shadow: 0 18px 50px rgba(0, 0, 0, .55), 0 2px 8px rgba(0, 0, 0, .35);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .6), 0 2px 10px rgba(0, 0, 0, .4);
 }
-#sk_omnibar.sk_omnibar_middle { top: 18%; }
+#sk_omnibar.sk_omnibar_middle { top: 16%; }
 .sk_theme #sk_omnibarSearchArea {
     margin: 0;
-    padding: 12px 16px;
+    padding: 16px 22px;
     border-bottom: none;
-    background: ${bg_high};
-    border-radius: 16px;
+    background: ${bg_low};
+    border-radius: 18px;
 }
-.sk_theme #sk_omnibarSearchArea > input { font-size: 17px; padding-left: 10px; color: ${fg}; }
-.sk_theme #sk_omnibarSearchArea .prompt { font-size: 15px; color: ${primary}; font-weight: 700; }
-.sk_theme #sk_omnibarSearchArea .resultPage { font-size: 13px; color: ${fg_dim}; }
-.sk_theme #sk_omnibarSearchResult { margin: 8px 2px 2px; max-height: 50vh; overflow-y: auto; scrollbar-width: none; }
+.sk_theme #sk_omnibarSearchArea > input {
+    font-family: '${input_font}', '${font}', sans-serif;
+    font-size: 23px;
+    font-weight: 500;
+    letter-spacing: .01em;
+    padding-left: 14px;
+    color: ${fg};
+    caret-color: ${primary};
+}
+.sk_theme #sk_omnibarSearchArea > input::placeholder { color: ${fg_dim}; opacity: .6; }
+.sk_theme #sk_omnibarSearchArea .prompt { font-size: 18px; color: ${primary}; font-weight: 700; display: inline-flex; align-items: center; }
+/* Icono del buscador (Google, YouTube, Wikipedia…): Surfingkeys le pone width:20px en línea */
+.sk_theme #sk_omnibarSearchArea .prompt img { width: 34px !important; height: 34px !important; border-radius: 8px; }
+.sk_theme #sk_omnibarSearchArea .resultPage { font-size: 14px; color: ${fg_dim}; }
+.sk_theme #sk_omnibarSearchResult { margin: 10px 2px 2px; max-height: 55vh; overflow-y: auto; scrollbar-width: none; font-size: 15px; }
 .sk_theme #sk_omnibarSearchResult > ul { margin: 0; }
-.sk_theme #sk_omnibarSearchResult > ul > li { padding: 8px 12px; margin: 2px 0; border-radius: 12px; background: transparent; }
+.sk_theme #sk_omnibarSearchResult > ul > li { padding: 10px 14px; margin: 2px 0; border-radius: 14px; background: transparent; }
 .sk_theme #sk_omnibarSearchResult > ul > li:nth-child(odd) { background: transparent; }
 .sk_theme #sk_omnibarSearchResult > ul > li .title { color: ${fg}; }
 .sk_theme #sk_omnibarSearchResult > ul > li.focused { background: ${primary_container}; color: ${on_primary_container}; box-shadow: inset 3px 0 0 ${primary}; }
 .sk_theme #sk_omnibarSearchResult > ul > li.focused .url,
 .sk_theme #sk_omnibarSearchResult > ul > li.focused .title { color: ${on_primary_container}; }
-.sk_theme #sk_omnibarSearchResult li .icon { width: 18px; margin-right: 10px; }
+.sk_theme #sk_omnibarSearchResult li .icon { width: 22px; height: 22px; margin-right: 12px; }
 .sk_theme .feature_name { color: ${primary}; }
 .sk_theme .feature_name > span { border-bottom: 2px solid ${border}; }
 .sk_theme kbd {
