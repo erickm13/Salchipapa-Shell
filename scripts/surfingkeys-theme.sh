@@ -5,6 +5,9 @@
 #     --scheme salchipapa: los de un tema guardado (shell/themes/schemes.json), aunque no esté activo
 #     --copy: al portapapeles (wl-copy) en vez de imprimirlo
 #   SURFINGKEYS_INPUT_FONT: letra del texto que escribes en el omnibar (por defecto Geist)
+#   SURFINGKEYS_TRANSLATE_TO: idioma al que traducen Q y q (por defecto es)
+# Además del tema registra el traductor de Q / q (registerInlineQuery: Surfingkeys no trae ninguno)
+# con el servicio de Google que usa su extensión de diccionario (sin clave).
 # Se pega en Surfingkeys > Settings > Advanced mode y se pulsa Save. Firefox no deja que las
 # extensiones lean archivos locales, así que no se puede cargar desde un file:// y hay que volver
 # a pegarlo si cambias de tema o de fondo.
@@ -60,6 +63,7 @@ font=$(jq -r '.appearanceBodyFont // ""' "$config" 2>/dev/null)
 font=${font:-Inter}
 
 input_font="${SURFINGKEYS_INPUT_FONT:-Geist}"
+translate_to="${SURFINGKEYS_TRANSLATE_TO:-es}"
 bg_base=$(c background 131313) # el fondo de la paleta: el del omnibar
 bg=$(c surfaceContainer 1f1f1f)
 bg_low=$(c surfaceContainerLow 1b1b1b)
@@ -77,6 +81,28 @@ js=$(
     cat <<EOF
 // Tema de Salchipapa-Shell para Surfingkeys (generado por scripts/surfingkeys-theme.sh).
 // Colores: ${scheme:-tema activo de la shell}${flavour:+ ($flavour)}.
+
+// Traductor de Q (escribes la palabra) y q en modo visual (la palabra bajo el cursor): al "${translate_to}"
+api.Front.registerInlineQuery({
+    url: function (q) {
+        return "https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=auto&tl=${translate_to}&q=" + encodeURIComponent(q);
+    },
+    parseResult: function (res) {
+        const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+        let text, from;
+        try {
+            const r = JSON.parse(res.text);
+            const first = Array.isArray(r[0]) ? r[0] : r; // [["traducción","en"]] o ["traducción","en"]
+            text = first[0];
+            from = first[1];
+        } catch (e) {
+            return '<div class="sk_tr"><div class="sk_tr_note">No se pudo traducir</div></div>';
+        }
+        if (!text) return "";
+        const note = from === "${translate_to}" ? "Ya está en ${translate_to}" : esc(from || "?") + " → ${translate_to}";
+        return '<div class="sk_tr"><div class="sk_tr_text">' + esc(text) + '</div><div class="sk_tr_note">' + note + "</div></div>";
+    },
+});
 
 // Etiquetas de \`f\` (abrir enlaces) y de los modos de texto
 api.Hints.style("border: none; border-radius: 6px; padding: 1px 5px; background: ${primary}; color: ${on_primary}; font-family: '${font}', sans-serif; font-size: 12px; font-weight: 700; box-shadow: 0 2px 6px rgba(0,0,0,.45);");
@@ -157,6 +183,12 @@ settings.theme = \`
     font-family: '${font}', sans-serif;
 }
 .sk_theme .prompt, .sk_theme .resultPage { color: ${fg_dim}; }
+/* Resultado del traductor (Q en el omnibar, q en la burbuja) */
+.sk_tr { padding: 6px 4px; }
+.sk_tr_text { font-family: '${input_font}', '${font}', sans-serif; font-size: 22px; font-weight: 600; color: ${fg}; }
+.sk_tr_note { margin-top: 4px; font-size: 12px; color: ${primary}; text-transform: uppercase; letter-spacing: .06em; }
+#sk_bubble { background: ${bg_base}; color: ${fg}; border: 1px solid ${border}; border-radius: 14px; }
+#sk_bubble .sk_bubble_content { padding: 8px 14px; }
 #sk_status, #sk_find {
     font-family: '${font}', sans-serif;
     font-size: 14pt;
