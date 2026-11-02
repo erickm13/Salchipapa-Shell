@@ -83,28 +83,42 @@ js=$(
 // Colores: ${scheme:-tema activo de la shell}${flavour:+ ($flavour)}.
 
 // Traductor (al "${translate_to}"). Surfingkeys para Firefox ignora api.Front.registerInlineQuery (en
-// esta versión solo funciona en Chrome), así que Q y q (visual) se redefinen: piden la traducción
-// aquí mismo y la muestran en la ventana emergente del tema.
-//   Q: traduce lo seleccionado o, si no hay nada, pregunta qué traducir.   q (visual): la selección.
+// esta versión solo funciona en Chrome), así que Q usa el omnibar como un buscador más ("t"): mientras
+// escribes, la traducción sale en vivo como sugerencia (la petición la hace el fondo de la extensión y
+// la respuesta se procesa aquí). Enter abre Google Translate con el texto. q (visual): ventana emergente.
 const skEsc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const skTrUrl = "https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=auto&tl=${translate_to}&q=";
+const skTrPage = "https://translate.google.com/?sl=auto&tl=${translate_to}&op=translate&text=";
+function skTrParse(text) {
+    const r = JSON.parse(text);
+    const first = Array.isArray(r[0]) ? r[0] : r; // [["traducción","en"]] o ["traducción","en"]
+    return { text: first[0], from: first[1] };
+}
+function skTrHtml(q, t) {
+    const note = t.from === "${translate_to}" ? "Ya está en ${translate_to}" : skEsc(t.from || "?") + " → ${translate_to}";
+    return '<div class="sk_tr"><div class="sk_tr_src">' + skEsc(q) + '</div><div class="sk_tr_text">' + skEsc(t.text) + '</div><div class="sk_tr_note">' + note + "</div></div>";
+}
+api.addSearchAlias("t", "Traducir", skTrPage, "s", skTrUrl, function (response, req) {
+    try {
+        const t = skTrParse(response.text);
+        return t.text ? [{ html: skTrHtml(req.query, t), url: skTrPage + encodeURIComponent(req.query) }] : [];
+    } catch (e) {
+        return [];
+    }
+}, "o", { skipMaps: true });
+api.mapkey("Q", "#8Traducir al ${translate_to} (con lo seleccionado, si hay)", function () {
+    api.Front.openOmnibar({ type: "SearchEngine", extra: "t", pref: window.getSelection().toString().trim() });
+});
 async function skTranslate(q) {
     q = (q || "").trim();
     if (!q) return;
     try {
-        const res = await fetch("https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=auto&tl=${translate_to}&q=" + encodeURIComponent(q));
-        const r = await res.json();
-        const first = Array.isArray(r[0]) ? r[0] : r; // [["traducción","en"]] o ["traducción","en"]
-        const text = first[0], from = first[1];
-        const note = from === "${translate_to}" ? "Ya está en ${translate_to}" : skEsc(from || "?") + " → ${translate_to}";
-        api.Front.showPopup('<div class="sk_tr"><div class="sk_tr_src">' + skEsc(q) + '</div><div class="sk_tr_text">' + skEsc(text) + '</div><div class="sk_tr_note">' + note + '</div></div>');
+        const res = await fetch(skTrUrl + encodeURIComponent(q));
+        api.Front.showPopup(skTrHtml(q, skTrParse(await res.text())));
     } catch (e) {
         api.Front.showBanner("No se pudo traducir: " + e);
     }
 }
-api.mapkey("Q", "#8Traducir (lo seleccionado o lo que escribas) al ${translate_to}", function () {
-    const sel = window.getSelection().toString();
-    skTranslate(sel.trim() ? sel : window.prompt("Traducir al ${translate_to}:"));
-});
 api.vmapkey("q", "#9Traducir la selección al ${translate_to}", function () {
     skTranslate(window.getSelection().toString());
 });
@@ -258,6 +272,8 @@ settings.theme = \`
     font-family: '${font}', sans-serif;
 }
 .sk_tr_src { font-size: 14px; color: ${fg_dim}; margin-bottom: 8px; }
+.sk_theme #sk_omnibarSearchResult .sk_tr { padding: 6px 4px; }
+.sk_theme #sk_omnibarSearchResult .sk_tr_src { display: none; }
 .sk_tr_text { font-family: '${input_font}', '${font}', sans-serif; font-size: 26px; font-weight: 600; line-height: 1.3; color: ${fg}; }
 .sk_tr_note { margin-top: 12px; font-size: 12px; font-weight: 700; color: ${primary}; text-transform: uppercase; letter-spacing: .08em; }
 #sk_bubble { background: ${bg_base}; color: ${fg}; border: 1px solid ${border}; border-radius: 14px; }
