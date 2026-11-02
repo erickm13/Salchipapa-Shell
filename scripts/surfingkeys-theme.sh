@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Tema de Surfingkeys (extensión de Firefox) con los colores y la letra actuales de la shell.
-#   surfingkeys-theme.sh          -> imprime el JS
-#   surfingkeys-theme.sh --copy   -> lo copia al portapapeles (wl-copy)
+#   surfingkeys-theme.sh [--scheme <nombre> [flavour]] [--copy]
+#     sin --scheme: los colores del tema activo (~/.local/state/salchipapa-shell/colors.json)
+#     --scheme salchipapa: los de un tema guardado (shell/themes/schemes.json), aunque no esté activo
+#     --copy: al portapapeles (wl-copy) en vez de imprimirlo
 # Se pega en Surfingkeys > Settings > Advanced mode y se pulsa Save. Firefox no deja que las
 # extensiones lean archivos locales, así que no se puede cargar desde un file:// y hay que volver
 # a pegarlo si cambias de tema o de fondo.
@@ -11,12 +13,46 @@ set -euo pipefail
 
 state="$HOME/.local/state/salchipapa-shell/colors.json"
 config="$HOME/.config/salchipapa-shell/config.json"
+schemes="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)/shell/themes/schemes.json"
+
+scheme="" flavour="" copy=false
+while [ $# -gt 0 ]; do
+    case "$1" in
+    --scheme)
+        scheme="${2:?falta el nombre del tema}"
+        shift
+        if [ $# -gt 1 ] && [ "${2#--}" = "$2" ]; then
+            flavour="$2"
+            shift
+        fi
+        ;;
+    --copy) copy=true ;;
+    *)
+        echo "uso: surfingkeys-theme.sh [--scheme <nombre> [flavour]] [--copy]" >&2
+        exit 1
+        ;;
+    esac
+    shift
+done
+
+if [ -n "$scheme" ]; then
+    # Primer flavour del tema si no se indica (salchipapa solo tiene "default")
+    pal=$(jq -c --arg s "$scheme" --arg f "$flavour" '.[$s] // empty | if $f != "" then .[$f] else (to_entries[0].value) end // empty' "$schemes")
+    [ -n "$pal" ] || {
+        echo "tema no encontrado: $scheme $flavour (hay: $(jq -r 'keys | join(", ")' "$schemes"))" >&2
+        exit 1
+    }
+else
+    pal=$(jq -c '.colours // {}' "$state" 2>/dev/null || echo '{}')
+fi
 
 declare -A C
-while IFS=$'\t' read -r k v; do C[$k]=$v; done < <(jq -r '.colours // {} | to_entries[] | "\(.key)\t\(.value)"' "$state" 2>/dev/null)
+while IFS=$'\t' read -r k v; do C[$k]=${v,,}; done < <(jq -r 'to_entries[] | "\(.key)\t\(.value)"' <<<"$pal")
 c() { printf '#%s' "${C[$1]:-$2}"; }
 
-accent=$(jq -r '.appearanceAccent // ""' "$config" 2>/dev/null)
+# El acento personalizado de Ajustes solo con el tema activo (con --scheme, el del tema)
+accent=""
+[ -n "$scheme" ] || accent=$(jq -r '.appearanceAccent // ""' "$config" 2>/dev/null)
 primary=${accent:+#$accent}
 primary=${primary:-$(c primary ff5759)}
 font=$(jq -r '.appearanceBodyFont // ""' "$config" 2>/dev/null)
@@ -37,7 +73,7 @@ tertiary=$(c tertiary f89f1e)
 js=$(
     cat <<EOF
 // Tema de Salchipapa-Shell para Surfingkeys (generado por scripts/surfingkeys-theme.sh).
-// Colores del tema activo de la shell; vuelve a generarlo si cambias de tema o de fondo.
+// Colores: ${scheme:-tema activo de la shell}${flavour:+ ($flavour)}.
 
 // Etiquetas de \`f\` (abrir enlaces) y de los modos de texto
 api.Hints.style("border: none; border-radius: 6px; padding: 1px 5px; background: ${primary}; color: ${on_primary}; font-family: '${font}', sans-serif; font-size: 12px; font-weight: 700; box-shadow: 0 2px 6px rgba(0,0,0,.45);");
@@ -95,7 +131,7 @@ settings.theme = \`
 EOF
 )
 
-if [ "${1:-}" = "--copy" ]; then
+if $copy; then
     printf '%s\n' "$js" | wl-copy
     echo "Copiado. Pégalo en Surfingkeys > Settings > Advanced mode y pulsa Save." >&2
 else
