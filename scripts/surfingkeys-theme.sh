@@ -201,7 +201,7 @@ settings.theme = \`
     border: 1px solid ${border};
     border-radius: 26px;
     box-shadow: 0 24px 60px rgba(0, 0, 0, .6), 0 2px 10px rgba(0, 0, 0, .4);
-    display: grid !important;
+    display: grid; /* sin !important: Surfingkeys la oculta con style="display: none" */
     grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
     gap: 16px;
     align-items: start;
