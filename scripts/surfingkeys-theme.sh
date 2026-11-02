@@ -85,7 +85,8 @@ js=$(
 // Traductor (al "${translate_to}"). Surfingkeys para Firefox ignora api.Front.registerInlineQuery (en
 // esta versión solo funciona en Chrome), así que Q usa el omnibar como un buscador más ("t"): mientras
 // escribes, la traducción sale en vivo como sugerencia (la petición la hace el fondo de la extensión y
-// la respuesta se procesa aquí). Enter abre Google Translate con el texto. q (visual): ventana emergente.
+// la respuesta se procesa aquí). Enter abre Google Translate con el texto. q (visual) y st (lo
+// seleccionado, en modo normal): ventana emergente.
 const skEsc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const skTrUrl = "https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=auto&tl=${translate_to}&q=";
 const skTrPage = "https://translate.google.com/?sl=auto&tl=${translate_to}&op=translate&text=";
@@ -121,6 +122,12 @@ async function skTranslate(q) {
 }
 api.vmapkey("q", "#9Traducir la selección al ${translate_to}", function () {
     skTranslate(window.getSelection().toString());
+});
+// st: lo seleccionado (con el ratón, doble clic…) en la ventana emergente, como sg/sy buscan la selección
+api.mapkey("st", "#6Traducir lo seleccionado al ${translate_to}", function () {
+    const sel = window.getSelection().toString().trim();
+    if (sel) skTranslate(sel);
+    else api.Front.showBanner("Selecciona un texto primero (o usa Q para escribirlo)");
 });
 api.unmap("cq"); // traducir con etiquetas: en Firefox solo abría la wiki
 
