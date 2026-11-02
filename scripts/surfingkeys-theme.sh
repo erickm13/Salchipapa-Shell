@@ -101,10 +101,36 @@ settings.theme = \`
 .sk_theme .omnibar_timestamp { color: ${secondary}; }
 .sk_theme .omnibar_visitcount { color: ${tertiary}; }
 .sk_theme .omnibar_folder { color: ${secondary}; }
-.sk_theme #sk_omnibarSearchArea { border-bottom: 1px solid ${border}; }
-.sk_theme #sk_omnibarSearchResult ul li:nth-child(odd) { background: ${bg_low}; }
-.sk_theme #sk_omnibarSearchResult ul li.focused { background: ${primary_container}; color: ${on_primary_container}; border-radius: 8px; }
-.sk_theme #sk_omnibarSearchResult ul li.focused .url { color: ${on_primary_container}; }
+/* Omnibar (t, og, b…) como el lanzador de la isla: centrado, redondeado, filas en pastilla */
+#sk_omnibar.sk_theme {
+    width: min(720px, 76vw);
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 6px;
+    border-radius: 22px;
+    border: 1px solid ${border};
+    box-shadow: 0 18px 50px rgba(0, 0, 0, .55), 0 2px 8px rgba(0, 0, 0, .35);
+}
+#sk_omnibar.sk_omnibar_middle { top: 18%; }
+.sk_theme #sk_omnibarSearchArea {
+    margin: 0;
+    padding: 12px 16px;
+    border-bottom: none;
+    background: ${bg_high};
+    border-radius: 16px;
+}
+.sk_theme #sk_omnibarSearchArea > input { font-size: 17px; padding-left: 10px; color: ${fg}; }
+.sk_theme #sk_omnibarSearchArea .prompt { font-size: 15px; color: ${primary}; font-weight: 700; }
+.sk_theme #sk_omnibarSearchArea .resultPage { font-size: 13px; color: ${fg_dim}; }
+.sk_theme #sk_omnibarSearchResult { margin: 8px 2px 2px; max-height: 50vh; overflow-y: auto; scrollbar-width: none; }
+.sk_theme #sk_omnibarSearchResult > ul { margin: 0; }
+.sk_theme #sk_omnibarSearchResult > ul > li { padding: 8px 12px; margin: 2px 0; border-radius: 12px; background: transparent; }
+.sk_theme #sk_omnibarSearchResult > ul > li:nth-child(odd) { background: transparent; }
+.sk_theme #sk_omnibarSearchResult > ul > li .title { color: ${fg}; }
+.sk_theme #sk_omnibarSearchResult > ul > li.focused { background: ${primary_container}; color: ${on_primary_container}; box-shadow: inset 3px 0 0 ${primary}; }
+.sk_theme #sk_omnibarSearchResult > ul > li.focused .url,
+.sk_theme #sk_omnibarSearchResult > ul > li.focused .title { color: ${on_primary_container}; }
+.sk_theme #sk_omnibarSearchResult li .icon { width: 18px; margin-right: 10px; }
 .sk_theme .feature_name { color: ${primary}; }
 .sk_theme .feature_name > span { border-bottom: 2px solid ${border}; }
 .sk_theme kbd {
