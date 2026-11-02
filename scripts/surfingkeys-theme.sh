@@ -131,6 +131,10 @@ api.mapkey("st", "#6Traducir lo seleccionado al ${translate_to}", function () {
 });
 api.unmap("cq"); // traducir con etiquetas: en Firefox solo abría la wiki
 
+// on: pestaña nueva escribiendo ya la URL o la búsqueda (el omnibar de t). El "on" original abre una
+// pestaña vacía sin foco en la barra de direcciones: una extensión no puede enfocarla ni pulsar Ctrl+T.
+api.map("on", "t");
+
 // Etiquetas de \`f\` (abrir enlaces) y de los modos de texto
 api.Hints.style("border: none; border-radius: 6px; padding: 1px 5px; background: ${primary}; color: ${on_primary}; font-family: '${font}', sans-serif; font-size: 12px; font-weight: 700; box-shadow: 0 2px 6px rgba(0,0,0,.45);");
 api.Hints.style("border: none; border-radius: 6px; padding: 1px 5px; background: ${tertiary}; color: ${bg}; font-family: '${font}', sans-serif; font-weight: 700;", "text");
