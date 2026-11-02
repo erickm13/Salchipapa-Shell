@@ -77,6 +77,9 @@ on_primary_container=$(c onPrimaryContainer ffdad9)
 secondary=$(c secondary e26764)
 tertiary=$(c tertiary f89f1e)
 
+# "#rrggbb" + alfa -> "rgba(r, g, b, a)"
+rgba() { printf 'rgba(%d, %d, %d, %s)' "0x${1:1:2}" "0x${1:3:2}" "0x${1:5:2}" "$2"; }
+
 js=$(
     cat <<EOF
 // Tema de Salchipapa-Shell para Surfingkeys (generado por scripts/surfingkeys-theme.sh).
@@ -140,8 +143,10 @@ api.Hints.style("border: none; border-radius: 6px; padding: 1px 5px; background:
 api.Hints.style("border: none; border-radius: 6px; padding: 1px 5px; background: ${tertiary}; color: ${bg}; font-family: '${font}', sans-serif; font-weight: 700;", "text");
 
 // Modo visual: coincidencias y cursor
-api.Visual.style("marks", "background-color: ${primary_container};");
-api.Visual.style("cursor", "background-color: ${primary};");
+// Coincidencias de / y * en un tono translúcido; la actual (y el cursor) en el acento, sólida y con
+// contorno, para saber en cuál estás al saltar con n / N
+api.Visual.style("marks", "background-color: $(rgba "$tertiary" .38); border-radius: 3px;");
+api.Visual.style("cursor", "background-color: ${primary}; color: ${on_primary}; border-radius: 3px; outline: 2px solid ${primary}; box-shadow: 0 0 0 4px $(rgba "$primary" .35);");
 
 // Omnibar, ayuda (?), barra de estado y de búsqueda
 settings.theme = \`
