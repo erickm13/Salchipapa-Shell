@@ -10,7 +10,9 @@ Leídos de la config real (en vivo):
 Escritos a mano (no guardan sus atajos por defecto en ningún archivo legible):
   yazi     los por defecto + los de ~/.config/yazi/keymap.toml si existe
   firefox  los más útiles + Surfingkeys si está instalada (sus atajos por defecto, sacados del .xpi
-           instalado: cada mapkey("tecla", "#<grupo>Descripción") de content.js)
+           instalado: cada mapkey("tecla", "#<grupo>Descripción") de content.js) y tu
+           configuración de Advanced mode (sección "Mis atajos"; map/unmap aplicados), leída de su
+           IndexedDB
   obsidian los por defecto + los de <bóveda>/.obsidian/hotkeys.json
 """
 
@@ -462,16 +464,103 @@ def firefox_profiles():
 
 
 def sk_caps(k):
-    """'<Ctrl-Alt-i>' -> ['Ctrl', 'Alt', 'i'];  ';ql' -> [';ql'];  'g<Ctrl-x>' -> ['g', 'Ctrl', 'x']"""
-    caps = []
-    for tok in re.findall(r"<[^>]+>|[^<]+", k):
-        if tok.startswith("<") and len(tok) > 2:
+    """'<Ctrl-Alt-i>' -> ['Ctrl', 'Alt', 'i'];  ';ql' -> [';ql'];  '<<' -> ['<<'];  'g<Ctrl-x>' -> ['g', 'Ctrl', 'x']"""
+    caps, buf = [], ""
+    for tok in re.findall(r"<(?:[A-Za-z]+-)*[^<>\s-]+>|.", k):
+        if len(tok) > 2 and tok[0] == "<" and tok[-1] == ">":
+            if buf:
+                caps.append(buf)
+                buf = ""
             parts = tok[1:-1].split("-")
-            key = parts.pop() or "-"
+            key = parts.pop()
             caps += [cap(p) for p in parts] + [NAMES.get(key.lower(), key) if len(key) > 1 else key]
         else:
-            caps.append(tok)
+            buf += tok
+    if buf:
+        caps.append(buf)
     return caps
+
+
+def sk_storage(prof):
+    """Ajustes guardados de Surfingkeys (IndexedDB de la extensión): {clave: valor} con los valores que
+    se saben leer (texto y booleanos). Las claves van con cada letra +1 y los valores en snappy +
+    structured clone."""
+    import shutil
+    import sqlite3
+    import tempfile
+    try:
+        prefs = open(os.path.join(prof, "prefs.js"), encoding="utf-8").read()
+        m = re.search(r'\\"' + re.escape(SURFINGKEYS_ID) + r'\\":\\"([0-9a-f-]+)\\"', prefs)
+        uuid = m.group(1)
+    except (OSError, AttributeError):
+        return {}
+    base = os.path.join(prof, "storage", "default", f"moz-extension+++{uuid}^userContextId=4294967295", "idb")
+    dbs = [f for f in os.listdir(base) if f.endswith(".sqlite")] if os.path.isdir(base) else []
+    if not dbs:
+        return {}
+
+    def snappy(b):
+        i = n = shift = 0
+        while True:
+            c = b[i]; i += 1; n |= (c & 0x7F) << shift; shift += 7
+            if c < 0x80:
+                break
+        out = bytearray()
+        while i < len(b):
+            t = b[i]; i += 1; k = t & 3
+            if k == 0:
+                ln = t >> 2
+                if ln >= 60:
+                    nb = ln - 59; ln = int.from_bytes(b[i:i + nb], "little"); i += nb
+                ln += 1; out += b[i:i + ln]; i += ln
+            else:
+                if k == 1:
+                    ln = ((t >> 2) & 7) + 4; off = ((t >> 5) << 8) | b[i]; i += 1
+                elif k == 2:
+                    ln = (t >> 2) + 1; off = int.from_bytes(b[i:i + 2], "little"); i += 2
+                else:
+                    ln = (t >> 2) + 1; off = int.from_bytes(b[i:i + 4], "little"); i += 4
+                for _ in range(ln):
+                    out.append(out[-off])
+        return bytes(out)
+
+    def value(raw):
+        # Cabecera (8 bytes) + par (dato uint32, etiqueta uint32)
+        data = int.from_bytes(raw[8:12], "little")
+        tag = int.from_bytes(raw[12:16], "little")
+        if tag == 0xFFFF0002:  # booleano
+            return bool(data)
+        if tag == 0xFFFF0004:  # texto: longitud + bit de latin1
+            n, latin1 = data & 0x7FFFFFFF, data & 0x80000000
+            body = raw[16:]
+            return body[:n].decode("latin-1") if latin1 else body[:2 * n].decode("utf-16-le", "replace")
+        return None
+
+    res = {}
+    with tempfile.TemporaryDirectory() as tmp:
+        # Copia (con su -wal): la base está abierta por Firefox
+        for f in os.listdir(base):
+            if f.startswith(dbs[0]):
+                shutil.copy(os.path.join(base, f), tmp)
+        try:
+            db = sqlite3.connect(os.path.join(tmp, dbs[0]))
+            for key, data in db.execute("select key, data from object_data"):
+                name = "".join(chr(c - 1) for c in key[1:])
+                try:
+                    res[name] = value(snappy(bytes(data)))
+                except (IndexError, ValueError):
+                    pass
+            db.close()
+        except sqlite3.Error:
+            pass
+    return res
+
+
+SK_MODES = {"mapkey": "", "map": "", "vmapkey": "visual", "imapkey": "inserción", "cmap": "omnibar"}
+
+
+def sk_unescape(s):
+    return s.encode("latin-1", "backslashreplace").decode("unicode_escape")
 
 
 def surfingkeys():
@@ -489,28 +578,82 @@ def surfingkeys():
                 js = z.read("content.js").decode("utf-8", "replace")
         except (OSError, KeyError, zipfile.BadZipFile):
             continue
-        out, seen = [], set()
-        found = re.findall(r'\("((?:[^"\\]|\\.){1,16})",\s*"#(\d+)((?:[^"\\]|\\.)+)"', js)
-        # Los de desplazarse y cambiar de modo: mappings.add("j",{annotation:"Scroll down",feature_group:2,…})
-        found += [(k, g, d) for k, d, g in re.findall(
-            r'mappings\.add\("((?:[^"\\]|\\.){1,16})",\{annotation:"((?:[^"\\]|\\.)+)",feature_group:(\d+)', js)]
-        # Buscadores: addSearchAlias("g","google",url,"s",…) crea "og" (omnibar para buscar en Google)
-        # y "sg" (buscar la selección en Google)
+        # Nombres (minificados) de las funciones de la API: const{…map:p,mapkey:m,…vmapkey:y,…}=o
+        fn = {}
+        m = re.search(r"const\{([^}]*mapkey:[^}]*)\}=\w+", js)
+        if m:
+            for name, var in re.findall(r"(\w+):([\w$]+)", m.group(1)):
+                if name in SK_MODES:
+                    fn[var] = name
+        found = []  # (tecla, grupo, descripción, modo)
+        # mapkey/vmapkey/imapkey("k","#Ndesc",…)
+        for var, key, group, desc in re.findall(r'(?<![\w$.])([\w$]{1,3})\("((?:[^"\\]|\\.){1,16})",\s*"#(\d+)((?:[^"\\]|\\.)+)"', js):
+            found.append((key, group, desc, SK_MODES.get(fn.get(var, "mapkey"), "")))
+        # map("g0",":feedkeys 99E",0,"#3Go to the first tab")
+        for key, group, desc in re.findall(r'\("((?:[^"\\]|\\.){1,16})","[^"]*",0,"#(\d+)((?:[^"\\]|\\.)+)"', js):
+            found.append((key, group, desc, ""))
+        # Desplazarse y modos: mappings.add("j",{annotation:"Scroll down",feature_group:2,…})
+        for key, desc, group in re.findall(r'mappings\.add\("((?:[^"\\]|\\.){1,16})",\{annotation:"((?:[^"\\]|\\.)+)",feature_group:(\d+)', js):
+            found.append((key, group, desc, ""))
+        # Buscadores: addSearchAlias("g","google",url,"s",…) crea "og" y "sg"
         for alias, engine, prefix in re.findall(r'\("([a-z])","([a-z]+)","https?://[^"]+","([a-z])"', js):
             name = {"duckduckgo": "DuckDuckGo", "github": "GitHub", "youtube": "YouTube"}.get(engine, engine.capitalize())
-            found.append(("o" + alias, "8", f"Buscar en {name} (abre el omnibar)"))
-            found.append((prefix + alias, "6", f"Buscar el texto seleccionado en {name}"))
-        for key, group, desc in found:
-            key = key.encode().decode("unicode_escape")
-            desc = desc.encode().decode("unicode_escape")
-            g = int(group)
-            if (key, desc) in seen:
+            found.append(("o" + alias, "8", f"Buscar en {name} (abre el omnibar)", ""))
+            found.append((prefix + alias, "6", f"Buscar el texto seleccionado en {name}", ""))
+
+        rows = {}  # (tecla, modo) -> (grupo, descripción): la última definición gana, como en Surfingkeys
+        order = []
+        for key, group, desc, mode in found:
+            k = (sk_unescape(key), mode)
+            if k not in rows:
+                order.append(k)
+            rows[k] = (int(group), sk_unescape(desc))
+
+        # Tu configuración (Advanced mode): mapkey/vmapkey/imapkey nuevos, map("nueva","vieja"), unmap
+        st = sk_storage(prof)
+        mine = set()
+        snippet = st.get("snippets") if st.get("showAdvanced") else None
+        if isinstance(snippet, str):
+            code = re.sub(r"//[^\n]*", "", snippet)
+            q = r"""(["'`])((?:\\.|(?!\1).)*)\1"""
+            for call in re.finditer(r"api\.(mapkey|vmapkey|imapkey|map|unmap)\(", code):
+                kind = call.group(1)
+                after = code[call.end():call.end() + 400]
+                if kind in ("map", "unmap"):  # sus argumentos no llevan ")"
+                    after = after[:after.find(")")]
+                strs = [m.group(2) for m in re.finditer(q, after)][:2]
+                if kind in ("mapkey", "vmapkey", "imapkey") and len(strs) >= 2:
+                    mode = SK_MODES[kind]
+                    g = re.match(r"#(\d+)", strs[1])
+                    desc = re.sub(r"^#\d+", "", strs[1])
+                    k = (strs[0], mode)
+                    if k not in rows:
+                        order.append(k)
+                    rows[k] = (int(g.group(1)) if g else 14, desc)
+                    mine.add(k)
+                elif kind == "map" and len(strs) >= 2:
+                    new, old = (strs[0], ""), (strs[1], "")
+                    if old in rows:
+                        if new not in rows:
+                            order.append(new)
+                        g, d = rows[old]
+                        rows[new] = (g, f"{d} (como {strs[1]})")
+                        mine.add(new)
+                elif kind == "unmap" and strs:
+                    rows.pop((strs[0], ""), None)
+
+        out = []
+        for k in order:
+            if k not in rows:
                 continue
-            seen.add((key, desc))
-            name = SK_GROUPS[g] if g < len(SK_GROUPS) else f"Grupo {g}"
-            out.append((g, row("Surfingkeys · " + name, sk_caps(key), desc)))
-        out.sort(key=lambda x: x[0])
-        return [r for _, r in out]
+            g, desc = rows[k]
+            key, mode = k
+            name = "Mis atajos" if k in mine else (SK_GROUPS[g] if g < len(SK_GROUPS) else f"Grupo {g}")
+            if mode:
+                desc += f" (modo {mode})"
+            out.append((0 if k in mine else 1, g, row("Surfingkeys · " + name, sk_caps(key), desc)))
+        out.sort(key=lambda x: (x[0], x[1]))
+        return [r for _, _, r in out]
     return []
 
 
