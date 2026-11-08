@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 // Contenido del lanzador, para mostrarse DENTRO de la Dynamic Island (modo "launcher").
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import Quickshell.Widgets
 import "../common"
 
@@ -12,6 +13,49 @@ Item {
     property string query: ""
     // Última posición del ratón sobre el launcher (ver el MouseArea de cada fila)
     property point mousePos: Qt.point(-1, -1)
+
+    // --- Frecencia: las apps que más usas arriba; las que dejas de usar van bajando ---
+    // Por app se guarda { s: puntuación, t: último uso en ms }. Cada lanzamiento suma 1 a la
+    // puntuación, que pierde la mitad de su valor cada `halfLifeDays` sin usarse.
+    readonly property string usagePath: Quickshell.env("HOME") + "/.local/state/salchipapa-shell/launcher-usage.json"
+    readonly property real halfLifeDays: 7
+    property var usage: ({})
+    // Momento de referencia: se fija al abrir el launcher para que el orden no cambie mientras está abierto
+    property real now: Date.now()
+
+    function score(id: string): real {
+        const u = usage[id];
+        if (!u)
+            return 0;
+        return u.s * Math.pow(0.5, (now - u.t) / (halfLifeDays * 86400000));
+    }
+
+    function recordLaunch(id: string): void {
+        const t = Date.now();
+        const u = usage[id];
+        const s = (u ? u.s * Math.pow(0.5, (t - u.t) / (halfLifeDays * 86400000)) : 0) + 1;
+        const next = Object.assign({}, usage);
+        next[id] = { s: s, t: t };
+        // Olvida las que ya casi no cuentan (y las de apps desinstaladas) para que el archivo no crezca
+        for (const k in next)
+            if (next[k].s * Math.pow(0.5, (t - next[k].t) / (halfLifeDays * 86400000)) < 0.01)
+                delete next[k];
+        usage = next;
+        usageFile.setText(JSON.stringify(usage));
+    }
+
+    FileView {
+        id: usageFile
+        path: root.usagePath
+        printErrors: false
+        onLoaded: {
+            try {
+                root.usage = JSON.parse(text()) ?? {};
+            } catch (e) {
+                root.usage = {};
+            }
+        }
+    }
 
     readonly property var results: {
         const all = DesktopEntries.applications.values;
@@ -24,12 +68,18 @@ Item {
             const n = (a.name ?? "").toLowerCase();
             return n.startsWith(q) ? 0 : n.includes(q) ? 1 : 2;
         };
-        return list.sort((x, y) => rank(x) - rank(y) || (x.name ?? "").localeCompare(y.name ?? ""));
+        // Dentro de cada grupo, las más usadas primero; las nunca usadas, por orden alfabético
+        const sc = {};
+        for (const a of list)
+            sc[a.id] = root.score(a.id ?? "");
+        return list.sort((x, y) => (q === "" ? 0 : rank(x) - rank(y)) || sc[y.id] - sc[x.id] || (x.name ?? "").localeCompare(y.name ?? ""));
     }
 
     function launch(): void {
         const app = results[sel];
         if (app) {
+            if (app.id)
+                root.recordLaunch(app.id);
             // Con uwsm, la app va en su propia unidad de la sesión (se cierra al salir); ver scripts/app.sh
             if (Quickshell.env("UWSM_FINALIZE_VARNAMES") && app.id)
                 Quickshell.execDetached([Quickshell.shellDir + "/../scripts/app.sh", app.id + ".desktop"]);
@@ -44,6 +94,7 @@ Item {
         target: Overlay
         function onModeChanged(): void {
             if (Overlay.mode === "launcher") {
+                root.now = Date.now();
                 root.query = "";
                 root.sel = 0;
                 searchInput.text = "";
