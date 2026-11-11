@@ -14,4 +14,6 @@ Singleton {
             || s === UPowerDeviceState.FullyCharged
             || s === UPowerDeviceState.PendingCharge;
     }
+    // Funcionando con la batería (desenchufado). Sin batería de portátil, siempre false.
+    readonly property bool onBattery: available && UPower.onBattery
 }

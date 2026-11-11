@@ -9,26 +9,31 @@ import "../common"
 Singleton {
     id: root
 
+    // Con la batería se usan los ajustes idleBattery*; enchufado (o sin batería), los idle*.
+    readonly property bool onBattery: Battery.onBattery
+    readonly property bool lockEnabled: onBattery ? Config.idleBatteryLockEnabled : Config.idleLockEnabled
+    readonly property int lockMinutes: onBattery ? Config.idleBatteryLockMinutes : Config.idleLockMinutes
+    readonly property bool suspendEnabled: onBattery ? Config.idleBatterySuspendEnabled : Config.idleSuspendEnabled
+    readonly property int suspendMinutes: onBattery ? Config.idleBatterySuspendMinutes : Config.idleSuspendMinutes
+
     // IdleMonitor no aplica un `timeout` nuevo si ya está activo: hay que apagarlo y
-    // volverlo a encender (también al cargar config.json, que llega tras los valores por defecto).
+    // volverlo a encender (también al cargar config.json, que llega tras los valores por
+    // defecto, y al enchufar/desenchufar, que cambia de juego de ajustes).
     property bool lockArmed: true
     property bool suspendArmed: true
 
-    Connections {
-        target: Config
-        function onIdleLockMinutesChanged(): void {
-            root.lockArmed = false;
-            Qt.callLater(() => root.lockArmed = true);
-        }
-        function onIdleSuspendMinutesChanged(): void {
-            root.suspendArmed = false;
-            Qt.callLater(() => root.suspendArmed = true);
-        }
+    onLockMinutesChanged: {
+        lockArmed = false;
+        Qt.callLater(() => lockArmed = true);
+    }
+    onSuspendMinutesChanged: {
+        suspendArmed = false;
+        Qt.callLater(() => suspendArmed = true);
     }
 
     IdleMonitor {
-        enabled: Config.idleLockEnabled && root.lockArmed
-        timeout: Config.idleLockMinutes * 60
+        enabled: root.lockEnabled && root.lockArmed
+        timeout: root.lockMinutes * 60
         respectInhibitors: true
         onIsIdleChanged: {
             if (isIdle)
@@ -38,8 +43,8 @@ Singleton {
 
     // LockScreen.suspend() bloquea primero y luego llama a `systemctl suspend`.
     IdleMonitor {
-        enabled: Config.idleSuspendEnabled && root.suspendArmed
-        timeout: Config.idleSuspendMinutes * 60
+        enabled: root.suspendEnabled && root.suspendArmed
+        timeout: root.suspendMinutes * 60
         respectInhibitors: true
         onIsIdleChanged: {
             if (isIdle && !LockScreen.suspending)

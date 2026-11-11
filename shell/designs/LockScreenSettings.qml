@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Widgets
 import "../common"
+import "../services"
 
 Item {
     id: root
@@ -335,30 +336,39 @@ Item {
             }
         }
 
-        SettingGroup {
-            title: "When idle"
+        // Enchufado (o equipo sin batería): claves idle*. Con la batería: idleBattery*.
+        IdleGroup {
+            title: Battery.available ? "When idle · plugged in" : "When idle"
             width: parent.width
-            SettingToggleRow { label: "Lock when idle"; checked: Config.idleLockEnabled; onToggled: Config.opt.idleLockEnabled = !Config.idleLockEnabled }
-            SettingSliderRow {
-                visible: Config.idleLockEnabled
-                label: "Lock after"
-                value: Config.idleLockMinutes
-                from: 1; to: 60; unit: " min"
-                onMoved: v => Config.opt.idleLockMinutes = v
-            }
-            SettingToggleRow { label: "Suspend when idle"; checked: Config.idleSuspendEnabled; onToggled: Config.opt.idleSuspendEnabled = !Config.idleSuspendEnabled }
-            SettingSliderRow {
-                visible: Config.idleSuspendEnabled
-                label: "Suspend after"
-                value: Config.idleSuspendMinutes
-                from: 5; to: 120; unit: " min"
-                onMoved: v => Config.opt.idleSuspendMinutes = v
-            }
+            lockEnabled: Config.idleLockEnabled
+            lockMinutes: Config.idleLockMinutes
+            suspendEnabled: Config.idleSuspendEnabled
+            suspendMinutes: Config.idleSuspendMinutes
+            onToggleLock: Config.opt.idleLockEnabled = !Config.idleLockEnabled
+            onSetLockMinutes: v => Config.opt.idleLockMinutes = v
+            onToggleSuspend: Config.opt.idleSuspendEnabled = !Config.idleSuspendEnabled
+            onSetSuspendMinutes: v => Config.opt.idleSuspendMinutes = v
+        }
+
+        IdleGroup {
+            visible: Battery.available
+            title: "When idle · on battery"
+            width: parent.width
+            lockEnabled: Config.idleBatteryLockEnabled
+            lockMinutes: Config.idleBatteryLockMinutes
+            suspendEnabled: Config.idleBatterySuspendEnabled
+            suspendMinutes: Config.idleBatterySuspendMinutes
+            onToggleLock: Config.opt.idleBatteryLockEnabled = !Config.idleBatteryLockEnabled
+            onSetLockMinutes: v => Config.opt.idleBatteryLockMinutes = v
+            onToggleSuspend: Config.opt.idleBatterySuspendEnabled = !Config.idleBatterySuspendEnabled
+            onSetSuspendMinutes: v => Config.opt.idleBatterySuspendMinutes = v
         }
 
         Text {
             width: parent.width
-            text: "Idle timers pause while an app blocks idle (video, fullscreen)."
+            text: Battery.available
+                ? "Uses the plugged-in or on-battery timers depending on the power source (now: " + (Battery.onBattery ? "on battery" : "plugged in") + "). Idle timers pause while an app blocks idle (video, fullscreen)."
+                : "Idle timers pause while an app blocks idle (video, fullscreen)."
             color: Theme.tertiaryText
             wrapMode: Text.Wrap
             font.family: Theme.bodyFontFamily

@@ -122,6 +122,10 @@ Singleton {
     readonly property int idleLockMinutes: settings.idleLockMinutes
     readonly property bool idleSuspendEnabled: settings.idleSuspendEnabled
     readonly property int idleSuspendMinutes: settings.idleSuspendMinutes
+    readonly property bool idleBatteryLockEnabled: settings.idleBatteryLockEnabled
+    readonly property int idleBatteryLockMinutes: settings.idleBatteryLockMinutes
+    readonly property bool idleBatterySuspendEnabled: settings.idleBatterySuspendEnabled
+    readonly property int idleBatterySuspendMinutes: settings.idleBatterySuspendMinutes
     // Hyprland window blur
     readonly property bool windowBlurEnabled: settings.windowBlurEnabled
     readonly property bool touchpadEnabled: settings.touchpadEnabled
@@ -280,6 +284,11 @@ Singleton {
             property int idleLockMinutes: 5
             property bool idleSuspendEnabled: true
             property int idleSuspendMinutes: 15
+            // Lo mismo con la batería (desenchufado); los idle* de arriba son para enchufado.
+            property bool idleBatteryLockEnabled: true
+            property int idleBatteryLockMinutes: 3
+            property bool idleBatterySuspendEnabled: true
+            property int idleBatterySuspendMinutes: 10
 
             // Hyprland window blur
             property bool windowBlurEnabled: true
