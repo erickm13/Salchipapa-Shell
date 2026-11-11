@@ -14,7 +14,8 @@ hl.config({
 		},
 		layout = "dwindle",
 		resize_on_border = true,
-		allow_tearing = false,
+		-- Solo rompe la imagen en las ventanas con `immediate` (los juegos, ver windowrules.lua)
+		allow_tearing = true,
 	},
 	dwindle = {
 		preserve_split = true, -- pseudotile ya no existe: se usa el dispatcher 'pseudo' (Super+P)

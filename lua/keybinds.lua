@@ -110,6 +110,10 @@ hl.bind("CTRL + " .. mod .. " + SHIFT + j", hl.dsp.window.move({ workspace = "e+
 hl.bind(mod .. " + S", hl.dsp.workspace.toggle_special("agents"))
 hl.bind(mod .. " + ALT + S", hl.dsp.window.move({ workspace = "special:agents" }))
 
+-- Workspace de juegos (los juegos van ahí solos, ver windowrules.lua)
+hl.bind(mod .. " + G", hl.dsp.focus({ workspace = "name:games" }))
+hl.bind(mod .. " + SHIFT + G", hl.dsp.window.move({ workspace = "name:games" }))
+
 -- Grupos de ventanas (pestañas)
 hl.bind("ALT + Tab", hl.dsp.window.cycle_next(), { repeating = true })
 hl.bind("SHIFT + ALT + Tab", hl.dsp.window.cycle_next({ next = false }), { repeating = true })
