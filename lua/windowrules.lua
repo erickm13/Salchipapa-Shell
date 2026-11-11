@@ -27,9 +27,8 @@ hl.window_rule({ match = { class = "btop" }, workspace = "special:sysmon" })
 -- WoW (Forever, Retail, Classic) corre con umu-run: su clase es steam_app_default, igual que Battle.net,
 -- así que se reconoce por el título (Battle.net se queda donde esté).
 local games = "steam_app_\\d+|gamescope|[Mm]inecraft.*"
--- El workspace de juegos vive en HDMI-A-1 (el monitor principal en los dos escritorios). Si no está
--- conectado, Hyprland lo abre en el monitor enfocado.
-hl.workspace_rule({ workspace = "name:games", monitor = "HDMI-A-1" })
+-- En qué monitor vive el workspace de juegos lo decide la shell (services/GamesWorkspace.qml):
+-- el principal de Ajustes > Display > Primary monitor, que existe en cualquier equipo.
 for _, m in ipairs({ { class = games }, { content = "game" }, { class = "steam_app_default", initial_title = "World of Warcraft" } }) do
 	hl.window_rule({ match = m, workspace = "name:games", immediate = true, no_blur = true, no_shadow = true })
 end

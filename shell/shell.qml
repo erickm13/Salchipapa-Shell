@@ -105,6 +105,7 @@ ShellRoot {
         LockScreen.mediaService = Media;
         WindowBlur.apply();
         Touchpad.apply();
+        GamesWorkspace.apply(); // workspace de juegos en el monitor principal
         WindowShadowSync.sync();
     }
 
