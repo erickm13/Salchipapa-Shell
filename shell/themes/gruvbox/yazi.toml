@@ -1,0 +1,124 @@
+# yazi con gruvbox (morhetz/gruvbox) repartido como gruvbox.nvim: directorios = Directory (verde
+# negrita), línea actual = CursorLine (bg1), búsqueda = Search (amarillo), bordes = WinSeparator
+# (bg3), modo normal como lualine (gris con texto oscuro), selección = amarillo.
+# apply-colors.sh lo copia a ~/.config/yazi/theme.toml al aplicar el tema (yazi lo lee al abrirse).
+[indicator]
+parent = { bg = "#3c3836" }
+current = { bg = "#3c3836", bold = true }
+preview = { underline = true }
+
+[mgr]
+cwd = { fg = "#b8bb26", bold = true }
+find_keyword = { fg = "#fabd2f", bold = true, underline = true }
+find_position = { fg = "#d3869b", bold = true }
+marker_copied = { fg = "#b8bb26", bg = "#b8bb26" }
+marker_cut = { fg = "#fb4934", bg = "#fb4934" }
+marker_marked = { fg = "#8ec07c", bg = "#8ec07c" }
+marker_selected = { fg = "#fabd2f", bg = "#fabd2f" }
+count_copied = { fg = "#282828", bg = "#b8bb26" }
+count_cut = { fg = "#282828", bg = "#fb4934" }
+count_selected = { fg = "#282828", bg = "#fabd2f" }
+border_symbol = "│"
+border_style = { fg = "#665c54" }
+
+[tabs]
+active = { fg = "#282828", bg = "#a89984", bold = true }
+inactive = { fg = "#a89984", bg = "#3c3836" }
+
+[mode]
+normal_main = { fg = "#282828", bg = "#a89984", bold = true }
+normal_alt = { fg = "#a89984", bg = "#3c3836" }
+select_main = { fg = "#282828", bg = "#fabd2f", bold = true }
+select_alt = { fg = "#fabd2f", bg = "#3c3836" }
+unset_main = { fg = "#282828", bg = "#fb4934", bold = true }
+unset_alt = { fg = "#fb4934", bg = "#3c3836" }
+
+[status]
+perm_sep = { fg = "#928374" }
+perm_type = { fg = "#b8bb26" }
+perm_read = { fg = "#fabd2f" }
+perm_write = { fg = "#fb4934" }
+perm_exec = { fg = "#8ec07c" }
+progress_label = { fg = "#ebdbb2", bold = true }
+progress_normal = { fg = "#b8bb26", bg = "#3c3836" }
+progress_error = { fg = "#fabd2f", bg = "#cc241d" }
+
+[which]
+border = { fg = "#665c54" }
+cand = { fg = "#8ec07c" }
+rest = { fg = "#928374" }
+desc = { fg = "#d3869b" }
+separator_style = { fg = "#928374" }
+
+[confirm]
+border = { fg = "#665c54" }
+title = { fg = "#fabd2f" }
+
+[spot]
+border = { fg = "#665c54" }
+title = { fg = "#fabd2f" }
+tbl_col = { fg = "#b8bb26" }
+tbl_cell = { fg = "#fabd2f", reversed = true }
+
+[notify]
+title_info = { fg = "#b8bb26" }
+title_warn = { fg = "#fabd2f" }
+title_error = { fg = "#fb4934" }
+
+[pick]
+border = { fg = "#665c54" }
+active = { fg = "#fabd2f", bold = true }
+
+[input]
+border = { fg = "#665c54" }
+
+[cmp]
+border = { fg = "#665c54" }
+
+[tasks]
+border = { fg = "#665c54" }
+hovered = { fg = "#fabd2f", bold = true }
+
+[help]
+border = { fg = "#665c54" }
+chord = { fg = "#8ec07c" }
+
+[filetype]
+rules = [
+	{ mime = "**/image/*", fg = "#fabd2f" },
+	{ mime = "**/{audio,video}/*", fg = "#d3869b" },
+	{ mime = "**/application/{zip,rar,7z*,tar,gzip,xz,zstd,bzip*,lzma,compress,archive,cpio,arj,xar,ms-cab*}", fg = "#fb4934" },
+	{ mime = "**/application/{pdf,doc,rtf}", fg = "#8ec07c" },
+	{ mime = "vfs/{absent,stale}", fg = "#928374" },
+	{ url = "*", is = "orphan", bg = "#cc241d" },
+	{ url = "*", is = "exec", fg = "#98971a" },
+	{ url = "*", is = "dummy", bg = "#cc241d" },
+	{ url = "*/", is = "dummy", bg = "#cc241d" },
+	{ url = "*/", fg = "#b8bb26", bold = true },
+]
+
+[icon]
+# Iconos de carpeta (los de yazi, con su glifo) en el verde de las carpetas, como eza;
+# los de archivos conservan sus colores de devicons, como en nvim.
+prepend_dirs = [
+	{ name = ".config", text = "", fg = "#b8bb26" },
+	{ name = ".git", text = "", fg = "#b8bb26" },
+	{ name = ".github", text = "", fg = "#b8bb26" },
+	{ name = ".npm", text = "", fg = "#b8bb26" },
+	{ name = "Desktop", text = "", fg = "#b8bb26" },
+	{ name = "Development", text = "", fg = "#b8bb26" },
+	{ name = "Documents", text = "", fg = "#b8bb26" },
+	{ name = "Downloads", text = "", fg = "#b8bb26" },
+	{ name = "Library", text = "", fg = "#b8bb26" },
+	{ name = "Movies", text = "", fg = "#b8bb26" },
+	{ name = "Music", text = "", fg = "#b8bb26" },
+	{ name = "Pictures", text = "", fg = "#b8bb26" },
+	{ name = "Public", text = "", fg = "#b8bb26" },
+	{ name = "Videos", text = "", fg = "#b8bb26" },
+]
+prepend_conds = [
+	{ if = "dir & hovered", text = "", fg = "#b8bb26" },
+	{ if = "dir", text = "", fg = "#b8bb26" },
+	{ if = "exec", text = "", fg = "#98971a" },
+	{ if = "!dir", text = "", fg = "#ebdbb2" },
+]

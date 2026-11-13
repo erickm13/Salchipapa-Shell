@@ -1,0 +1,5 @@
+# eza (ls) con gruvbox: directorios en el verde de Directory de gruvbox.nvim.
+# apply-colors.sh lo copia a ~/.config/eza/theme.yml (eza lo lee en cada ejecución).
+colourful: true
+filekinds:
+  directory: {foreground: "#B8BB26", is_bold: true}

@@ -1,0 +1,31 @@
+# lazygit con gruvbox, como lo pinta snacks.nvim desde nvim (mismos grupos de gruvbox.nvim):
+# defaultFg = Normal, opciones = Function (verde), cherry-pick = Identifier/Function, sin preparar =
+# DiagnosticError. Donde gruvbox.nvim no da color (MatchParen sin fg, FloatBorder = texto), como en
+# yazi/fzf/btop: borde activo amarillo negrita, inactivo = WinSeparator (bg3), línea = CursorLine.
+# fish lo añade a LG_CONFIG_FILE junto al config.yml de los dotfiles (lazygit lo lee al abrirse).
+gui:
+  theme:
+    activeBorderColor:
+      - "#fabd2f"
+      - bold
+    searchingActiveBorderColor:
+      - "#fe8019"
+      - bold
+    inactiveBorderColor:
+      - "#665c54"
+    optionsTextColor:
+      - "#b8bb26"
+    selectedLineBgColor:
+      - "#3c3836"
+    cherryPickedCommitBgColor:
+      - "#83a598"
+    cherryPickedCommitFgColor:
+      - "#b8bb26"
+    markedBaseCommitBgColor:
+      - "#fabd2f"
+    markedBaseCommitFgColor:
+      - "#282828"
+    unstagedChangesColor:
+      - "#fb4934"
+    defaultFgColor:
+      - "#ebdbb2"

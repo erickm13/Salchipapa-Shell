@@ -1,0 +1,19 @@
+# delta (diffs de git y lazygit) con gruvbox, como los diffs de gruvbox.nvim: fondos de DiffDelete y
+# DiffAdd (dark_red / dark_green de gruvbox.nvim); palabras cambiadas, en los faded de morhetz.
+# El syntax-theme lo pone apply-colors.sh (el mismo tema que bat). Se añade a
+# ~/.local/state/salchipapa-shell/delta.gitconfig, que ~/.gitconfig incluye después del
+# delta.gitconfig de los dotfiles.
+    minus-style = syntax "#722529"
+    minus-emph-style = syntax "#9d0006"
+    plus-style = syntax "#62693e"
+    plus-emph-style = syntax "#79740e"
+    line-numbers-zero-style = "#7c6f64"
+    line-numbers-minus-style = "#fb4934"
+    line-numbers-plus-style = "#b8bb26"
+    line-numbers-left-style = "#665c54"
+    line-numbers-right-style = "#665c54"
+[delta "decorations"]
+    commit-decoration-style = "#fabd2f" ol
+    hunk-header-decoration-style = "#665c54" box
+    hunk-header-file-style = "#fb4934"
+    hunk-header-line-number-style = "#b8bb26"

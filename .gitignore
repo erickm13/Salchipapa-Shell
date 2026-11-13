@@ -1,3 +1,6 @@
 # Estado generado en runtime
 *.bak
 *.log
+
+# Caché de Python de los scripts
+__pycache__/

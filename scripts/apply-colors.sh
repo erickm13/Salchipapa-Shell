@@ -62,6 +62,22 @@ declare -A COL
 while IFS=$'\t' read -r _k _v; do COL[$_k]=$_v; done < <(echo "$pal" | jq -r 'to_entries[] | "\(.key)\t\(.value)"')
 # Helper: valor de un rol (hex sin #), con fallback gris
 c() { printf '%s' "${COL[$1]:-808080}"; }
+# Helper: color ANSI i (0-15) de la terminal (casilla 1 = rojo, 2 = verde, 3 = amarillo...).
+# Los temas con la paleta de terminal oficial usan su term0-term15. El resto (los generados por
+# caelestia, salchipapa y matugen) traen term* sin ese orden y se rellenan con los roles.
+ANSI_SCHEMES=" gruvbox "
+TERM_ROLES=(surfaceContainerLowest error tertiary secondary primary tertiary secondary onSurfaceVariant
+    outline error tertiary secondary primary tertiary secondary onBackground)
+use_term=false
+[ "$mode" = "scheme" ] && [[ "$ANSI_SCHEMES" == *" $arg "* ]] && use_term=true
+t() { if $use_term && [ -n "${COL[term$1]:-}" ]; then printf '%s' "${COL[term$1]}"; else c "${TERM_ROLES[$1]}"; fi; }
+
+# Temas hechos a mano: shell/themes/<tema>/ trae un archivo por app (yazi.toml, fish.fish, fzf,
+# eza.yml, starship.toml, bat…). theme_file <archivo> da su ruta si el tema elegido lo trae; si no,
+# esa app usa su estilo por defecto (nombres ANSI: la paleta de la terminal). Añadir un tema nuevo
+# = crear su carpeta, sin tocar este script.
+theme_dir="$repo/shell/themes/$arg"
+theme_file() { [ "$mode" = "scheme" ] && [ -f "$theme_dir/$1" ] && printf '%s' "$theme_dir/$1"; }
 
 # ------------------------------------------------------------------ GTK 3 / 4
 gtk_css() {
@@ -136,22 +152,22 @@ cursor #$(c primary)
 cursor_text_color #$(c onPrimary)
 selection_background #$(c primary)
 selection_foreground #$(c onPrimary)
-color0  #$(c surfaceContainerLowest)
-color8  #$(c outline)
-color1  #$(c error)
-color9  #$(c error)
-color2  #$(c tertiary)
-color10 #$(c tertiary)
-color3  #$(c secondary)
-color11 #$(c secondary)
-color4  #$(c primary)
-color12 #$(c primary)
-color5  #$(c tertiary)
-color13 #$(c tertiary)
-color6  #$(c secondary)
-color14 #$(c secondary)
-color7  #$(c onSurfaceVariant)
-color15 #$(c onBackground)
+color0  #$(t 0)
+color1  #$(t 1)
+color2  #$(t 2)
+color3  #$(t 3)
+color4  #$(t 4)
+color5  #$(t 5)
+color6  #$(t 6)
+color7  #$(t 7)
+color8  #$(t 8)
+color9  #$(t 9)
+color10 #$(t 10)
+color11 #$(t 11)
+color12 #$(t 12)
+color13 #$(t 13)
+color14 #$(t 14)
+color15 #$(t 15)
 EOF
     # Incluir el archivo al final de kitty.conf (gana sobre colores inline)
     if [ -f "$kdir/kitty.conf" ] && ! grep -qxF "include salchipapa-colors.conf" "$kdir/kitty.conf"; then
@@ -247,6 +263,199 @@ fi
     kde_colors
 } >"$HOME/.config/kdeglobals"
 
+# ------------------------------------------------------------------ eza (ls)
+# Color de los directorios de `ls` (eza --icons); lo relee en cada ejecución. El del tema
+# (eza.yml) o, por defecto, la casilla azul de la terminal en negrita.
+mkdir -p "$HOME/.config/eza"
+if f=$(theme_file eza.yml); then
+    { echo "# Generado por Salchipapa-Shell (apply-colors.sh) desde $f. No editar a mano."; cat "$f"; } \
+        >"$HOME/.config/eza/theme.yml"
+else
+    cat >"$HOME/.config/eza/theme.yml" <<EOF
+# Generado por Salchipapa-Shell (apply-colors.sh). No editar a mano.
+colourful: true
+filekinds:
+  directory: {foreground: Blue, is_bold: true}
+EOF
+fi
+
+# ------------------------------------------------------------------ bat
+# Tema de bat (lo relee en cada ejecución): el suyo propio si bat lo trae; si no, `ansi` (la
+# paleta de la terminal). El fish de Salchipapa.Dots no define BAT_THEME si existe este archivo.
+# El del tema (archivo `bat` con el nombre de un tmTheme de shell/themes/bat/ o de los que trae
+# bat) o, si no, `ansi` (la paleta de la terminal).
+if f=$(theme_file bat); then
+    bat_theme=$(head -n1 "$f")
+else
+    bat_theme='ansi'
+fi
+mkdir -p "$HOME/.config/bat"
+# Temas y sintaxis propios del repo (shell/themes/bat, los genera scripts/build-bat-theme.py):
+# enlazados en la carpeta de bat. Las sintaxis (bash con más detalle: números, true/false, case)
+# valen para cualquier tema. bat los lee de su caché, que se reconstruye solo si falta el tema o
+# algún archivo es más nuevo que ella.
+bat_repo="$repo/shell/themes/bat"
+if command -v bat >/dev/null && [ -d "$bat_repo" ]; then
+    bat_conf="$(bat --config-dir)"
+    mkdir -p "$bat_conf/themes" "$bat_conf/syntaxes"
+    bat_files=("$bat_repo"/*.tmTheme "$bat_repo"/syntaxes/*.sublime-syntax)
+    for f in "${bat_files[@]}"; do
+        [ -f "$f" ] || continue
+        case "$f" in
+            *.tmTheme) ln -sfn "$f" "$bat_conf/themes/${f##*/}" ;;
+            *) ln -sfn "$f" "$bat_conf/syntaxes/${f##*/}" ;;
+        esac
+    done
+    bat_cache="$(bat --cache-dir)/themes.bin"
+    bat_stale=false
+    [ -f "$bat_cache" ] || bat_stale=true
+    for f in "${bat_files[@]}"; do [ "$f" -nt "$bat_cache" ] && bat_stale=true; done
+    if [ -f "$bat_repo/$bat_theme.tmTheme" ] \
+        && ! bat --list-themes --color=never 2>/dev/null | grep -qxF "$bat_theme"; then
+        bat_stale=true
+    fi
+    if $bat_stale; then
+        # bat toma un argumento "cache" como archivo si existe en el directorio actual
+        (cd / && bat cache --build >/dev/null 2>&1) || bat_theme='gruvbox-dark'
+    fi
+fi
+# --italic-text: bat no pone cursivas si no se le pide (comentarios en cursiva, como nvim)
+printf '# Generado por Salchipapa-Shell (apply-colors.sh). No editar a mano.\n--theme="%s"\n--italic-text=always\n' "$bat_theme" >"$HOME/.config/bat/config"
+
+# delta (diffs de git y lazygit): el mismo tema de sintaxis que bat y las decoraciones del tema
+# (delta.gitconfig). ~/.gitconfig lo incluye después del delta.gitconfig de los dotfiles, así que
+# gana a su syntax-theme. delta lee los temas de la caché de bat.
+{
+    echo "# Generado por Salchipapa-Shell (apply-colors.sh). No editar a mano."
+    echo "[delta]"
+    echo "    syntax-theme = $bat_theme"
+    if f=$(theme_file delta.gitconfig); then cat "$f"; fi
+} >"$state/delta.gitconfig"
+# shellcheck disable=SC2088 # la ~ va literal: la expande git, como las otras include.path
+if command -v git >/dev/null && ! git config --global --get-all include.path 2>/dev/null |
+    grep -qxF "~/.local/state/salchipapa-shell/delta.gitconfig"; then
+    git config --global --add include.path "~/.local/state/salchipapa-shell/delta.gitconfig"
+fi
+
+# ------------------------------------------------------------------ fish (resaltado)
+# Colores del resaltado de fish del tema (fish.fish). Sin él, el config.fish de Salchipapa.Dots usa
+# nombres ANSI. Las fish abiertas lo recargan al cambiar la universal `salchipapa_theme` (handler
+# en config.fish).
+fish_colors="$state/fish-colors.fish"
+if f=$(theme_file fish.fish); then
+    { echo "# Generado por Salchipapa-Shell (apply-colors.sh) desde $f. No editar a mano."; cat "$f"; } >"$fish_colors"
+else
+    rm -f "$fish_colors"
+fi
+if command -v fish >/dev/null; then
+    # con la hora: cambia siempre, aunque se vuelva a aplicar el mismo tema
+    fish -c "set -U salchipapa_theme '${arg:-dynamic} $(date +%s%N)'" >/dev/null 2>&1 || true
+fi
+
+# ------------------------------------------------------------------ starship
+# Copia del starship.toml de los dotfiles con la paleta del tema (starship.toml del tema, una tabla
+# [palettes.theme]); sin ella, la paleta "salchipapa" de los dotfiles (nombres ANSI). fish apunta
+# STARSHIP_CONFIG a la copia y starship la relee en cada prompt. Si el starship.toml de los
+# dotfiles cambia, se ve al volver a aplicar un tema.
+starship_src="$HOME/.config/starship.toml"
+if [ -f "$starship_src" ]; then
+    {
+        echo "# Generado por Salchipapa-Shell (apply-colors.sh) desde $starship_src. No editar:"
+        echo "# se edita aquel (o la paleta del tema) y se vuelve a aplicar el tema."
+        if f=$(theme_file starship.toml); then
+            sed 's/^palette = .*/palette = "theme"/' "$(readlink -f "$starship_src")"
+            echo
+            cat "$f"
+        else
+            sed 's/^palette = .*/palette = "salchipapa"/' "$(readlink -f "$starship_src")"
+        fi
+    } >"$state/starship.toml.tmp" && mv "$state/starship.toml.tmp" "$state/starship.toml"
+fi
+
+# ------------------------------------------------------------------ fzf
+# Opciones de color de fzf (FZF_DEFAULT_OPTS_FILE en el fish de Salchipapa.Dots); fzf lo lee cada
+# vez que se abre. Las del tema (fzf) o, por defecto, nombres ANSI (la paleta de la terminal).
+if f=$(theme_file fzf); then
+    cp "$f" "$state/fzf-colors"
+else
+    cat >"$state/fzf-colors" <<'EOF'
+--color=fg:-1,bg:-1,gutter:-1,hl:blue,fg+:bright-white,bg+:bright-black,hl+:bright-blue
+--color=prompt:blue,pointer:magenta,marker:green,info:cyan,spinner:cyan,header:yellow,border:bright-black,label:cyan
+EOF
+fi
+
+# ------------------------------------------------------------------ btop
+# El del tema (btop.theme) como ~/.config/btop/themes/salchipapa.theme; sin él, "TTY" (los 16
+# colores de la terminal). btop lee el tema al abrirse. Ojo: btop guarda btop.conf al salir, así
+# que si está abierto mientras se cambia de tema, al cerrarlo deja el color_theme que tenía.
+btop_conf="$HOME/.config/btop/btop.conf"
+if [ -f "$btop_conf" ]; then
+    if f=$(theme_file btop.theme); then
+        mkdir -p "$HOME/.config/btop/themes"
+        { echo "# Generado por Salchipapa-Shell (apply-colors.sh) desde $f. No editar a mano."; cat "$f"; } \
+            >"$HOME/.config/btop/themes/salchipapa.theme"
+        btop_theme='salchipapa'
+    else
+        btop_theme='TTY'
+    fi
+    sed -i "s|^color_theme = .*|color_theme = \"$btop_theme\"|" "$btop_conf"
+fi
+
+# ------------------------------------------------------------------ lazygit
+# Colores del tema (lazygit.yml) en el estado; fish los añade a LG_CONFIG_FILE junto al config.yml
+# de los dotfiles. Sin él, lazygit con sus colores. Desde nvim, snacks pone los suyos.
+if f=$(theme_file lazygit.yml); then
+    { echo "# Generado por Salchipapa-Shell (apply-colors.sh) desde $f. No editar a mano."; cat "$f"; } \
+        >"$state/lazygit-theme.yml"
+else
+    rm -f "$state/lazygit-theme.yml"
+fi
+
+# ------------------------------------------------------------------ herdr
+# herdr no puede incluir otro archivo: ~/.config/herdr/config.toml pasa a ser una copia del de los
+# dotfiles con la sección [theme] del tema (herdr.toml); sin ella, la de los dotfiles. Se recarga
+# al momento. La primera vez es un enlace a los dotfiles: se apunta su ruta para las siguientes.
+# Si cambia el config.toml de los dotfiles, se ve al volver a aplicar un tema.
+herdr_cfg="$HOME/.config/herdr/config.toml"
+if [ -L "$herdr_cfg" ]; then
+    readlink -f "$herdr_cfg" >"$state/herdr-source"
+fi
+herdr_src="$(cat "$state/herdr-source" 2>/dev/null || true)"
+if [ -n "$herdr_src" ] && [ -f "$herdr_src" ]; then
+    {
+        echo "# Generado por Salchipapa-Shell (apply-colors.sh) desde $herdr_src."
+        echo "# No editar: se edita aquel y se vuelve a aplicar el tema (Super+T)."
+        if f=$(theme_file herdr.toml); then
+            # quitar [theme] y sus subtablas ([theme.custom]…) y poner las del tema al final
+            awk '/^\[/{skip = ($0 ~ /^\[theme(\]|\.)/)} !skip' "$herdr_src"
+            echo
+            cat "$f"
+        else
+            cat "$herdr_src"
+        fi
+    } >"$herdr_cfg.tmp" && mv -f "$herdr_cfg.tmp" "$herdr_cfg"
+    if command -v herdr >/dev/null && herdr status server 2>/dev/null | grep -q running; then
+        herdr server reload-config >/dev/null 2>&1 || true
+    fi
+fi
+
+# ------------------------------------------------------------------ nvim
+# Colorscheme del tema (archivo `nvim` con su nombre) para el colorscheme.lua de Salchipapa.Dots;
+# sin él, el de siempre de los dotfiles. Los nvim abiertos lo cambian al momento: cada uno escucha
+# en un socket ($XDG_RUNTIME_DIR/nvim.*) y se le pide que llame a SalchipapaApplyColorscheme().
+if f=$(theme_file nvim); then
+    cp "$f" "$state/nvim-colorscheme"
+else
+    rm -f "$state/nvim-colorscheme"
+fi
+if command -v nvim >/dev/null; then
+    for sock in "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"/nvim.*; do
+        [ -S "$sock" ] || continue
+        timeout 2 nvim --server "$sock" --remote-expr \
+            "luaeval('_G.SalchipapaApplyColorscheme and _G.SalchipapaApplyColorscheme()')" >/dev/null 2>&1 || true
+    done
+fi
+
 # ------------------------------------------------------------------ foot
 fdir="$HOME/.config/foot"
 if [ -d "$fdir" ]; then
@@ -254,22 +463,22 @@ if [ -d "$fdir" ]; then
 [colors-dark]
 foreground=$(c onBackground)
 background=$(c background)
-regular0=$(c surfaceContainerLowest)
-regular1=$(c error)
-regular2=$(c tertiary)
-regular3=$(c secondary)
-regular4=$(c primary)
-regular5=$(c tertiary)
-regular6=$(c secondary)
-regular7=$(c onSurfaceVariant)
-bright0=$(c outline)
-bright1=$(c error)
-bright2=$(c tertiary)
-bright3=$(c secondary)
-bright4=$(c primary)
-bright5=$(c tertiary)
-bright6=$(c secondary)
-bright7=$(c onBackground)
+regular0=$(t 0)
+regular1=$(t 1)
+regular2=$(t 2)
+regular3=$(t 3)
+regular4=$(t 4)
+regular5=$(t 5)
+regular6=$(t 6)
+regular7=$(t 7)
+bright0=$(t 8)
+bright1=$(t 9)
+bright2=$(t 10)
+bright3=$(t 11)
+bright4=$(t 12)
+bright5=$(t 13)
+bright6=$(t 14)
+bright7=$(t 15)
 selection-foreground=$(c onPrimary)
 selection-background=$(c primary)
 EOF
@@ -281,7 +490,12 @@ fi
 
 # ------------------------------------------------------------------ yazi
 ydir="$HOME/.config/yazi"
-if [ -d "$ydir" ]; then
+# El del tema (yazi.toml) o, por defecto, uno con nombres ANSI (sigue la paleta de la terminal y
+# cambia en vivo). yazi lee el theme.toml al abrirse.
+if [ -d "$ydir" ] && f=$(theme_file yazi.toml); then
+    { echo "# Generado por Salchipapa-Shell (apply-colors.sh) desde $f. No editar a mano."; cat "$f"; } \
+        >"$ydir/theme.toml"
+elif [ -d "$ydir" ]; then
     cat >"$ydir/theme.toml" <<EOF
 # Generado por Salchipapa-Shell (apply-colors.sh). No editar a mano.
 # Usa nombres ANSI (no hex) para que yazi siga la paleta del terminal y los
@@ -428,10 +642,9 @@ term_sequences() {
     printf '%s]10;#%s%s' "$esc" "$(c onBackground)" "$st"
     printf '%s]11;#%s%s' "$esc" "$(c background)" "$st"
     printf '%s]12;#%s%s' "$esc" "$(c primary)" "$st"
-    local roles=(surfaceContainerLowest error tertiary secondary primary tertiary secondary onSurfaceVariant outline error tertiary secondary primary tertiary secondary onBackground)
     local i
     for i in $(seq 0 15); do
-        printf '%s]4;%d;#%s%s' "$esc" "$i" "$(c "${roles[$i]}")" "$st"
+        printf '%s]4;%d;#%s%s' "$esc" "$i" "$(t "$i")" "$st"
     done
 }
 seqs=$(term_sequences)

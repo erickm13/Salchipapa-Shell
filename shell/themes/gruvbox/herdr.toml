@@ -1,0 +1,7 @@
+# herdr con gruvbox: su tema integrado (los paneles siguen transparentes). Se pueden afinar colores
+# sueltos con [theme.custom] (tokens: herdr config check avisa de los desconocidos).
+# apply-colors.sh pone esta sección en lugar del [theme] de los dotfiles al generar
+# ~/.config/herdr/config.toml.
+[theme]
+name = "gruvbox"
+auto_switch = false
