@@ -5,6 +5,7 @@
 - `<tema>/`: los temas **hechos a mano**, con un archivo por app. `scripts/apply-colors.sh scheme <tema>`
   aplica los que haya; una app sin su archivo usa su estilo por defecto (nombres ANSI: la paleta de
   la terminal). La referencia para repartir los colores es el colorscheme de nvim de ese tema.
+- `spicetify/`: diseños de Spotify (Spicetify) que se colorean con cada tema.
 - `bat/`: temas y sintaxis de bat generados por `scripts/build-bat-theme.py` (originales en `bat/upstream/`).
 
 ## Archivos de un tema
@@ -21,6 +22,11 @@
 | `lazygit.yml` | lazygit (`gui.theme`) | `~/.local/state/salchipapa-shell/lazygit-theme.yml` (fish lo añade a `LG_CONFIG_FILE`) | no: al reabrir lazygit |
 | `delta.gitconfig` | diffs de git y lazygit (delta) | `~/.local/state/salchipapa-shell/delta.gitconfig` (incluido por `~/.gitconfig`; el `syntax-theme` es el de bat) | sí |
 | `herdr.toml` | sección `[theme]` de herdr (`name`, `[theme.custom]`) | `~/.config/herdr/config.toml`: copia del de los dotfiles con esta sección | sí |
+| `fastfetch` | opciones de color de fastfetch (una por línea: `--color-keys`, `--color-title`…) | `~/.local/state/salchipapa-shell/fastfetch-args` (las pasa la función `fastfetch` de fish) | sí |
+| `gtk.css` | GTK 3/4 (Thunar, Nemo, libadwaita): `@define-color` | `~/.config/gtk-3.0/gtk.css` y `gtk-4.0/gtk.css` | sí (GTK3 por gsettings; GTK4 con gtk4-live-css) |
+| `papirus` | color de las carpetas de Papirus (uno de `papirus-folders -l`) | iconos del sistema (`papirus-folders`, regla sudo) | sí, en segundo plano (~4 s) |
+| `qt.colors` | Qt (qtengine) y apps KDE: grupos `[Colors:*]` de un colorscheme de KDE | `~/.config/qtengine/salchipapa.colors` y `~/.config/kdeglobals` | no: al reabrir la app |
+| `spicetify.ini` | Spotify: claves del `color.ini` del diseño *text* de Spicetify (sin cabecera) | tema `Salchipapa` de Spicetify (`spicetify/text/user.css` + esto como esquema `base`) | no: al reabrir Spotify |
 | `bat` | nombre del tema de bat (de `bat/` o de los que trae bat) | `~/.config/bat/config` | sí |
 
 La terminal (16 casillas) sale de `term0`–`term15` de `schemes.json` si el tema está en

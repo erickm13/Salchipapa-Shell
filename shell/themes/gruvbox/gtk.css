@@ -1,0 +1,79 @@
+/* GTK 3/4 (Thunar, Nemo, apps libadwaita) con gruvbox (morhetz/gruvbox), repartido como gruvbox.nvim:
+ * lista de archivos = fondo del editor (bg0_h), ventana/cabecera/barra lateral = bg0, tarjetas y
+ * menús = bg1 (NormalFloat), seleccionado = Visual (bg3 con el texto normal), acento = amarillo
+ * (CursorLineNr/Search), bordes = bg2, éxito/aviso/error = verde/amarillo/rojo.
+ * apply-colors.sh lo copia a ~/.config/gtk-3.0/gtk.css y ~/.config/gtk-4.0/gtk.css. */
+@define-color accent_color #fabd2f;
+@define-color accent_bg_color #fabd2f;
+@define-color accent_fg_color #282828;
+@define-color destructive_color #fb4934;
+@define-color destructive_bg_color #fb4934;
+@define-color destructive_fg_color #282828;
+@define-color success_color #b8bb26;
+@define-color warning_color #fabd2f;
+@define-color error_color #fb4934;
+@define-color window_bg_color #282828;
+@define-color window_fg_color #ebdbb2;
+@define-color view_bg_color #1d2021;
+@define-color view_fg_color #ebdbb2;
+@define-color headerbar_bg_color #282828;
+@define-color headerbar_fg_color #ebdbb2;
+@define-color headerbar_border_color #504945;
+@define-color headerbar_backdrop_color #282828;
+@define-color card_bg_color #3c3836;
+@define-color card_fg_color #ebdbb2;
+@define-color popover_bg_color #3c3836;
+@define-color popover_fg_color #ebdbb2;
+@define-color dialog_bg_color #32302f;
+@define-color dialog_fg_color #ebdbb2;
+@define-color sidebar_bg_color #282828;
+@define-color sidebar_fg_color #ebdbb2;
+@define-color sidebar_backdrop_color #282828;
+@define-color sidebar_border_color #504945;
+
+/* Nombres clásicos GTK3 (Adwaita) — los usan Thunar, Nemo y demás apps GTK3 */
+@define-color theme_bg_color #282828;
+@define-color theme_fg_color #ebdbb2;
+@define-color theme_base_color #1d2021;
+@define-color theme_text_color #ebdbb2;
+@define-color theme_selected_bg_color #665c54;
+@define-color theme_selected_fg_color #ebdbb2;
+@define-color theme_unfocused_bg_color #282828;
+@define-color theme_unfocused_fg_color #ebdbb2;
+@define-color theme_unfocused_base_color #1d2021;
+@define-color theme_unfocused_text_color #ebdbb2;
+@define-color theme_unfocused_selected_bg_color #504945;
+@define-color theme_unfocused_selected_fg_color #ebdbb2;
+@define-color insensitive_bg_color #282828;
+@define-color insensitive_fg_color #928374;
+@define-color insensitive_base_color #282828;
+@define-color theme_tooltip_bg_color #3c3836;
+@define-color theme_tooltip_fg_color #ebdbb2;
+@define-color borders #504945;
+@define-color unfocused_borders #504945;
+@define-color wm_bg #282828;
+@define-color wm_title #ebdbb2;
+
+/* Selección en gris también en la barra lateral de Thunar/Nemo (GTK3): por defecto la pinta con el
+ * acento (amarillo) atenuado. */
+.sidebar .view:selected,
+.sidebar treeview.view:selected,
+.sidebar row:selected,
+placessidebar row:selected {
+    background-color: #665c54;
+    color: #ebdbb2;
+}
+
+/* Selección de arrastre (clic izquierdo y mover): gris como la selección, translúcido. */
+.rubberband,
+rubberband,
+.view.rubberband,
+.view rubberband,
+treeview.view rubberband,
+flowbox rubberband,
+gridview rubberband,
+listview rubberband,
+columnview rubberband {
+    background-color: alpha(#665c54, 0.35);
+    border: 1px solid #928374;
+}

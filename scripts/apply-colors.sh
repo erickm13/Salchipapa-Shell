@@ -136,9 +136,15 @@ gtk_css() {
 EOF
 }
 
+# El del tema (gtk.css) o, por defecto, el generado con los roles de la paleta.
 for d in gtk-3.0 gtk-4.0; do
     mkdir -p "$HOME/.config/$d"
-    gtk_css >"$HOME/.config/$d/gtk.css"
+    if f=$(theme_file gtk.css); then
+        { echo "/* Generado por Salchipapa-Shell (apply-colors.sh) desde $f. No editar a mano. */"; cat "$f"; } \
+            >"$HOME/.config/$d/gtk.css"
+    else
+        gtk_css >"$HOME/.config/$d/gtk.css"
+    fi
 done
 
 # ------------------------------------------------------------------ kitty
@@ -178,6 +184,11 @@ fi
 # --------------------------------------------- Qt (qtengine) + KDE (kdeglobals)
 # Formato KDE colorscheme, reutilizado por qtengine (apps Qt no-KDE) y kdeglobals (apps KDE: Dolphin…)
 kde_colors() {
+    # El del tema (qt.colors) o, por defecto, generado con los roles de la paleta.
+    if f=$(theme_file qt.colors); then
+        cat "$f"
+        return
+    fi
     cat <<EOF
 [Colors:Window]
 BackgroundNormal=#$(c background)
@@ -456,6 +467,32 @@ if command -v nvim >/dev/null; then
     done
 fi
 
+# ------------------------------------------------------------------ fastfetch
+# Opciones de color del tema (fastfetch: una opción o valor por línea, p. ej. --color-keys y su
+# color) para la función fastfetch de fish. Sin él, los colores del config.jsonc de los dotfiles.
+if f=$(theme_file fastfetch); then
+    cp "$f" "$state/fastfetch-args"
+else
+    rm -f "$state/fastfetch-args"
+fi
+
+# ------------------------------------------------------------------ Spotify (Spicetify)
+# Tema "Salchipapa" de Spicetify: el diseño text (shell/themes/spicetify/text) con los colores del
+# tema (spicetify.ini) como esquema "base". Sin él no se toca Spicetify. Los temas del Marketplace
+# solo funcionan con current_theme = marketplace. Spotify toma los colores al abrirse (spicetify refresh los deja en el
+# cliente parcheado; si Spotify está abierto, se ven al reiniciarlo).
+if command -v spicetify >/dev/null && f=$(theme_file spicetify.ini); then
+    sdir="$(spicetify path userdata 2>/dev/null || echo "$HOME/.config/spicetify")/Themes/Salchipapa"
+    mkdir -p "$sdir"
+    { echo "; Generado por Salchipapa-Shell (apply-colors.sh) desde $f. No editar a mano."; echo "[base]"; cat "$f"; } \
+        >"$sdir/color.ini"
+    # Diseño: el user.css de text (shell/themes/spicetify/text, MIT); los colores son los del tema.
+    # + spotify-1.3.css: sus recuadros de paneles sobre los nombres que siguen en Spotify 1.3.x.
+    cat "$repo/shell/themes/spicetify/text/user.css" "$repo/shell/themes/spicetify/text/spotify-1.3.css" >"$sdir/user.css"
+    spicetify config current_theme Salchipapa color_scheme base >/dev/null 2>&1 || true
+    spicetify refresh >/dev/null 2>&1 || true
+fi
+
 # ------------------------------------------------------------------ foot
 fdir="$HOME/.config/foot"
 if [ -d "$fdir" ]; then
@@ -546,6 +583,11 @@ fi
 # aplicamos sin contraseña. Si no, se omite en silencio (no rompe nada).
 if command -v papirus-folders >/dev/null && [ -d /usr/share/icons/Papirus-Dark ] &&
     sudo -n papirus-folders -V >/dev/null 2>&1; then
+    # El del tema (archivo `papirus` con el nombre de un color de papirus-folders -l) o, si no, el
+    # más cercano al primary.
+    if f=$(theme_file papirus); then
+        folder_color=$(head -n1 "$f")
+    else
     folder_color=$(python3 - "$(c primary)" 2>/dev/null <<'PY'
 import sys, colorsys
 hexv = sys.argv[1].lstrip('#')
@@ -576,6 +618,7 @@ for name, hx in cols.items():
 print(best)
 PY
 )
+    fi
     # El cambio real (papirus-folders -u, ~4s) se hace AL FINAL en segundo plano,
     # para no retrasar el recoloreado de las apps (Thunar/terminal/shell).
 fi

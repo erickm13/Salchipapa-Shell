@@ -1,0 +1,82 @@
+/* Salchipapa-Shell: los recuadros y etiquetas de los paneles de text en Spotify 1.3.x (Linux).
+ * Spotify 1.3.8 ya no tiene las clases Root__globalNav, Root__nav-bar, Root__main-view… que usa
+ * text (su interfaz va en un snapshot de V8 y Spicetify no puede ponerle los nombres legibles), así
+ * que aquí se repiten esas reglas sobre los nombres que sí siguen (ids, data-testid y las
+ * Root__right-sidebar-*), vistos con las DevTools de Spotify 1.3.8.620 el 2026-11-13. Se añade
+ * después del user.css de text. */
+
+/* Paneles: borde y fondo como los de text */
+#global-nav-bar,
+#Desktop_LeftSidebar_Id > nav,
+#main-view,
+.Root__right-sidebar-peek {
+    position: relative;
+    border: var(--border-width) var(--border-style);
+    border-color: var(--spice-border-inactive);
+    border-radius: var(--border-radius);
+    background-color: var(--spice-main);
+    transition: border-color var(--border-transition);
+}
+#global-nav-bar:hover,
+#Desktop_LeftSidebar_Id > nav:hover,
+#main-view:hover,
+.Root__right-sidebar-peek:hover {
+    border-color: var(--spice-border-active);
+}
+
+/* Etiquetas de los paneles (como text: el nombre sobre el borde, arriba a la izquierda) */
+#global-nav-bar::before,
+#Desktop_LeftSidebar_Id > nav::before,
+#main-view::before,
+.Root__right-sidebar-peek::before {
+    color: var(--spice-header);
+    position: absolute;
+    top: 0;
+    left: 0;
+    margin: -10px 4px;
+    background: var(--spice-main);
+    padding: 0 3px;
+    z-index: 3;
+    transition: color var(--border-transition);
+}
+#global-nav-bar::before { content: "Nav"; }
+#Desktop_LeftSidebar_Id > nav::before { content: "Library"; }
+#main-view::before {
+    content: "Main";
+    /* como text: fixed para que no lo recorte el overflow del panel (sin top/left: se queda donde estaría) */
+    position: fixed;
+    top: auto;
+    left: auto;
+}
+/* La barra superior empieza en el borde de la ventana: hueco para su etiqueta, como en text */
+#global-nav-bar {
+    margin-top: 10px;
+    height: calc(100% - 10px);
+}
+.Root__right-sidebar-peek::before { content: "Sidebar"; }
+#global-nav-bar:hover::before,
+#Desktop_LeftSidebar_Id > nav:hover::before,
+#main-view:hover::before,
+.Root__right-sidebar-peek:hover::before {
+    color: var(--spice-border-active);
+}
+
+/* Barra de progreso: la parte vacía en el color de los bordes (en text quedaba igual que el fondo) */
+[data-testid="progress-bar"] {
+    --bg-color: var(--spice-border-inactive) !important;
+}
+
+/* Snippet BMO Progressbar del Marketplace: apunta a .player-controls, que en Spotify 1.3.8 es un
+ * data-testid. Misma regla sobre el nombre nuevo (solo se ve si el snippet está instalado: usa su
+ * imagen solo si la regla original existe, así que se repite aquí completa). */
+[data-testid="player-controls"] .playback-progressbar::before {
+    content: '';
+    width: 45px;
+    height: 45px;
+    bottom: calc(100% - 6px);
+    right: 10px;
+    position: absolute;
+    image-rendering: high-quality;
+    background-size: 45px 45px;
+    background-image: url('https://64.media.tumblr.com/38ff0368992c9f601ee746469f9a19c1/tumblr_mqf4asbozS1qmkil9o1_500.gif');
+}
