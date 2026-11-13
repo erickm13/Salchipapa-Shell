@@ -3,7 +3,9 @@
 [{section, keys: [str], desc}] (el formato de BindsContent.qml).
 
 Leídos de la config real (en vivo):
-  herdr    ~/.config/herdr/config.toml [keys] (la descripción sale de tus comentarios)
+  terminal la chuleta `keys --json` de Salchipapa.Dots (fish): comandos, abreviaturas, fzf, git, lazygit
+  herdr    ~/.config/herdr/config.toml ([keys] y [[keys.command]] con su description) + los por defecto
+           que no cambiaste (`herdr --default-config`)
   foot     los defaults documentados en /etc/xdg/foot/foot.ini + tus cambios en ~/.config/foot/foot.ini
   zellij   ~/.config/zellij/config.kdl (o `zellij setup --dump-config` si no define keybinds)
   ghostty  `ghostty +list-keybinds` (los efectivos: defaults + tu config)
@@ -62,14 +64,54 @@ def humanize(action):
 
 
 # ---------------------------------------------------------------- herdr
+# Acciones de herdr en español (las que no estén aquí se leen tal cual, "swap_pane_left" -> "Swap pane left")
 HERDR = {
-    "previous_tab": "Pestaña anterior", "next_tab": "Pestaña siguiente", "new_tab": "Pestaña nueva",
-    "move_tab_previous": "Mover la pestaña a la izquierda", "move_tab_next": "Mover la pestaña a la derecha",
+    "prefix": "Prefijo (tecla líder)", "help": "Ver todos los atajos", "settings": "Ajustes",
+    "detach": "Salir sin cerrar nada (sigue en segundo plano)", "reload_config": "Recargar la configuración",
+    "open_notification_target": "Ir a la notificación (el agente que te necesita)",
+    "workspace_picker": "Elegir workspace", "goto": "Navegador de sesiones",
+    "new_workspace": "Workspace nuevo", "new_worktree": "Workspace nuevo en un git worktree",
+    "rename_workspace": "Renombrar workspace", "close_workspace": "Cerrar workspace",
+    "previous_workspace": "Workspace anterior", "next_workspace": "Workspace siguiente",
+    "new_tab": "Pestaña nueva", "rename_tab": "Renombrar pestaña", "previous_tab": "Pestaña anterior",
+    "next_tab": "Pestaña siguiente", "move_tab_previous": "Mover la pestaña a la izquierda",
+    "move_tab_next": "Mover la pestaña a la derecha", "switch_tab": "Ir a la pestaña 1…9",
+    "close_tab": "Cerrar pestaña", "rename_pane": "Renombrar panel",
+    "edit_scrollback": "Historial del panel en el editor (nvim)", "clear_pane": "Limpiar el panel",
     "focus_pane_left": "Panel de la izquierda", "focus_pane_right": "Panel de la derecha",
     "focus_pane_down": "Panel de abajo", "focus_pane_up": "Panel de arriba",
-    "split_vertical": "Panel nuevo a la derecha", "split_horizontal": "Panel nuevo abajo",
-    "close_pane": "Cerrar panel", "close_tab": "Cerrar pestaña", "prefix": "Prefijo (tecla líder)",
+    "cycle_pane_next": "Panel siguiente", "cycle_pane_previous": "Panel anterior",
+    "last_pane": "Volver al último panel", "split_vertical": "Panel nuevo a la derecha",
+    "split_horizontal": "Panel nuevo abajo", "close_pane": "Cerrar panel",
+    "zoom": "Ampliar el panel (otra vez para volver)", "resize_mode": "Modo redimensionar (flechas, Esc sale)",
+    "resize_pane_left": "Agrandar el panel a la izquierda", "resize_pane_right": "Agrandar el panel a la derecha",
+    "resize_pane_down": "Agrandar el panel hacia abajo", "resize_pane_up": "Agrandar el panel hacia arriba",
+    "swap_pane_left": "Intercambiar con el panel de la izquierda", "swap_pane_right": "Intercambiar con el panel de la derecha",
+    "swap_pane_down": "Intercambiar con el panel de abajo", "swap_pane_up": "Intercambiar con el panel de arriba",
+    "toggle_sidebar": "Mostrar u ocultar la barra lateral",
 }
+# Solo para el modo navegar / ventanas de herdr: no son atajos globales
+HERDR_SKIP = {"remote_image_paste", "navigate_workspace_up", "navigate_workspace_down", "navigate_pane_left",
+              "navigate_pane_down", "navigate_pane_up", "navigate_pane_right"}
+
+
+def herdr_defaults():
+    """{acción: [teclas]} por defecto, de `herdr --default-config` (las líneas comentadas de [keys])"""
+    try:
+        text = subprocess.run(["herdr", "--default-config"], capture_output=True, text=True, timeout=5).stdout
+    except (OSError, subprocess.SubprocessError):
+        return {}
+    out, in_keys = {}, False
+    for line in text.splitlines():
+        t = line.strip()
+        if t.startswith("[") or t.startswith("# ["):
+            in_keys = t.lstrip("# ") == "[keys]"
+            continue
+        m = re.match(r'#\s*([a-z_]+)\s*=\s*"([^"]*)"', t)
+        # Solo atajos ("prefix+w", "ctrl+v"): fuera quedan los ejemplos de [[keys.command]] (type = "popup"…)
+        if in_keys and m and "+" in m.group(2):
+            out[m.group(1)] = [m.group(2)]
+    return out
 
 
 def herdr():
@@ -78,44 +120,84 @@ def herdr():
         lines = open(path, encoding="utf-8").read().splitlines()
     except OSError:
         return []
-    out, in_keys, comment, prefix = [], False, "", ["Ctrl", "G"]
-    entries = []
+    mine, commands, block = {}, [], None  # block: "keys", "command" u otra tabla
     for line in lines:
-        t = line.strip()
+        t = line.split(" #")[0].strip() if not line.strip().startswith("#") else ""
+        if t.startswith("[[keys.command]]"):
+            block = "command"
+            commands.append({})
+            continue
         if t.startswith("["):
-            in_keys = t == "[keys]"
-            comment = ""
-            continue
-        if not in_keys:
-            continue
-        if t.startswith("#"):
-            comment = t.lstrip("# ").strip()
+            block = "keys" if t == "[keys]" else None
             continue
         m = re.match(r"([\w-]+)\s*=\s*(.+)$", t)
         if not m:
-            comment = ""
             continue
         name, value = m.group(1), m.group(2)
-        keys = re.findall(r'"([^"]+)"', value)
-        if name == "prefix" and keys:
-            prefix = combo(keys[0])
-        entries.append((name, keys, comment))
-        comment = ""
-    for name, keys, comment in entries:
-        desc = HERDR.get(name)
-        # Sin traducción: el comentario del usuario encima ("Nuevo panel abajo: Alt d (…)")
-        if desc is None:
-            c = comment.split(":")[0].strip() if comment else ""
-            desc = c if c and len(c) < 60 else humanize(name)
+        if block == "keys":
+            mine[name] = re.findall(r'"([^"]+)"', value)
+        elif block == "command":
+            q = re.match(r'\s*["\']{1,3}(.*?)["\']{1,3}\s*$', value)
+            commands[-1][name] = q.group(1) if q else value
+    prefix_key = (mine.get("prefix") or herdr_defaults().get("prefix") or ["ctrl+b"])[0]
+    prefix = combo(prefix_key)
+
+    def caps(k):
+        if k.startswith("prefix+"):
+            return prefix + ["·"] + combo(k[len("prefix+"):]), True
+        return combo(k), False
+
+    out = [row("herdr · Prefijo", prefix, HERDR["prefix"])]
+    # Los tuyos (config.toml) primero; los por defecto que no cambiaste, después
+    for name, keys in mine.items():
+        if name == "prefix" or name in HERDR_SKIP:
+            continue
         for k in keys:
-            if k.startswith("prefix+"):
-                caps = prefix + ["·"] + combo(k[len("prefix+"):])
-                section = "herdr · Con el prefijo"
-            else:
-                caps = combo(k)
-                section = "herdr · Mis atajos" if name != "prefix" else "herdr · Prefijo"
-            out.append(row(section, caps, desc))
-    out.sort(key=lambda r: ({"herdr · Prefijo": 0, "herdr · Mis atajos": 1}.get(r["section"], 2)))
+            c, pre = caps(k)
+            out.append(row("herdr · Con el prefijo" if pre else "herdr · Mis atajos", c, HERDR.get(name, humanize(name))))
+    for cmd in commands:
+        if "key" not in cmd:
+            continue
+        c, pre = caps(cmd["key"])
+        desc = cmd.get("description") or cmd.get("command", "")
+        out.append(row("herdr · Mis comandos", c, desc))
+    for name, keys in herdr_defaults().items():
+        if name == "prefix" or name in mine or name in HERDR_SKIP:
+            continue
+        for k in keys:
+            if ".." in k:  # prefix+1..9
+                k = k.replace("1..9", "1…9")
+            c, _ = caps(k)
+            out.append(row("herdr · Por defecto", c, HERDR.get(name, humanize(name))))
+    order = {"herdr · Prefijo": 0, "herdr · Mis atajos": 1, "herdr · Con el prefijo": 2, "herdr · Mis comandos": 3}
+    out.sort(key=lambda r: order.get(r["section"], 4))
+    return out
+
+
+# ---------------------------------------------------------------- terminal
+# La chuleta `keys` de Salchipapa.Dots (fish): comandos propios, abreviaturas, fzf, git y lazygit.
+# Nvim y herdr tienen su propia pestaña, así que esas secciones se saltan.
+def keycaps(k):
+    """'Ctrl+T' -> ['Ctrl', 'T']; con espacios o '/' ('ff [texto]', 'Ctrl+R / ↑') va en una sola tecla"""
+    if " " in k or "/" in k or "+" not in k:
+        return [k]
+    return combo(k)
+
+
+def terminal():
+    try:
+        res = subprocess.run(["fish", "-c", "keys --json"], capture_output=True, text=True, timeout=10)
+        data = json.loads(res.stdout or "[]")
+    except (OSError, subprocess.SubprocessError, ValueError):
+        return []
+    out = []
+    for r in data:
+        if r.get("section") in ("Nvim", "Herdr"):
+            continue
+        item = row("Terminal · " + r["section"], keycaps(r["key"]), r["desc"])
+        if r["section"] == "Abreviaturas":  # la expansión es un comando: sin mayúscula ("git status")
+            item["desc"] = r["desc"].strip()
+        out.append(item)
     return out
 
 
@@ -692,7 +774,7 @@ def obsidian():
 
 
 APPS = {
-    "herdr": herdr, "foot": foot, "zellij": zellij, "ghostty": ghostty, "yazi": yazi,
+    "terminal": terminal, "herdr": herdr, "foot": foot, "zellij": zellij, "ghostty": ghostty, "yazi": yazi,
     "firefox": lambda: curated("Firefox", FIREFOX) + surfingkeys(), "obsidian": obsidian,
 }
 
