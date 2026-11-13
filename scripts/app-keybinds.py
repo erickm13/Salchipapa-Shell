@@ -89,7 +89,7 @@ HERDR = {
     "swap_pane_left": "Intercambiar con el panel de la izquierda", "swap_pane_right": "Intercambiar con el panel de la derecha",
     "swap_pane_down": "Intercambiar con el panel de abajo", "swap_pane_up": "Intercambiar con el panel de arriba",
     "toggle_sidebar": "Mostrar u ocultar la barra lateral",
-    "copy_mode": "Modo copia: recorrer el historial del panel con el teclado",
+    "copy_mode": "Modo copia: historial del panel con el teclado (j/k bajar/subir, q salir)",
 }
 # Solo para el modo navegar / ventanas de herdr: no son atajos globales
 HERDR_SKIP = {"remote_image_paste", "navigate_workspace_up", "navigate_workspace_down", "navigate_pane_left",
