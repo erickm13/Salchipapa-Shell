@@ -50,13 +50,26 @@ Item {
         return root.themeMap[item.id] ?? "";
     }
 
-    // ↑/↓ en la pestaña de animados: cambia el tema del seleccionado (queda como corrección manual)
+    // ↑/↓: cambia el tema del seleccionado. Animados: su asignación (queda como corrección manual).
+    // Estáticos: el archivo se mueve a la carpeta del tema (sin pisar uno con el mismo nombre); si es
+    // el fondo puesto, se actualiza su ruta en el estado de la shell.
+    property string pendingSelect: ""
     function cycleTheme(step: int): void {
         const item = results[sel];
-        if (!animatedTab || !item || themeNames.length === 0)
+        if (!item || themeNames.length === 0)
             return;
         const i = themeNames.indexOf(themeOf(item));
         const next = themeNames[((i < 0 ? (step > 0 ? -1 : 0) : i) + step + themeNames.length) % themeNames.length];
+        if (!animatedTab) {
+            const name = item.substring(item.lastIndexOf("/") + 1);
+            const dest = Quickshell.env("HOME") + "/Pictures/Wallpapers/" + next + "/" + name;
+            root.pendingSelect = dest;
+            moveProc.command = ["sh", "-c", 'mkdir -p "${2%/*}" && [ ! -e "$2" ] && mv -n -- "$1" "$2" || exit 1; '
+                + 's="$HOME/.local/state/salchipapa-shell"; '
+                + 'if [ "$(cat "$s/wallpaper" 2>/dev/null)" = "$1" ]; then printf %s "$2" >"$s/wallpaper"; ln -sf "$2" "$s/current"; fi', "sh", item, dest];
+            moveProc.running = true;
+            return;
+        }
         const m = Object.assign({}, root.themeMap);
         m[item.id] = next;
         root.themeMap = m;
@@ -118,7 +131,12 @@ Item {
             id: listOut
             onStreamFinished: {
                 root.files = listOut.text.trim().split("\n").filter(s => s.length > 0);
-                root.selectCurrent();
+                const moved = root.files.indexOf(root.pendingSelect);
+                root.pendingSelect = "";
+                if (moved >= 0 && !root.animatedTab && root.query === "")
+                    root.sel = moved;
+                else
+                    root.selectCurrent();
             }
         }
     }
@@ -167,6 +185,10 @@ Item {
         id: setThemeProc
     }
     Process {
+        id: moveProc
+        onExited: listProc.running = true // se relee la lista y se vuelve a seleccionar el movido
+    }
+    Process {
         id: stopProc
         command: [root.scripts + "/animated-wallpaper.sh", "stop"]
     }
@@ -207,7 +229,7 @@ Item {
             }
             Text {
                 anchors.verticalCenter: parent.verticalCenter
-                text: root.animatedTab ? "Search animated wallpapers…  (↑/↓: change its theme)" : "Search wallpapers…"
+                text: (root.animatedTab ? "Search animated wallpapers…" : "Search wallpapers…") + "  (↑/↓: change its theme)"
                 color: Theme.tertiaryText
                 font: parent.font
                 visible: parent.text.length === 0
