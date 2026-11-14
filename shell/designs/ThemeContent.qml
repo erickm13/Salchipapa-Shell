@@ -180,7 +180,7 @@ Item {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.topMargin: 12
-        height: 110
+        height: 130
         orientation: ListView.Horizontal
         spacing: 12
         clip: true
@@ -188,8 +188,8 @@ Item {
         currentIndex: root.sel
         highlightMoveDuration: 200
         highlightRangeMode: ListView.StrictlyEnforceRange
-        preferredHighlightBegin: (width - 140) / 2
-        preferredHighlightEnd: (width - 140) / 2
+        preferredHighlightBegin: (width - 230) / 2
+        preferredHighlightEnd: (width - 230) / 2
         snapMode: ListView.SnapToItem
         boundsBehavior: Flickable.StopAtBounds
 
@@ -198,10 +198,13 @@ Item {
             required property int index
             required property var modelData
 
-            width: 140
-            height: 100
+            // 230 de ancho: caben nombres largos (gentleman-kanagawa-blur) con la letra a 15
+            width: 230
+            height: 120
             radius: 16
-            color: index === root.sel ? Theme.surface1 : Theme.surface0
+            // Oscuras como el fondo de la terminal (040e0d, el terminal-bg de los temas); la seleccionada,
+            // un poco más clara y con el borde del acento.
+            color: index === root.sel ? "#0f1f1d" : "#040e0d"
             border.width: index === root.sel ? 2 : 0
             border.color: Theme.green
 
@@ -229,14 +232,14 @@ Item {
 
                 Row {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    spacing: 4
+                    spacing: 6
                     Repeater {
                         model: card.modelData.swatches
                         delegate: Rectangle {
                             required property var modelData
-                            width: 10
-                            height: 10
-                            radius: 5
+                            width: 15
+                            height: 15
+                            radius: 7.5
                             color: modelData
                         }
                     }
@@ -244,9 +247,12 @@ Item {
                 Text {
                     font.family: Theme.bodyFontFamily
                     anchors.horizontalCenter: parent.horizontalCenter
+                    width: Math.min(implicitWidth, card.width - 20)
+                    horizontalAlignment: Text.AlignHCenter
+                    elide: Text.ElideRight
                     text: card.modelData.name
                     color: "#ffffff"
-                    font.pixelSize: Theme.fontPx(12)
+                    font.pixelSize: Theme.fontPx(15)
                     font.bold: index === root.sel
                 }
             }
