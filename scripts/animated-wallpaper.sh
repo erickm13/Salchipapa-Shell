@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Fondos animados de Wallpaper Engine (Workshop de Steam) con linux-wallpaperengine.
 #   animated-wallpaper.sh list                    -> JSON [{id, title, type, preview}] (con caché)
-#   animated-wallpaper.sh set <id> [colors|nocolors] -> lo pone en todos los monitores activos
+#   animated-wallpaper.sh set <id> [colors|nocolors] -> lo pone en todos los monitores activos (con
+#                                                    colors: su tema de animated-themes.json o matugen)
 #   animated-wallpaper.sh stop                    -> lo quita y vuelve el fondo estático de la shell
 #   animated-wallpaper.sh restore                 -> al iniciar sesión, vuelve a poner el último
 #   animated-wallpaper.sh watch                   -> (interno) pausa el motor de cada monitor tapado
@@ -18,6 +19,7 @@ state="$HOME/.local/state/salchipapa-shell"
 cache="${XDG_CACHE_HOME:-$HOME/.cache}/salchipapa-shell/animated-wallpapers.json"
 log=/tmp/animated-wallpaper.log
 watchpid="$state/animated-watch.pid"
+themes_map="$HOME/.config/salchipapa-shell/animated-themes.json"
 mkdir -p "$state" "$(dirname "$cache")"
 
 list() {
@@ -202,8 +204,15 @@ set)
     fi
     printf '%s' "$id" >"$state/animated"
     if [ "$colors" = "colors" ]; then
-        preview="$workshop/$id/$(jq -r '.preview // "preview.jpg"' "$workshop/$id/project.json")"
-        [ -f "$preview" ] && "$repo/scripts/wallpaper.sh" --colors-only "$preview"
+        # Con tema asignado (~/.config/salchipapa-shell/animated-themes.json, ver
+        # scripts/classify-animated.py), ese tema; si no, los colores de su vista previa (matugen).
+        theme=$(jq -r --arg id "$id" '.[$id] // empty' "$themes_map" 2>/dev/null || true)
+        if [ -n "$theme" ]; then
+            SALCHIPAPA_FROM_WALLPAPER=1 "$repo/scripts/apply-colors.sh" scheme "$theme"
+        else
+            preview="$workshop/$id/$(jq -r '.preview // "preview.jpg"' "$workshop/$id/project.json")"
+            [ -f "$preview" ] && "$repo/scripts/wallpaper.sh" --colors-only "$preview"
+        fi
     fi
     ;;
 stop)

@@ -748,7 +748,17 @@ fi
 # Si el tema tiene carpeta de fondos (~/Pictures/Wallpapers/<tema>/) y el fondo actual no es de
 # ella, se pone uno al azar de ahí (wallpaper.sh … nocolors: solo el fondo). No cuando el tema lo
 # aplica wallpaper.sh por haber elegido un fondo de esa carpeta.
-if [ "$mode" = "scheme" ] && [ -z "${SALCHIPAPA_FROM_WALLPAPER:-}" ]; then
+# Con un fondo animado puesto, uno animado del tema (animated-themes.json) si el actual no lo es.
+animated=$(cat "$state/animated" 2>/dev/null || true)
+if [ "$mode" = "scheme" ] && [ -z "${SALCHIPAPA_FROM_WALLPAPER:-}" ] && [ -n "$animated" ]; then
+    amap="$HOME/.config/salchipapa-shell/animated-themes.json"
+    if [ "$(jq -r --arg id "$animated" '.[$id] // empty' "$amap" 2>/dev/null)" != "$arg" ]; then
+        apick=$(jq -r --arg t "$arg" 'to_entries[] | select(.value == $t) | .key' "$amap" 2>/dev/null | shuf -n1)
+        if [ -n "$apick" ]; then
+            setsid -f "$repo/scripts/animated-wallpaper.sh" set "$apick" nocolors >/dev/null 2>&1 || true
+        fi
+    fi
+elif [ "$mode" = "scheme" ] && [ -z "${SALCHIPAPA_FROM_WALLPAPER:-}" ]; then
     wdir="${XDG_PICTURES_DIR:-$HOME/Pictures}/Wallpapers/$arg"
     cur=$(cat "$state/wallpaper" 2>/dev/null || true)
     if [ -d "$wdir" ] && [ "${cur%/*}" != "$wdir" ]; then

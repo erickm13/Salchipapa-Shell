@@ -17,6 +17,10 @@ Item {
     property bool applyColors: true // switch: generar colores del wallpaper (matugen)
     property bool animatedTab: false // pestaña de fondos animados (Wallpaper Engine)
     property var animatedList: [] // [{id, title, type, preview}]
+    // Tema de cada fondo: estáticos, el de su carpeta (~/Pictures/Wallpapers/<tema>/); animados, el
+    // de ~/.config/salchipapa-shell/animated-themes.json (scripts/classify-animated.py).
+    property var themeMap: ({})
+    property var themeNames: []
     readonly property string scripts: Quickshell.shellDir + "/../scripts"
 
     // Estáticos: rutas. Animados: objetos. Las celdas usan titleOf/previewOf para ambos.
@@ -38,6 +42,28 @@ Item {
     }
 
     // Selecciona el wallpaper actual (la lista lo centra sola por StrictlyEnforceRange)
+    function themeOf(item): string {
+        if (typeof item === "string") {
+            const m = item.match(/\/Wallpapers\/([^\/]+)\/[^\/]+$/);
+            return m ? m[1] : "";
+        }
+        return root.themeMap[item.id] ?? "";
+    }
+
+    // ↑/↓ en la pestaña de animados: cambia el tema del seleccionado (queda como corrección manual)
+    function cycleTheme(step: int): void {
+        const item = results[sel];
+        if (!animatedTab || !item || themeNames.length === 0)
+            return;
+        const i = themeNames.indexOf(themeOf(item));
+        const next = themeNames[((i < 0 ? (step > 0 ? -1 : 0) : i) + step + themeNames.length) % themeNames.length];
+        const m = Object.assign({}, root.themeMap);
+        m[item.id] = next;
+        root.themeMap = m;
+        setThemeProc.command = ["python3", root.scripts + "/classify-animated.py", "--set", item.id, next];
+        setThemeProc.running = true;
+    }
+
     function selectCurrent(): void {
         const i = animatedTab ? results.findIndex(w => w.id === Wallpaper.animated) : results.findIndex(f => f === Wallpaper.current);
         sel = i >= 0 ? i : 0;
@@ -77,6 +103,8 @@ Item {
                 searchInput.forceActiveFocus();
                 root.animatedTab = Wallpaper.animated !== "";
                 listProc.running = true;
+                mapProc.running = true;
+                namesProc.running = true;
                 if (root.animatedTab)
                     animatedProc.running = true;
             }
@@ -112,6 +140,31 @@ Item {
     }
     Process {
         id: applyProc
+    }
+    Process {
+        id: mapProc
+        command: ["sh", "-c", "cat \"$HOME/.config/salchipapa-shell/animated-themes.json\" 2>/dev/null || echo '{}'"]
+        stdout: StdioCollector {
+            id: mapOut
+            onStreamFinished: {
+                try {
+                    root.themeMap = JSON.parse(mapOut.text);
+                } catch (e) {
+                    root.themeMap = {};
+                }
+            }
+        }
+    }
+    Process {
+        id: namesProc
+        command: ["jq", "-r", "keys_unsorted[] | select(. != \"dynamic\")", Quickshell.shellDir + "/themes/schemes.json"]
+        stdout: StdioCollector {
+            id: namesOut
+            onStreamFinished: root.themeNames = namesOut.text.trim().split("\n").filter(s => s.length > 0).sort()
+        }
+    }
+    Process {
+        id: setThemeProc
     }
     Process {
         id: stopProc
@@ -154,13 +207,15 @@ Item {
             }
             Text {
                 anchors.verticalCenter: parent.verticalCenter
-                text: root.animatedTab ? "Search animated wallpapers…" : "Search wallpapers…"
+                text: root.animatedTab ? "Search animated wallpapers…  (↑/↓: change its theme)" : "Search wallpapers…"
                 color: Theme.tertiaryText
                 font: parent.font
                 visible: parent.text.length === 0
             }
             Keys.onLeftPressed: root.sel = Math.max(root.sel - 1, 0)
             Keys.onRightPressed: root.sel = Math.min(root.sel + 1, root.results.length - 1)
+            Keys.onUpPressed: root.cycleTheme(-1)
+            Keys.onDownPressed: root.cycleTheme(1)
             Keys.onReturnPressed: root.apply()
             Keys.onEnterPressed: root.apply()
             Keys.onEscapePressed: Overlay.close()
@@ -408,6 +463,27 @@ Item {
                         fillMode: Image.PreserveAspectCrop
                         asynchronous: true
                         cache: false
+                    }
+
+                    // Tema del fondo (carpeta o asignación de los animados)
+                    Rectangle {
+                        visible: themeText.text !== ""
+                        anchors.top: parent.top
+                        anchors.left: parent.left
+                        anchors.margins: 6
+                        width: themeText.implicitWidth + 12
+                        height: 18
+                        radius: 9
+                        color: "#b3000000"
+                        Text {
+                            id: themeText
+                            anchors.centerIn: parent
+                            text: root.themeOf(cell.modelData)
+                            color: "#ffffff"
+                            font.family: Theme.bodyFontFamily
+                            font.pixelSize: Theme.fontPx(10)
+                            font.bold: true
+                        }
                     }
 
                     // Animados: tipo (escena, vídeo, web) y si es el activo
