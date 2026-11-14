@@ -46,7 +46,9 @@ for d in /sys/bus/pci/devices/*; do
             IFS=',' read -r name util mu mt temp power clk clkmax clkmem pstate < <(nvidia-smi \
                 --query-gpu=name,utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw,clocks.gr,clocks.max.gr,clocks.mem,pstate \
                 --format=csv,noheader,nounits 2>/dev/null | head -1)
-            [ -n "${name:-}" ] && g=$(jq -n --arg state "$state" --arg name "$(echo "$name" | sed 's/^ *//')" \
+            # Solo con datos de verdad: si nvidia-smi falla (p. ej. "Driver/library version mismatch"
+            # tras actualizar el driver sin reiniciar), imprime un error que rompería todo el JSON.
+            [ -n "${name:-}" ] && [[ "${util// /}" =~ ^[0-9]+$ ]] && [[ "${mt// /}" =~ ^[0-9]+$ ]] && g=$(jq -n --arg state "$state" --arg name "$(echo "$name" | sed 's/^ *//')" \
                 --argjson util "${util// /}" --argjson mu "${mu// /}" --argjson mt "${mt// /}" \
                 --argjson temp "${temp// /}" --arg power "${power// /}" --arg clk "${clk// /}" \
                 --arg clkmax "${clkmax// /}" --arg clkmem "${clkmem// /}" --arg pstate "${pstate// /}" \
