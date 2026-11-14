@@ -102,8 +102,8 @@ def build(p):
 # --- Gruvbox (morhetz/gruvbox colours, laid out like ellisonleao/gruvbox.nvim) -------------
 # Only colours from the palette. As in gruvbox.nvim, the contrast only changes bg0; the ladder
 # above it is always dark1-dark4 (shell bg1-bg4 = cursorline/floats, statusline/pmenu, visual,
-# line numbers). Accents: yellow (CursorLineNr, Search, ModeMsg), blue (Identifier, PmenuSel,
-# DiagnosticInfo), purple (Constant). Terminal colours are the ones gruvbox.nvim sets, except blue.
+# line numbers). Accents: green (Directory/Function: the user's choice for the shell), blue
+# (Identifier, PmenuSel, DiagnosticInfo), purple (Constant). Terminal colours are the ones gruvbox.nvim sets, except blue.
 def gruvbox_(bg0):
     return build(dict(
         bg=bg0, dim=bg0, lowest=bg0, container="3C3836",
@@ -111,8 +111,8 @@ def gruvbox_(bg0):
         fg="EBDBB2", sub="A89984", muted="928374",
         red="FB4934", green="B8BB26", yellow="FABD2F", blue="83A598", magenta="D3869B",
         cyan="8EC07C", orange="FE8019",
-        primary="FABD2F", secondary="83A598", tertiary="D3869B",
-        dimmed={"FABD2F": "D79921", "83A598": "458588", "D3869B": "B16286"},  # bright -> neutral
+        primary="B8BB26", secondary="83A598", tertiary="D3869B",
+        dimmed={"B8BB26": "98971A", "83A598": "458588", "D3869B": "B16286"},  # bright -> neutral
         cat={"subtext1": "D5C4A1", "subtext0": "BDAE93", "overlay2": "A89984",
              "overlay1": "928374", "overlay0": "7C6F64"},
         # Blue slots (4, 12) hold the gray (bright black) instead of blue: the user's choice.

@@ -78,6 +78,8 @@ t() { if $use_term && [ -n "${COL[term$1]:-}" ]; then printf '%s' "${COL[term$1]
 # = crear su carpeta, sin tocar este script.
 theme_dir="$repo/shell/themes/$arg"
 theme_file() { [ "$mode" = "scheme" ] && [ -f "$theme_dir/$1" ] && printf '%s' "$theme_dir/$1"; }
+# Fondo de la terminal: el del tema (terminal-bg, un hex sin #) o el background de la paleta.
+term_bg() { if f=$(theme_file terminal-bg); then head -n1 "$f"; else c background; fi; }
 
 # ------------------------------------------------------------------ GTK 3 / 4
 gtk_css() {
@@ -152,7 +154,7 @@ kdir="$HOME/.config/kitty"
 if [ -d "$kdir" ]; then
     cat >"$kdir/salchipapa-colors.conf" <<EOF
 # Generado por Salchipapa-Shell (apply-colors.sh). No editar a mano.
-background #$(c background)
+background #$(term_bg)
 foreground #$(c onBackground)
 cursor #$(c primary)
 cursor_text_color #$(c onPrimary)
@@ -531,7 +533,7 @@ if [ -d "$fdir" ]; then
     cat >"$fdir/salchipapa-colors.ini" <<EOF
 [colors-dark]
 foreground=$(c onBackground)
-background=$(c background)
+background=$(term_bg)
 regular0=$(t 0)
 regular1=$(t 1)
 regular2=$(t 2)
@@ -715,7 +717,7 @@ term_sequences() {
     esc=$'\033'
     st=$'\033\\'
     printf '%s]10;#%s%s' "$esc" "$(c onBackground)" "$st"
-    printf '%s]11;#%s%s' "$esc" "$(c background)" "$st"
+    printf '%s]11;#%s%s' "$esc" "$(term_bg)" "$st"
     printf '%s]12;#%s%s' "$esc" "$(c primary)" "$st"
     local i
     for i in $(seq 0 15); do

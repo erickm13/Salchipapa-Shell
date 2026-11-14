@@ -30,6 +30,7 @@
 | `vscode.json` | ajustes de VS Code (`workbench.colorTheme`, `workbench.colorCustomizations`) | se mezclan en `~/.config/Code/User/settings.json` (`scripts/vscode-settings.py`); sin él vuelve el tema del usuario | sí |
 | `surfingkeys.js` | configuración de Surfingkeys (Firefox) con el tema | no se aplica sola: se pega en Surfingkeys > Settings > Advanced mode (Firefox no deja leer archivos) | no |
 | `vesktop.css` | Vesktop/Discord: variables de color del tema system24 (`:root`) | bloque marcado en `~/.config/vesktop/settings/quickCss.css` | sí |
+| `terminal-bg` | fondo de la terminal (hex sin `#`); sin él, el `background` de la paleta | kitty, foot y las terminales abiertas (OSC 11) | sí |
 | `bat` | nombre del tema de bat (de `bat/` o de los que trae bat) | `~/.config/bat/config` | sí |
 
 La terminal (16 casillas) sale de `term0`–`term15` de `schemes.json` si el tema está en
