@@ -16,106 +16,193 @@ from pathlib import Path
 
 DIR = Path(__file__).resolve().parent.parent / "shell/themes/bat"
 UP = DIR / "upstream"
-SRC, OUT = UP / "gruvbox-dark.tmTheme", DIR / "gruvbox-salchipapa.tmTheme"
-PINK, ORANGE, GRAY, RED, BLUE, GREEN = '#d3869b', '#fe8019', '#928374', '#fb4934', '#83a598', '#b8bb26'
-FG, AQUA = '#ebdbb2', '#8ec07c'
+SRC = UP / "gruvbox-dark.tmTheme"
 
-def category(sel):
-    parts = sel.split()
-    last = parts[-1] if parts else ''
-    if 'comment' in sel:
-        return GRAY
-    # command flags (-n, -la, --color) with their dash
-    if last.startswith(('variable.parameter.option', 'punctuation.definition.parameter')):
-        return BLUE
-    if last.startswith('punctuation.definition.variable'):
-        return PINK
-    if last.startswith('punctuation.definition.string'):
-        return GREEN  # as nvim: the quotes are part of the string
-    if (last.startswith(('punctuation', 'meta.brace'))
-            or (last.startswith('keyword.operator') and not last.startswith(('keyword.operator.word', 'keyword.operator.logical.python')))):
-        return ORANGE
-    if last.startswith(('keyword', 'storage')):
-        return RED
-    if (last.startswith(('variable', 'entity.name.variable'))
-            and not last.startswith(('variable.function', 'variable.language', 'variable.other.constant', 'variable.import', 'variable.package', 'variable.type', 'variable.other.class'))):
-        return PINK
-    return None
+# Roles of each theme, as its nvim colorscheme paints them (gruvbox.nvim / solarized-osaka.nvim).
+# Optional roles (string, function, type, constant, remap) only exist where the base theme's own
+# colours don't fit: remap translates the base's leftover gruvbox colours to the theme.
+GRUVBOX = dict(
+    name='gruvbox-salchipapa', fg='#ebdbb2', comment='#928374', keyword='#fb4934', keyword_style=None,
+    symbol='#fe8019', variable='#d3869b', flag='#83a598', quote='#b8bb26', command='#b8bb26',
+    command_style='bold', builtin='#fe8019', flow='#fe8019', flow_style='bold', dollar='#fe8019',
+    shell_name='#ebdbb2', shell_constant='#d3869b', shell_builtin_var='#fe8019',
+    expansion_string='#b8bb26', shebang='#8ec07c', case_rest='#83a598', case_first='#b8bb26',
+    description='variables pink, symbols orange, comments gray, keywords red, flags blue')
+SOLARIZED = dict(
+    name='solarized-salchipapa', fg='#b6c5c6', comment='#7b99a2', keyword='#a2bb00',
+    keyword_style='bold italic', symbol='#a2bb00', variable='#b6c5c6', flag='#fb724a',
+    quote='#34c5b9', command='#5aaefa', command_style='', builtin='#fb724a', flow='#fb724a',
+    flow_style='', dollar='#fb724a', shell_name='#b6c5c6', shell_constant='#34c5b9',
+    shell_builtin_var='#fb724a', shell_special='#fb724a', bracket='#fb724a',
+    expansion_string='#34c5b9', shebang='#ff6c6a', case_rest='#fb724a',
+    case_first='#34c5b9', string='#34c5b9', function='#5aaefa', type='#dba500', constant='#34c5b9',
+    remap={'#b8bb26': '#a2bb00', '#98971a': '#a2bb00', '#fabd2f': '#dba500', '#d79921': '#dba500',
+           '#d3869b': '#34c5b9', '#b16286': '#34c5b9', '#83a598': '#5aaefa', '#458588': '#5aaefa',
+           '#8ec07c': '#5aaefa', '#689d6a': '#5aaefa', '#fe8019': '#fb724a', '#d65d0e': '#fb724a',
+           '#fb4934': '#ff6c6a', '#cc241d': '#ff6c6a', '#fbf1c7': '#c2cdcd', '#ebdbb2': '#b6c5c6',
+           '#d5c4a1': '#b6c5c6', '#bdae93': '#a0b4b6', '#a89984': '#a0b4b6', '#928374': '#7b99a2',
+           '#7c6f64': '#7b99a2', '#665c54': '#063540', '#504945': '#063540', '#3c3836': '#002c38',
+           '#32302f': '#002c38', '#282828': '#001419', '#1d2021': '#001419', '#1b1b1b': '#001419',
+           '#3a3a3a': '#002c38'},
+    description='as solarized-osaka.nvim (vivid): keywords green, commands blue, strings cyan, '
+                'parameters orange, comments gray')
 
-t = plistlib.load(open(SRC, 'rb'))
-t['name'] = 'gruvbox-salchipapa'
-t['comment'] = ('gruvbox-dark of bat (github.com/subnut/gruvbox-tmTheme, MIT, (c) 2020 Subhaditya Nath; '
-                'based on morhetz/gruvbox) recoloured by Salchipapa-Shell: variables pink, symbols '
-                'orange, comments gray, keywords red, flags blue.')
-rules = []
-for r in t['settings'][1:]:
-    sels = [s.strip() for s in r.get('scope', '').replace('\n', ' ').split(',') if s.strip()]
-    keep, moved = [], {}
-    for s in sels:
-        c = category(s)
-        (keep.append(s) if c is None or c == r.get('settings', {}).get('foreground') else moved.setdefault(c, []).append(s))
-    if keep or not sels:
-        rules.append(dict(r, scope=', '.join(keep)) if sels else r)
-    for c, ss in moved.items():
-        st = dict(r.get('settings', {}), foreground=c)
-        if c == GRAY: st['fontStyle'] = 'italic'
-        rules.append({'name': f"{r.get('name') or 'rule'} (Salchipapa)", 'scope': ', '.join(ss), 'settings': st})
-# fallbacks for scopes the theme never names
-for name, scope, c in [
-    ('symbols', 'punctuation, meta.brace, keyword.operator', ORANGE),
-    ('keywords', 'keyword, storage', RED),
-    ('variables', 'variable.other, variable.parameter, entity.name.variable', PINK),
-    ('comments', 'comment', GRAY),
-    ('flags', 'variable.parameter.option, punctuation.definition.parameter', BLUE),
-    ('string quotes', 'string punctuation.definition.string', GREEN),
-    # command arguments, as nvim's @variable.parameter (strings and variables inside keep theirs)
-    ('command arguments', 'meta.function-call.arguments', BLUE),
-]:
-    rules.insert(1, {'name': f'Salchipapa fallback: {name}', 'scope': scope, 'settings': {'foreground': c}})
-# Shell scripts like nvim's bash treesitter (gruvbox.nvim): at the end so they win the ties.
-SHELL = [
-    # nvim: `$`/`${` orange; the name pink (as its ALL_CAPS @constant; bat cannot tell the case)
-    ('variable expansions ($x, ${x}, $1, $@)',
-     'source.shell punctuation.definition.variable, '
-     'source.shell punctuation.section.expansion.parameter, '
-     'source.shell meta.group.expansion.parameter punctuation.section.expansion', ORANGE),
-    # names as nvim: the rest cream, ALL_CAPS pink (@constant), bash's own orange (@variable.builtin)
-    ('variable names', 'source.shell variable.other.readwrite, '
-     'source.shell meta.group.expansion.parameter variable.other.readwrite', FG),
-    ('constants (ALL_CAPS names, $@ $# $? $$ $!)', 'source.shell variable.other.constant, '
-     'source.shell variable.other.readwrite variable.other.constant, source.shell variable.language', PINK),
-    ('bash variables ($HOME, $PATH)', 'source.shell variable.other.builtin, '
-     'source.shell variable.other.readwrite variable.other.builtin', ORANGE),
-    ('commands and functions (sudo, mkdir, step)',  # nvim: Function = GruvboxGreenBold
-     'source.shell variable.function, source.shell entity.name.function, '
-     'source.shell meta.function entity.name.function, '
-     'source.shell meta.function-call variable.function', GREEN, 'bold'),
-    ('builtins (echo, set, cd, true, [ ])',
-     'source.shell support.function, source.shell meta.function-call support.function, '
-     'source.shell meta.function-call variable.function support.function', ORANGE, 'bold'),
-    ('return, break, continue', 'source.shell keyword.control.flow, '
-     'source.shell meta.function-call keyword.control.flow', ORANGE, 'bold'),
-    # text inside ${...} that is not the name (the default in ${X:-...}): the string's green, as nvim
-    ('${...} text inside strings', 'source.shell string meta.group.expansion.parameter', GREEN),
-    # syntaxes/: nvim's @keyword.directive -> PreProc (aqua), still italic as a comment
-    ('shebang', 'source.shell comment.line.shebang', AQUA, 'italic'),
-    # syntaxes/: the first word of a case pattern list, then the others (s | si | yes)
-    ('case patterns', 'source.shell string.unquoted.case.pattern', BLUE),
-    ('case pattern, first word', 'source.shell string.unquoted.case.pattern.first', GREEN),
-]
-for name, scope, c, *style in SHELL:
-    st = {'foreground': c, 'fontStyle': style[0] if style else ''}
-    rules.append({'name': f'Salchipapa shell: {name}', 'scope': scope, 'settings': st})
-t['settings'] = t['settings'][:1] + rules
-# Plain text in nvim's cream (fg1 #ebdbb2) instead of the theme's fg0 (#fbf1c7)
-for r in t['settings']:
-    st = r.get('settings', {})
-    for k in ('foreground', 'highlight', 'highlightForeground'):
-        if st.get(k, '').lower() == '#fbf1c7':
-            st[k] = '#ebdbb2'
-t['settings'][0]['settings']['foreground'] = '#ebdbb2'
-plistlib.dump(t, open(OUT, 'wb'))
+BLUR = dict(
+    name='gentleman-kanagawa-blur-salchipapa', fg='#f3f6f9', comment='#8394a3', keyword='#c99ad6',
+    keyword_style='', symbol='#deba87', bracket='#8aa6c1', variable='#c4746e', flag='#c7a8df',
+    quote='#dfbd76', command='#b99bf2', command_style='', builtin='#8d9ef2', flow='#8d9ef2',
+    flow_style='', dollar='#96a2b0', shell_name='#c4746e', shell_constant='#cb7c94',
+    shell_builtin_var='#b6a6c8', shell_special='#cb7c94', expansion_string='#dfbd76',
+    shebang='#c99ad6', case_rest='#c7a8df', case_first='#dfbd76', string='#dfbd76',
+    function='#b99bf2', type='#8fb8dd', constant='#cb7c94',
+    test_bracket='#8aa6c1', paren='#96a2b0', separator='#a3b5c1', number='#a4daa7',
+    remap={'#b8bb26': '#b7cc85', '#98971a': '#b7cc85', '#fabd2f': '#e0c15a', '#d79921': '#e0c15a',
+           '#d3869b': '#cb7c94', '#b16286': '#cb7c94', '#83a598': '#7fb4ca', '#458588': '#7fb4ca',
+           '#8ec07c': '#b99bf2', '#689d6a': '#b99bf2', '#fe8019': '#deba87', '#d65d0e': '#deba87',
+           '#fb4934': '#c4746e', '#cc241d': '#c4746e', '#fbf1c7': '#f3f6f9', '#ebdbb2': '#f3f6f9',
+           '#d5c4a1': '#e0e2ea', '#bdae93': '#a3b5c1', '#a89984': '#a3b5c1', '#928374': '#8394a3',
+           '#7c6f64': '#5c6170', '#665c54': '#232a40', '#504945': '#232a36', '#3c3836': '#191e28',
+           '#32302f': '#191e28', '#282828': '#06080f', '#1d2021': '#06080f', '#1b1b1b': '#06080f',
+           '#3a3a3a': '#191e28'},
+    description='as gentleman-kanagawa-blur (nvim): keywords lilac, commands purple, strings gold, '
+                'parameters light lilac, comments gray')
 
+
+def build_theme(P):
+    """bat's gruvbox-dark recoloured by role with palette P (see GRUVBOX / SOLARIZED)."""
+    def category(sel):
+        parts = sel.split()
+        last = parts[-1] if parts else ''
+        if 'comment' in sel:
+            return 'comment'
+        # command flags (-n, -la, --color) with their dash
+        if last.startswith(('variable.parameter.option', 'punctuation.definition.parameter')):
+            return 'flag'
+        if last.startswith('punctuation.definition.variable'):
+            return 'variable'
+        if last.startswith('punctuation.definition.string'):
+            return 'quote'  # as nvim: the quotes are part of the string
+        if 'bracket' in P and (last.startswith(('meta.brace', 'punctuation.section', 'punctuation.definition.group',
+                                                  'punctuation.definition.compound', 'punctuation.definition.array'))):
+            return 'bracket'
+        if (last.startswith(('punctuation', 'meta.brace'))
+                or (last.startswith('keyword.operator') and not last.startswith(('keyword.operator.word', 'keyword.operator.logical.python')))):
+            return 'symbol'
+        if last.startswith(('keyword', 'storage')):
+            return 'keyword'
+        if (last.startswith(('variable', 'entity.name.variable'))
+                and not last.startswith(('variable.function', 'variable.language', 'variable.other.constant', 'variable.import', 'variable.package', 'variable.type', 'variable.other.class'))):
+            return 'variable'
+        if 'string' in P and last.startswith('string'):
+            return 'string'
+        if 'function' in P and last.startswith(('entity.name.function', 'variable.function', 'meta.function-call')):
+            return 'function'
+        if 'type' in P and last.startswith(('entity.name.type', 'support.type', 'support.class', 'storage.type', 'entity.name.class')):
+            return 'type'
+        if 'constant' in P and last.startswith('constant'):
+            return 'constant'
+        return None
+
+    t = plistlib.load(open(SRC, 'rb'))
+    t['name'] = P['name']
+    t['comment'] = ('gruvbox-dark of bat (github.com/subnut/gruvbox-tmTheme, MIT, (c) 2020 Subhaditya Nath; '
+                    f'based on morhetz/gruvbox) recoloured by Salchipapa-Shell: {P["description"]}.')
+    rules = []
+    for r in t['settings'][1:]:
+        sels = [s.strip() for s in r.get('scope', '').replace('\n', ' ').split(',') if s.strip()]
+        keep, moved = [], {}
+        for s in sels:
+            role = category(s)
+            c = P[role] if role else None
+            (keep.append(s) if c is None or c == r.get('settings', {}).get('foreground') else moved.setdefault(role, []).append(s))
+        if keep or not sels:
+            rules.append(dict(r, scope=', '.join(keep)) if sels else r)
+        for role, ss in moved.items():
+            st = dict(r.get('settings', {}), foreground=P[role])
+            if role == 'comment': st['fontStyle'] = 'italic'
+            if role == 'keyword' and P.get('keyword_style') is not None: st['fontStyle'] = P['keyword_style']
+            rules.append({'name': f"{r.get('name') or 'rule'} (Salchipapa)", 'scope': ', '.join(ss), 'settings': st})
+    # fallbacks for scopes the theme never names
+    for name, scope, role in [
+        ('symbols', 'punctuation, meta.brace, keyword.operator', 'symbol'),
+        ('keywords', 'keyword, storage', 'keyword'),
+        ('variables', 'variable.other, variable.parameter, entity.name.variable', 'variable'),
+        ('comments', 'comment', 'comment'),
+        ('flags', 'variable.parameter.option, punctuation.definition.parameter', 'flag'),
+        ('string quotes', 'string punctuation.definition.string', 'quote'),
+        # command arguments, as nvim's @variable.parameter (strings and variables inside keep theirs)
+        ('command arguments', 'meta.function-call.arguments', 'flag'),
+    ]:
+        rules.insert(1, {'name': f'Salchipapa fallback: {name}', 'scope': scope, 'settings': {'foreground': P[role]}})
+    # Shell scripts like nvim's bash treesitter: at the end so they win the ties.
+    SHELL = [
+        # nvim: `$`/`${` Special; the name: ALL_CAPS @constant, bash's own @variable.builtin, the rest @variable
+        ('variable expansions ($x, ${x}, $1, $@)',
+         'source.shell punctuation.definition.variable, '
+         'source.shell punctuation.section.expansion.parameter, '
+         'source.shell meta.group.expansion.parameter punctuation.section.expansion', P['dollar']),
+        ('variable names', 'source.shell variable.other.readwrite, '
+         'source.shell meta.group.expansion.parameter variable.other.readwrite', P['shell_name']),
+        ('constants (ALL_CAPS names, $@ $# $? $$ $!)', 'source.shell variable.other.constant, '
+         'source.shell variable.other.readwrite variable.other.constant'
+         + ('' if 'shell_special' in P else ', source.shell variable.language'), P['shell_constant']),
+        *([('special variables ($@ $# $? $$ $!)', 'source.shell variable.language', P['shell_special'])]
+          if 'shell_special' in P else []),
+        ('bash variables ($HOME, $PATH)', 'source.shell variable.other.builtin, '
+         'source.shell variable.other.readwrite variable.other.builtin', P['shell_builtin_var']),
+        ('commands and functions (sudo, mkdir, step)',  # nvim: Function
+         'source.shell variable.function, source.shell entity.name.function, '
+         'source.shell meta.function entity.name.function, '
+         'source.shell meta.function-call variable.function', P['command'], P['command_style']),
+        ('builtins (echo, set, cd, true, [ ])',
+         'source.shell support.function, source.shell meta.function-call support.function, '
+         'source.shell meta.function-call variable.function support.function', P['builtin'], 'bold'),
+        ('return, break, continue', 'source.shell keyword.control.flow, '
+         'source.shell meta.function-call keyword.control.flow', P['flow'], P['flow_style']),
+        # text inside ${...} that is not the name (the default in ${X:-...}): the string's colour, as nvim
+        ('${...} text inside strings', 'source.shell string meta.group.expansion.parameter', P['expansion_string']),
+        # syntaxes/: nvim's @keyword.directive, still italic as a comment
+        ('shebang', 'source.shell comment.line.shebang', P['shebang'], 'italic'),
+        # syntaxes/: the first word of a case pattern list, then the others (s | si | yes)
+        ('case patterns', 'source.shell string.unquoted.case.pattern', P['case_rest']),
+        ('case pattern, first word', 'source.shell string.unquoted.case.pattern.first', P['case_first']),
+    ]
+    # optional roles (only palettes whose nvim tells them apart)
+    for role, scope in (('test_bracket', 'source.shell support.function.test, source.shell support.function.double-brace'),
+                        ('paren', 'source.shell meta.group.expansion.command punctuation.section'),  # the ( ) of $( )
+                        ('separator', 'source.shell keyword.operator.logical.continue, source.shell punctuation.terminator, '
+                                      'source.shell keyword.operator.list'),
+                        ('number', 'source.shell constant.numeric, source.shell meta.function-call.arguments constant.numeric')):
+        if role in P:
+            SHELL.append((role, scope, P[role]))
+    if 'bracket' in P:
+        SHELL.append(('brackets', 'source.shell punctuation.section, source.shell punctuation.definition.compound, '
+                      'source.shell punctuation.definition.array, source.shell meta.brace', P['bracket']))
+    for name, scope, c, *style in SHELL:
+        st = {'foreground': c, 'fontStyle': style[0] if style else ''}
+        rules.append({'name': f'Salchipapa shell: {name}', 'scope': scope, 'settings': st})
+    t['settings'] = t['settings'][:1] + rules
+    # Plain text in nvim's colour (gruvbox: fg1 #ebdbb2 instead of the theme's fg0 #fbf1c7)
+    for r in t['settings']:
+        st = r.get('settings', {})
+        for k in ('foreground', 'highlight', 'highlightForeground'):
+            if st.get(k, '').lower() == '#fbf1c7':
+                st[k] = '#ebdbb2'
+    t['settings'][0]['settings']['foreground'] = '#ebdbb2'
+    # Other themes: the base's leftover gruvbox colours (global settings included) to the theme's
+    remap = P.get('remap')
+    if remap:
+        for r in t['settings']:
+            st = r.get('settings', {})
+            for k, v in list(st.items()):
+                if isinstance(v, str) and v[:7].lower() in remap:
+                    st[k] = remap[v[:7].lower()] + v[7:]
+        t['settings'][0]['settings']['foreground'] = P['fg']
+    plistlib.dump(t, open(DIR / f"{P['name']}.tmTheme", 'wb'))
+
+
+for _palette in (GRUVBOX, SOLARIZED, BLUR):
+    build_theme(_palette)
 
 # Bash's own variables, as nvim-treesitter's queries/bash/highlights.scm (@variable.builtin):
 # names from the GNU Bash manual (Bourne Shell Variables + Bash Variables).
@@ -191,6 +278,18 @@ def build_syntaxes():
     assert job.count("    - match: (%)") == 3 and job.count("    - match: '%'") == 1
     job = job.replace("    - match: (%)", "    - match: (?<![^\\s])(%)").replace("    - match: '%'", "    - match: '(?<![^\\s])%'")
     s = s[:i] + job + s[j:]
+    # Builtins anywhere a command name goes (inside $( ) bat only knew them at the start of a
+    # statement: `$(cmd || true)` and `x="$(pwd)"` came out as plain commands). nvim: @function.builtin
+    builtins = ('alias bg bind builtin caller cd command compgen complete declare dirs disown echo enable eval '
+                'exec exit export false fc fg getopts hash help history jobs kill let local logout mapfile '
+                'popd printf pushd pwd read readarray readonly set shift shopt source suspend test times '
+                'trap true type typeset ulimit umask unalias unset wait').split()
+    for ctx, end in (('cmd-name', '{{is_start_of_arguments}}|{{is_end_of_interpolation}}'),
+                     ('cmd-name-bt', '{{is_start_of_arguments}}|{{is_end_of_interpolation}}|`')):
+        old = f"  {ctx}:\n    - match: \"\"\n"
+        assert s.count(old) == 1, ctx
+        s = s.replace(old, f"  {ctx}:\n    - match: '(?:{'|'.join(builtins)})(?={end})'\n"
+                           f"      scope: meta.function-call.shell support.function.shell\n      pop: true\n" + old.split('\n', 1)[1])
     # Shebang (#!/usr/bin/env bash) apart from the comments, as nvim (@keyword.directive)
     old = "  prototype:\n    - include: comment\n"
     assert s.count(old) == 1

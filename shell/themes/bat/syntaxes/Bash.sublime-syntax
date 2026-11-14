@@ -947,6 +947,9 @@ contexts:
     # - include: cmd-args-boilerplate-bt
 
   cmd-name:
+    - match: '(?:alias|bg|bind|builtin|caller|cd|command|compgen|complete|declare|dirs|disown|echo|enable|eval|exec|exit|export|false|fc|fg|getopts|hash|help|history|jobs|kill|let|local|logout|mapfile|popd|printf|pushd|pwd|read|readarray|readonly|set|shift|shopt|source|suspend|test|times|trap|true|type|typeset|ulimit|umask|unalias|unset|wait)(?={{is_start_of_arguments}}|{{is_end_of_interpolation}})'
+      scope: meta.function-call.shell support.function.shell
+      pop: true
     - match: ""
       set:
         - meta_scope: meta.function-call.shell variable.function.shell
@@ -955,6 +958,9 @@ contexts:
         - include: cmd-name-common
 
   cmd-name-bt:
+    - match: '(?:alias|bg|bind|builtin|caller|cd|command|compgen|complete|declare|dirs|disown|echo|enable|eval|exec|exit|export|false|fc|fg|getopts|hash|help|history|jobs|kill|let|local|logout|mapfile|popd|printf|pushd|pwd|read|readarray|readonly|set|shift|shopt|source|suspend|test|times|trap|true|type|typeset|ulimit|umask|unalias|unset|wait)(?={{is_start_of_arguments}}|{{is_end_of_interpolation}}|`)'
+      scope: meta.function-call.shell support.function.shell
+      pop: true
     - match: ""
       set:
         - meta_scope: meta.function-call.shell variable.function.shell
