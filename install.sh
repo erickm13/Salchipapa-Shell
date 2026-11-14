@@ -32,7 +32,7 @@ PKGS=(
     # Gráficos comunes (los drivers de cada GPU se añaden en detect_gpu)
     mesa lib32-mesa vulkan-icd-loader lib32-vulkan-icd-loader libva-utils
     # Audio (sof-firmware: micro y altavoces de portátiles Intel), red, bluetooth, energía, brillo
-    pipewire pipewire-pulse pipewire-audio pipewire-alsa pipewire-jack wireplumber libcanberra
+    pipewire pipewire-pulse pipewire-audio pipewire-alsa pipewire-jack wireplumber libcanberra sound-theme-freedesktop
     sof-firmware alsa-ucm-conf xdg-user-dirs
     networkmanager bluez bluez-utils upower power-profiles-daemon brightnessctl
     # Lo que usan los scripts y la isla

@@ -102,6 +102,7 @@ ShellRoot {
         LockScreen.locked;
         Idle.objectName; // bloqueo/suspensión automáticos
         Downloads.objectName; // aviso de descargas terminadas
+        Battery.objectName; // aviso de batería baja
         LockScreen.mediaService = Media;
         WindowBlur.apply();
         Touchpad.apply();

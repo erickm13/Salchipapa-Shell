@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import "../common"
+import "../services"
 
 // Controls shown inside the Settings page's scrollable column.
 Item {
@@ -60,6 +61,30 @@ Item {
                 sublabel: "Notify when a new file finishes downloading"
                 checked: Config.opt.notificationDownloads
                 onToggled: Config.opt.notificationDownloads = !Config.opt.notificationDownloads
+            }
+            SettingToggleRow {
+                visible: Battery.available
+                label: "Low battery"
+                sublabel: "Warn when the battery runs low while unplugged"
+                checked: Config.opt.notificationBatteryLow
+                onToggled: Config.opt.notificationBatteryLow = !Config.opt.notificationBatteryLow
+            }
+            SettingSliderRow {
+                visible: Battery.available
+                label: "Low battery at"
+                value: Config.opt.notificationBatteryLowPercent
+                from: 10; to: 50; unit: "%"
+                snap: 5
+                enabled: Config.opt.notificationBatteryLow
+                onMoved: v => Config.opt.notificationBatteryLowPercent = v
+            }
+            SettingSliderRow {
+                visible: Battery.available
+                label: "Critical battery at"
+                value: Config.opt.notificationBatteryCriticalPercent
+                from: 3; to: 20; unit: "%"
+                enabled: Config.opt.notificationBatteryLow
+                onMoved: v => Config.opt.notificationBatteryCriticalPercent = v
             }
             SettingToggleRow {
                 label: "Show time left"

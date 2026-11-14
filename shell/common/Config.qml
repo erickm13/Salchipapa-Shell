@@ -94,6 +94,9 @@ Singleton {
     readonly property bool notificationTimeoutBar: settings.notificationTimeoutBar
     readonly property int notificationProgressWait: settings.notificationProgressWait
     readonly property bool notificationDownloads: settings.notificationDownloads
+    readonly property bool notificationBatteryLow: settings.notificationBatteryLow
+    readonly property int notificationBatteryLowPercent: settings.notificationBatteryLowPercent
+    readonly property int notificationBatteryCriticalPercent: settings.notificationBatteryCriticalPercent
     readonly property bool notificationShowBody: settings.notificationShowBody
     readonly property bool notificationSound: settings.notificationSound
     readonly property int notificationHistoryHeight: settings.notificationHistoryHeight
@@ -253,6 +256,9 @@ Singleton {
             property bool notificationTimeoutBar: true
             property int notificationProgressWait: 30 // s que espera a una descarga en curso (0 = nada)
             property bool notificationDownloads: true // aviso al terminar una descarga
+            property bool notificationBatteryLow: true // aviso de batería baja (services/Battery.qml)
+            property int notificationBatteryLowPercent: 20
+            property int notificationBatteryCriticalPercent: 10 // este no se va solo
             property bool notificationShowBody: true
             property bool notificationSound: true
             property int notificationHistoryHeight: 200

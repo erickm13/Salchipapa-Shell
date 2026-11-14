@@ -137,6 +137,10 @@ PanelWindow {
         readonly property string notifIcon: notifTop?.icon ?? ""
         readonly property string notifImage: notifTop?.image ?? ""
         readonly property bool notifUrgent: notifTop?.urgency === NotificationUrgency.Critical
+        // Crítica que pide no caducar (notify-send -u critical -t 0, p.ej. batería crítica): se
+        // queda hasta que se pulse o la cierre quien la mandó. Solo en las críticas, para que una
+        // app normal con expireTimeout 0 no deje la isla abierta.
+        readonly property bool notifSticky: notifTop?.sticky ?? false
         // Botones: las acciones que no son la del clic (como mucho 3) y "Reply" si admite respuesta
         readonly property var notifActions: notifObj ? notifObj.actions.filter(a => a.identifier !== "default").slice(0, 3) : []
         readonly property bool notifCanReply: notifObj?.hasInlineReply ?? false
@@ -199,7 +203,11 @@ PanelWindow {
             peek = name;
             peekTimer.interval = name === "notif" ? (notifUrgent ? Config.notificationUrgentTimeout : Config.notificationPopupTimeout) : (name === "volume" || name === "brightness") ? Config.osdOnScreenTime : name === "keys" ? 2000 : (name === "media" ? 3000 : 1400);
             peekTimer.restart();
-            if (name === "notif") {
+            if (name === "notif" && notifSticky) {
+                peekTimer.stop();
+                notifProgressAnim.stop();
+                notifProgress = 1;
+            } else if (name === "notif") {
                 notifProgressAnim.duration = peekTimer.interval;
                 notifProgressAnim.restart();
                 if (notifWaiting)
@@ -213,7 +221,7 @@ PanelWindow {
         // tiempo completo. Si tarda más del límite, sigue el tiempo normal y se irá: volverá a salir
         // al terminar (Notifs.progressDone).
         function checkProgress(): void {
-            if (peek !== "notif")
+            if (peek !== "notif" || notifSticky)
                 return;
             const busy = notifValue >= 0 && notifValue < 100 && Config.notificationProgressWait > 0;
             if (busy && !notifWaiting && !notifWaitDone) {
@@ -312,7 +320,7 @@ PanelWindow {
             notifProgressAnim.pause();
         }
         function resumeNotif(): void {
-            if (peek !== "notif" || notifReplying || hovered || notifWaiting)
+            if (peek !== "notif" || notifReplying || hovered || notifWaiting || notifSticky)
                 return;
             peekTimer.interval = Math.max(800, notifProgressAnim.duration * notifProgress);
             peekTimer.restart();
@@ -454,6 +462,7 @@ PanelWindow {
                 icon: (notif?.image ?? "").startsWith("image://icon/") ? notif.image.slice(13) : (notif?.appIcon ?? ""),
                 image: (notif?.image ?? "").startsWith("image://icon/") ? "" : (notif?.image ?? ""),
                 urgency: notif?.urgency ?? NotificationUrgency.Normal,
+                sticky: notif?.urgency === NotificationUrgency.Critical && notif?.expireTimeout === 0,
                 seq: ++notifSeq
             };
             // Si ya se está viendo alguna, la nueva entra en su sitio por prioridad. Mientras se
