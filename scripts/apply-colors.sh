@@ -493,6 +493,38 @@ if command -v spicetify >/dev/null && f=$(theme_file spicetify.ini); then
     spicetify refresh >/dev/null 2>&1 || true
 fi
 
+# ------------------------------------------------------------------ VS Code
+# Ajustes del tema (vscode.json: workbench.colorTheme y colorCustomizations) mezclados en el
+# settings.json del usuario; VS Code lo recarga solo. Sin él, vuelve el colorTheme que tenía el
+# usuario (guardado la primera vez). La extensión del tema la instala el usuario (README del tema).
+if [ -f "$HOME/.config/Code/User/settings.json" ]; then
+    if f=$(theme_file vscode.json); then
+        python3 "$repo/scripts/vscode-settings.py" apply "$f" "$state" || true
+    else
+        python3 "$repo/scripts/vscode-settings.py" restore "$state" || true
+    fi
+fi
+
+# ------------------------------------------------------------------ Vesktop (Vencord)
+# Colores del tema (vesktop.css: variables de color de system24) en un bloque marcado del QuickCSS
+# de Vesktop; Vencord lo recarga en vivo. Lo que el usuario tenga fuera del bloque no se toca. Sin
+# el archivo, se quita el bloque (vuelven los colores del tema de Vesktop).
+vcss="$HOME/.config/vesktop/settings/quickCss.css"
+if [ -d "$(dirname "$vcss")" ]; then
+    f=$(theme_file vesktop.css) || f=""
+    python3 - "$vcss" "$f" <<'PY' || true
+import re, sys
+from pathlib import Path
+path, theme = Path(sys.argv[1]), sys.argv[2]
+begin, end = "/* salchipapa-shell: tema (no editar este bloque) */", "/* salchipapa-shell: fin */"
+text = path.read_text() if path.exists() else ""
+text = re.sub(re.escape(begin) + r".*?" + re.escape(end) + r"\n?", "", text, flags=re.S)
+if theme:
+    text = text.rstrip("\n") + ("\n\n" if text.strip() else "") + begin + "\n" + Path(theme).read_text().rstrip("\n") + "\n" + end + "\n"
+path.write_text(text)
+PY
+fi
+
 # ------------------------------------------------------------------ foot
 fdir="$HOME/.config/foot"
 if [ -d "$fdir" ]; then

@@ -1,0 +1,78 @@
+{
+    "workbench.colorTheme": "Gruvbox Dark Hard",
+    "workbench.colorCustomizations": {
+        "[Gruvbox Dark Hard]": {
+            "editor.selectionBackground": "#665c54",
+            "editor.inactiveSelectionBackground": "#504945",
+            "editor.lineHighlightBackground": "#3c3836",
+            "editor.lineHighlightBorder": "#00000000",
+            "editorLineNumber.foreground": "#7c6f64",
+            "editorLineNumber.activeForeground": "#fabd2f",
+            "list.activeSelectionBackground": "#665c54",
+            "list.inactiveSelectionBackground": "#504945"
+        }
+    },
+    "editor.tokenColorCustomizations": {
+        "[Gruvbox Dark Hard]": {
+            "textMateRules": [
+                {
+                    "scope": [
+                        "entity.name.command.shell",
+                        "entity.name.function.call.shell",
+                        "entity.name.function.shell"
+                    ],
+                    "settings": {
+                        "foreground": "#b8bb26",
+                        "fontStyle": "bold"
+                    }
+                },
+                {
+                    "scope": "support.function.builtin.shell",
+                    "settings": {
+                        "foreground": "#fe8019",
+                        "fontStyle": "bold"
+                    }
+                },
+                {
+                    "scope": [
+                        "string.unquoted.argument.shell",
+                        "constant.other.option.shell",
+                        "constant.other.option.dash.shell"
+                    ],
+                    "settings": {
+                        "foreground": "#83a598",
+                        "fontStyle": ""
+                    }
+                },
+                {
+                    "scope": [
+                        "meta.expression.assignment.shell string.unquoted.shell",
+                        "punctuation.section.array.shell string.unquoted.shell"
+                    ],
+                    "settings": {
+                        "foreground": "#ebdbb2",
+                        "fontStyle": ""
+                    }
+                },
+                {
+                    "scope": "punctuation.definition.variable.shell",
+                    "settings": {
+                        "foreground": "#fe8019"
+                    }
+                },
+                {
+                    "scope": [
+                        "variable.language.special.shell",
+                        "variable.language.special.at.shell",
+                        "constant.numeric.shell",
+                        "constant.numeric.integer.shell",
+                        "constant.numeric.decimal.shell"
+                    ],
+                    "settings": {
+                        "foreground": "#d3869b"
+                    }
+                }
+            ]
+        }
+    }
+}

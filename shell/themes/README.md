@@ -27,6 +27,9 @@
 | `papirus` | color de las carpetas de Papirus (uno de `papirus-folders -l`) | iconos del sistema (`papirus-folders`, regla sudo) | sí, en segundo plano (~4 s) |
 | `qt.colors` | Qt (qtengine) y apps KDE: grupos `[Colors:*]` de un colorscheme de KDE | `~/.config/qtengine/salchipapa.colors` y `~/.config/kdeglobals` | no: al reabrir la app |
 | `spicetify.ini` | Spotify: claves del `color.ini` del diseño *text* de Spicetify (sin cabecera) | tema `Salchipapa` de Spicetify (`spicetify/text/user.css` + esto como esquema `base`) | no: al reabrir Spotify |
+| `vscode.json` | ajustes de VS Code (`workbench.colorTheme`, `workbench.colorCustomizations`) | se mezclan en `~/.config/Code/User/settings.json` (`scripts/vscode-settings.py`); sin él vuelve el tema del usuario | sí |
+| `surfingkeys.js` | configuración de Surfingkeys (Firefox) con el tema | no se aplica sola: se pega en Surfingkeys > Settings > Advanced mode (Firefox no deja leer archivos) | no |
+| `vesktop.css` | Vesktop/Discord: variables de color del tema system24 (`:root`) | bloque marcado en `~/.config/vesktop/settings/quickCss.css` | sí |
 | `bat` | nombre del tema de bat (de `bat/` o de los que trae bat) | `~/.config/bat/config` | sí |
 
 La terminal (16 casillas) sale de `term0`–`term15` de `schemes.json` si el tema está en
@@ -40,3 +43,6 @@ El comando `theme <tema>` de fish (Salchipapa.Dots) hace lo mismo que elegirlo c
 2. `shell/themes/solarized/` copiando los archivos de `gruvbox/` y cambiando los colores según
    cómo los reparte su colorscheme de nvim.
 3. Aplicarlo con `Super+T`.
+
+Temas de apps que hay que instalar aparte: gruvbox en VS Code usa la extensión
+`jdinhlife.gruvbox` (`code --install-extension jdinhlife.gruvbox`).
