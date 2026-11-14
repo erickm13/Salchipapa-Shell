@@ -123,6 +123,42 @@ def gruvbox_(bg0):
 gruvbox = {"hard": gruvbox_("1D2021"), "medium": gruvbox_("282828"), "soft": gruvbox_("32302F")}
 
 
+# --- Solarized, as craftzdog/solarized-osaka.nvim with style = "vivid" (the user's and craftzdog's) -----------------
+# Its own palette and terminal colours (extras/kitty, extras/foot). Accent = blue (Directory,
+# Function), secondary = green (Keyword, Operator), tertiary = orange (Special, CursorLineNr).
+# Surfaces: bg 001419, CursorLine 002c38, Visual/Pmenu/WinSeparator 063540; the two above are
+# 063540 mixed toward the comment gray (osaka has no lighter dark background).
+OSAKA_BG, OSAKA_S1, OSAKA_S2, OSAKA_MUTED = "001419", "002C38", "063540", "7B99A2"
+solarized = {"default": build(dict(
+    bg=OSAKA_BG, dim=OSAKA_BG, lowest=OSAKA_BG,
+    s1=OSAKA_S1, s2=OSAKA_S2, s3=mix(OSAKA_S2, OSAKA_MUTED, 0.3), s4=mix(OSAKA_S2, OSAKA_MUTED, 0.55),
+    fg="B6C5C6", sub="a0b4b6", muted=OSAKA_MUTED,
+    red="FF6C6A", green="a2bb00", yellow="DBA500", blue="5AAEFA", magenta="FE67A8",
+    cyan="34C5B9", orange="FB724A",
+    primary="5AAEFA", secondary="a2bb00", tertiary="FB724A",
+    cat={"subtext1": "C2CDCD", "subtext0": "a0b4b6", "overlay2": "85a1ac", "overlay1": "7B99A2",
+         "overlay0": "7B99A2"},
+    ansi=["001419", "FF6C6A", "a2bb00", "DBA500", "5AAEFA", "FE67A8", "34C5B9", "a0b4b6",
+          "7B99A2", "FF6C6A", "a2bb00", "DBA500", "5AAEFA", "FE67A8", "34C5B9", "a0b4b6"]))}
+
+
+# --- Gentleman Kanagawa Blur (Gentleman-Programming/gentleman-kanagawa-blur, variant "blur") -----
+# Its palette and terminal colours (nvim's terminal_color_*). Accent = Directory (lavender), secondary
+# = Keyword (lilac), tertiary = its accent (yellow: CursorLineNr, Search). Surfaces: CursorLine
+# 191e28, Visual/PmenuSel 232a36, then its surface2 and gray3.
+blur = {"default": build(dict(
+    bg="06080F", dim="06080F", lowest="06080F",
+    s1="191E28", s2="232A36", s3="2A3142", s4="313342",
+    fg="F3F6F9", sub="A3B5C1", muted="8394A3",
+    red="CB7C94", green="B7CC85", yellow="FFE066", blue="7FB4CA", magenta="B99BF2",
+    cyan="7AA89F", orange="DEBA87", pink="FF8DD7",
+    primary="A3B5D6", secondary="C99AD6", tertiary="E0C15A",
+    cat={"subtext1": "A3B5C1", "subtext0": "8A8FA3", "overlay2": "8394A3", "overlay1": "5C6170",
+         "overlay0": "5C6170", "lavender": "B99BF2"},
+    ansi=["06080F", "CB7C94", "B7CC85", "FFE066", "7FB4CA", "A3B5D6", "7AA89F", "F3F6F9",
+          "8A8FA3", "DE8FA8", "D1E8A9", "FFF7B1", "A3D4D5", "B99BF2", "7FB4CA", "F3F6F9"]))}
+
+
 # --- Catppuccin (catppuccin/palette) -------------------------------------------------------
 def catppuccin(cp, light=False):
     ansi = ([cp["subtext1"]] if light else [cp["surface1"]]) + [
@@ -218,7 +254,7 @@ oldworld = {"default": build(dict(
 catppuccin_ = {k: catppuccin_[k] for k in ("mocha", "macchiato", "frappe", "latte")}
 rosepine_ = {k: rosepine_[k] for k in ("main", "moon", "dawn")}
 
-REBUILT = {"gruvbox": gruvbox, "catppuccin": catppuccin_, "rosepine": rosepine_,
+REBUILT = {"gruvbox": gruvbox, "solarized-osaka": solarized, "gentleman-kanagawa-blur": blur, "catppuccin": catppuccin_, "rosepine": rosepine_,
            "onedark": onedark, "oldworld": oldworld}
 
 

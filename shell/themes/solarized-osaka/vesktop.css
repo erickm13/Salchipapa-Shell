@@ -1,0 +1,69 @@
+/* Vesktop/Discord con system24 (refact0r, MIT) en solarized, repartido como solarized-osaka.nvim:
+ * fondo = 001419, paneles = CursorLine (002c38), botones = Visual/Pmenu (063540), texto = b6c5c6,
+ * apagado = Comment (7b99a2), acento = azul (Directory/Function), estados verde/amarillo/rojo.
+ * Las escalas de color son las de solarized-osaka (300..700). */
+:root {
+    --text-0: #001419;
+    --text-1: #c2cdcd;
+    --text-2: #c2cdcd;
+    --text-3: #b6c5c6;
+    --text-4: #a0b4b6;
+    --text-5: #7b99a2;
+    --bg-1: #063540;
+    --bg-2: #063540;
+    --bg-3: #002c38;
+    --bg-4: #001419;
+    --accent-1: #5aaefa;
+    --accent-2: #5aaefa;
+    --accent-3: #5aaefa;
+    --accent-4: #70b9ff;
+    --accent-5: #2ea1f3;
+    --accent-new: #ff6c6a;
+    --online: #a2bb00;
+    --dnd: #ff6c6a;
+    --idle: #dba500;
+    --streaming: #fe67a8;
+    --offline: #7b99a2;
+    --border-hover: #5aaefa;
+    --button-border: #063540;
+    --hover: #06354080;
+    --active: #063540c0;
+    --active-2: #063540;
+    --message-hover: var(--hover);
+
+    --red-1: #ff8c8a;
+    --red-2: #ff7c7b;
+    --red-3: #ff6c6a;
+    --red-4: #ff5b5a;
+    --red-5: #b7211f;
+
+    --green-1: #c4ff5d;
+    --green-2: #b4e100;
+    --green-3: #a2bb00;
+    --green-4: #92a800;
+    --green-5: #586600;
+
+    --blue-1: #87c4ff;
+    --blue-2: #70b9ff;
+    --blue-3: #5aaefa;
+    --blue-4: #2ea1f3;
+    --blue-5: #1a6397;
+
+    --yellow-1: #ffd28c;
+    --yellow-2: #f9bb00;
+    --yellow-3: #dba500;
+    --yellow-4: #c09200;
+    --yellow-5: #664c00;
+
+    --purple-1: #ff8bbc;
+    --purple-2: #ff79b2;
+    --purple-3: #fe67a8;
+    --purple-4: #f3619f;
+    --purple-5: #af2668;
+
+    --sian-1: #2dfbea;
+    --sian-2: #27e8d7;
+    --sian-3: #34c5b9;
+    --sian-4: #30afab;
+    --sian-5: #1a6265;
+}

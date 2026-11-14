@@ -38,12 +38,27 @@ La terminal (16 casillas) sale de `term0`–`term15` de `schemes.json` si el tem
 
 El comando `theme <tema>` de fish (Salchipapa.Dots) hace lo mismo que elegirlo con `Super+T`.
 
-## Añadir un tema (p. ej. solarized)
+## Añadir un tema
 
-1. Su paleta en `schemes.json` (o en `scripts/build-schemes.py` si tiene paleta oficial).
-2. `shell/themes/solarized/` copiando los archivos de `gruvbox/` y cambiando los colores según
-   cómo los reparte su colorscheme de nvim.
-3. Aplicarlo con `Super+T`.
+La referencia es **su colorscheme de nvim**: cada color se reparte como lo hace nvim (Directory,
+Function, Keyword, String, `@variable.parameter`, Visual, CursorLine, Search, CursorLineNr…), medido
+con nvim headless (`nvim_get_hl`, `terminal_color_0..15`). Si el plugin trae `extras/` para una app, se
+usan (comprobando que sean de ese tema); fish siempre como nvim. Hechos así: `gruvbox`,
+`solarized-osaka` (estilo `vivid`) y `gentleman-kanagawa-blur`.
+
+1. Paleta en `scripts/build-schemes.py` (`primary` = Directory, `secondary` = Keyword, `tertiary` =
+   Special/CursorLineNr, superficies = CursorLine/Visual…, `ansi` = las 16 de nvim), añadirla a
+   `REBUILT` y una entrada vacía en `schemes.json`; ejecutar el script y `--check`. El tema a
+   `ANSI_SCHEMES` de `scripts/apply-colors.sh`.
+2. `shell/themes/<tema>/` con los archivos de la tabla de arriba (copiar la estructura de un tema
+   hecho; `btop.theme`, `gtk.css`, `qt.colors` y `yazi.toml` se traducen de los de gruvbox por papel).
+   `terminal-bg` = `040E0D` en todos.
+3. bat: paleta por papeles en `scripts/build-bat-theme.py` (y que el de gruvbox salga idéntico).
+4. `scripts/surfingkeys-theme.sh --scheme <tema> > shell/themes/<tema>/surfingkeys.js`.
+5. Comprobar cada archivo con su app, que no queden colores de otro tema y bat contra nvim.
+6. Fondos en `~/Pictures/Wallpapers/<tema>/`: elegir uno aplica el tema; elegir el tema pone uno de ahí.
+
+Receta completa y decisiones: nota `salchipapa-shell-nuevo-tema` de la bóveda.
 
 Temas de apps que hay que instalar aparte: gruvbox en VS Code usa la extensión
 `jdinhlife.gruvbox` (`code --install-extension jdinhlife.gruvbox`).

@@ -1,0 +1,68 @@
+/* Vesktop/Discord con system24 (refact0r, MIT) en Gentleman Kanagawa Blur, como su nvim: fondo =
+ * 06080f, paneles = CursorLine, botones = Visual, texto = f3f6f9, apagado = Comment, acento =
+ * Function/Keyword (morado/lila), bordes activos = su amarillo. */
+:root {
+    --text-0: #06080f;
+    --text-1: #f3f6f9;
+    --text-2: #f3f6f9;
+    --text-3: #e0e2ea;
+    --text-4: #a3b5c1;
+    --text-5: #5c6170;
+    --bg-1: #2a3142;
+    --bg-2: #232a36;
+    --bg-3: #191e28;
+    --bg-4: #06080f;
+    --accent-1: #7fbaff;
+    --accent-2: #b99bf2;
+    --accent-3: #b99bf2;
+    --accent-4: #c99ad6;
+    --accent-5: #8fa2d1;
+    --accent-new: #cb7c94;
+    --online: #b7cc85;
+    --dnd: #cb7c94;
+    --idle: #e0c15a;
+    --streaming: #ff8dd7;
+    --offline: #8394a3;
+    --border-hover: #e0c15a;
+    --button-border: #232a40;
+    --hover: #232a3680;
+    --active: #232a36c0;
+    --active-2: #2a3142;
+    --message-hover: var(--hover);
+
+    --red-1: #de8fa8;
+    --red-2: #cb7c94;
+    --red-3: #cb7c94;
+    --red-4: #c4746e;
+    --red-5: #c4746e;
+
+    --green-1: #d1e8a9;
+    --green-2: #b7cc85;
+    --green-3: #b7cc85;
+    --green-4: #a4daa7;
+    --green-5: #a4daa7;
+
+    --blue-1: #a3d4d5;
+    --blue-2: #7fb4ca;
+    --blue-3: #7fb4ca;
+    --blue-4: #79b8ea;
+    --blue-5: #7cb9dd;
+
+    --yellow-1: #fff7b1;
+    --yellow-2: #ffe066;
+    --yellow-3: #e0c15a;
+    --yellow-4: #e2b93d;
+    --yellow-5: #deba87;
+
+    --purple-1: #ffaeea;
+    --purple-2: #b99bf2;
+    --purple-3: #c99ad6;
+    --purple-4: #a3b5d6;
+    --purple-5: #8fa2d1;
+
+    --sian-1: #b7d9cd;
+    --sian-2: #7aa89f;
+    --sian-3: #7aa89f;
+    --sian-4: #a6d9ca;
+    --sian-5: #7aa89f;
+}

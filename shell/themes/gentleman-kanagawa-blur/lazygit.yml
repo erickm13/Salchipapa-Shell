@@ -1,0 +1,29 @@
+# lazygit con Gentleman Kanagawa Blur, como lo pinta snacks desde nvim con este colorscheme y los
+# demás temas: borde activo = acento amarillo, inactivo = WinSeparator, línea = CursorLine,
+# opciones = Function, sin preparar = DiagnosticError.
+gui:
+  theme:
+    activeBorderColor:
+      - "#e0c15a"
+      - bold
+    searchingActiveBorderColor:
+      - "#deba87"
+      - bold
+    inactiveBorderColor:
+      - "#232a40"
+    optionsTextColor:
+      - "#b99bf2"
+    selectedLineBgColor:
+      - "#191e28"
+    cherryPickedCommitBgColor:
+      - "#c99ad6"
+    cherryPickedCommitFgColor:
+      - "#06080f"
+    markedBaseCommitBgColor:
+      - "#e0c15a"
+    markedBaseCommitFgColor:
+      - "#06080f"
+    unstagedChangesColor:
+      - "#c4746e"
+    defaultFgColor:
+      - "#f3f6f9"

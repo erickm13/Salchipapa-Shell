@@ -1,0 +1,53 @@
+# btop con Gentleman Kanagawa Blur: fila seleccionada = CursorLine con el amarillo de CursorLineNr,
+# cajas = WinSeparator, atajos = Operator (naranja), gráficas de verde a amarillo y rojo.
+
+# Fondo (solo si theme_background = true en btop.conf; tú lo tienes transparente)
+theme[main_bg]="#06080f"
+theme[main_fg]="#f3f6f9"
+theme[title]="#f3f6f9"
+# Letras de los atajos en los títulos de las cajas
+theme[hi_fg]="#deba87"
+theme[selected_bg]="#191e28"
+theme[selected_fg]="#e0c15a"
+theme[inactive_fg]="#232a40"
+theme[graph_text]="#a3b5c1"
+theme[meter_bg]="#191e28"
+theme[proc_misc]="#b99bf2"
+
+# Cajas y separadores
+theme[cpu_box]="#232a40"
+theme[mem_box]="#232a40"
+theme[net_box]="#232a40"
+theme[proc_box]="#232a40"
+theme[div_line]="#232a40"
+
+# Gráficas: verde -> amarillo -> rojo
+theme[temp_start]="#b7cc85"
+theme[temp_mid]="#e0c15a"
+theme[temp_end]="#cb7c94"
+theme[cpu_start]="#b7cc85"
+theme[cpu_mid]="#e0c15a"
+theme[cpu_end]="#cb7c94"
+theme[used_start]="#b7cc85"
+theme[used_mid]="#e0c15a"
+theme[used_end]="#cb7c94"
+theme[process_start]="#7aa89f"
+theme[process_mid]="#e0c15a"
+theme[process_end]="#cb7c94"
+# Memoria libre/disponible: al revés (poca = rojo)
+theme[free_start]="#cb7c94"
+theme[free_mid]="#e0c15a"
+theme[free_end]="#b7cc85"
+theme[available_start]="#cb7c94"
+theme[available_mid]="#e0c15a"
+theme[available_end]="#b7cc85"
+theme[cached_start]="#7fb4ca"
+theme[cached_mid]="#7fb4ca"
+theme[cached_end]="#7aa89f"
+# Red: bajada en verdes, subida en naranjas
+theme[download_start]="#b7cc85"
+theme[download_mid]="#b7cc85"
+theme[download_end]="#7aa89f"
+theme[upload_start]="#e0c15a"
+theme[upload_mid]="#deba87"
+theme[upload_end]="#cb7c94"

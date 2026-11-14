@@ -1,0 +1,201 @@
+{
+    "workbench.colorTheme": "Default Dark Modern",
+    "workbench.colorCustomizations": {
+        "[Default Dark Modern]": {
+            "editor.background": "#06080f",
+            "editorGutter.background": "#06080f",
+            "sideBar.background": "#06080f",
+            "panel.background": "#06080f",
+            "statusBar.background": "#06080f",
+            "statusBar.noFolderBackground": "#06080f",
+            "titleBar.activeBackground": "#06080f",
+            "titleBar.inactiveBackground": "#06080f",
+            "tab.inactiveBackground": "#06080f",
+            "editorGroupHeader.tabsBackground": "#06080f",
+            "terminal.background": "#06080f",
+            "activityBar.background": "#06080f",
+            "sideBarSectionHeader.background": "#06080f",
+            "breadcrumb.background": "#06080f",
+            "tab.activeBackground": "#191e28",
+            "editor.lineHighlightBackground": "#191e28",
+            "editor.lineHighlightBorder": "#00000000",
+            "editor.selectionBackground": "#232a36",
+            "editor.inactiveSelectionBackground": "#191e28",
+            "list.activeSelectionBackground": "#232a36",
+            "list.inactiveSelectionBackground": "#191e28",
+            "list.hoverBackground": "#191e28",
+            "editorWidget.background": "#191e28",
+            "input.background": "#191e28",
+            "dropdown.background": "#191e28",
+            "editorLineNumber.foreground": "#5c6170",
+            "editorLineNumber.activeForeground": "#e0c15a",
+            "editor.foreground": "#f3f6f9",
+            "foreground": "#f3f6f9",
+            "focusBorder": "#232a40",
+            "sideBar.border": "#232a40",
+            "panel.border": "#232a40",
+            "editorGroup.border": "#232a40",
+            "button.background": "#b99bf2",
+            "button.foreground": "#06080f",
+            "textLink.foreground": "#7fbaff",
+            "editorCursor.foreground": "#e0c15a",
+            "statusBar.foreground": "#a3b5c1"
+        }
+    },
+    "editor.tokenColorCustomizations": {
+        "[Default Dark Modern]": {
+            "textMateRules": [
+                {
+                    "scope": "comment",
+                    "settings": {
+                        "foreground": "#8394a3",
+                        "fontStyle": "italic"
+                    }
+                },
+                {
+                    "scope": [
+                        "keyword",
+                        "storage",
+                        "keyword.control"
+                    ],
+                    "settings": {
+                        "foreground": "#c99ad6"
+                    }
+                },
+                {
+                    "scope": [
+                        "string",
+                        "string.quoted"
+                    ],
+                    "settings": {
+                        "foreground": "#dfbd76"
+                    }
+                },
+                {
+                    "scope": [
+                        "entity.name.function",
+                        "support.function",
+                        "meta.function-call"
+                    ],
+                    "settings": {
+                        "foreground": "#b99bf2"
+                    }
+                },
+                {
+                    "scope": [
+                        "variable",
+                        "variable.other"
+                    ],
+                    "settings": {
+                        "foreground": "#c4746e"
+                    }
+                },
+                {
+                    "scope": "variable.parameter",
+                    "settings": {
+                        "foreground": "#c7a8df"
+                    }
+                },
+                {
+                    "scope": [
+                        "constant",
+                        "constant.language"
+                    ],
+                    "settings": {
+                        "foreground": "#cb7c94"
+                    }
+                },
+                {
+                    "scope": "constant.numeric",
+                    "settings": {
+                        "foreground": "#a4daa7"
+                    }
+                },
+                {
+                    "scope": [
+                        "entity.name.type",
+                        "support.type",
+                        "support.class"
+                    ],
+                    "settings": {
+                        "foreground": "#8fb8dd"
+                    }
+                },
+                {
+                    "scope": [
+                        "keyword.operator"
+                    ],
+                    "settings": {
+                        "foreground": "#deba87"
+                    }
+                },
+                {
+                    "scope": [
+                        "punctuation"
+                    ],
+                    "settings": {
+                        "foreground": "#a3b5c1"
+                    }
+                },
+                {
+                    "scope": "variable.other.property",
+                    "settings": {
+                        "foreground": "#a1b5c7"
+                    }
+                },
+                {
+                    "scope": [
+                        "entity.name.command.shell",
+                        "entity.name.function.call.shell",
+                        "entity.name.function.shell"
+                    ],
+                    "settings": {
+                        "foreground": "#b99bf2"
+                    }
+                },
+                {
+                    "scope": "support.function.builtin.shell",
+                    "settings": {
+                        "foreground": "#8d9ef2"
+                    }
+                },
+                {
+                    "scope": [
+                        "string.unquoted.argument.shell",
+                        "constant.other.option.shell",
+                        "constant.other.option.dash.shell"
+                    ],
+                    "settings": {
+                        "foreground": "#c7a8df",
+                        "fontStyle": ""
+                    }
+                },
+                {
+                    "scope": [
+                        "meta.expression.assignment.shell string.unquoted.shell",
+                        "punctuation.section.array.shell string.unquoted.shell"
+                    ],
+                    "settings": {
+                        "foreground": "#f3f6f9",
+                        "fontStyle": ""
+                    }
+                },
+                {
+                    "scope": "punctuation.definition.variable.shell",
+                    "settings": {
+                        "foreground": "#96a2b0"
+                    }
+                },
+                {
+                    "scope": [
+                        "variable.other.normal.shell",
+                        "variable.other.assignment.shell"
+                    ],
+                    "settings": {
+                        "foreground": "#c4746e"
+                    }
+                }
+            ]
+        }
+    }
+}

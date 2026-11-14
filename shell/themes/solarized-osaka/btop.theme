@@ -1,0 +1,55 @@
+# btop con solarized, repartido como solarized-osaka.nvim: fila seleccionada = CursorLine (002c38)
+# con el naranja de CursorLineNr, cajas = WinSeparator (063540), atajos = naranja (Special),
+# gráficas de verde a amarillo y rojo.
+# apply-colors.sh lo copia a ~/.config/btop/themes/salchipapa.theme (btop lo lee al abrirse).
+
+# Fondo (solo si theme_background = true en btop.conf; tú lo tienes transparente)
+theme[main_bg]="#001419"
+theme[main_fg]="#b6c5c6"
+theme[title]="#b6c5c6"
+# Letras de los atajos en los títulos de las cajas
+theme[hi_fg]="#fb724a"
+theme[selected_bg]="#002c38"
+theme[selected_fg]="#fb724a"
+theme[inactive_fg]="#7b99a2"
+theme[graph_text]="#a0b4b6"
+theme[meter_bg]="#002c38"
+theme[proc_misc]="#5aaefa"
+
+# Cajas y separadores
+theme[cpu_box]="#063540"
+theme[mem_box]="#063540"
+theme[net_box]="#063540"
+theme[proc_box]="#063540"
+theme[div_line]="#063540"
+
+# Gráficas: verde -> amarillo -> rojo
+theme[temp_start]="#a2bb00"
+theme[temp_mid]="#dba500"
+theme[temp_end]="#ff6c6a"
+theme[cpu_start]="#a2bb00"
+theme[cpu_mid]="#dba500"
+theme[cpu_end]="#ff6c6a"
+theme[used_start]="#a2bb00"
+theme[used_mid]="#dba500"
+theme[used_end]="#ff6c6a"
+theme[process_start]="#34c5b9"
+theme[process_mid]="#dba500"
+theme[process_end]="#ff6c6a"
+# Memoria libre/disponible: al revés (poca = rojo)
+theme[free_start]="#ff6c6a"
+theme[free_mid]="#dba500"
+theme[free_end]="#a2bb00"
+theme[available_start]="#ff6c6a"
+theme[available_mid]="#dba500"
+theme[available_end]="#a2bb00"
+theme[cached_start]="#5AAEFA"
+theme[cached_mid]="#5aaefa"
+theme[cached_end]="#34c5b9"
+# Red: bajada en verdes, subida en naranjas
+theme[download_start]="#a2bb00"
+theme[download_mid]="#a2bb00"
+theme[download_end]="#34c5b9"
+theme[upload_start]="#dba500"
+theme[upload_mid]="#fb724a"
+theme[upload_end]="#ff6c6a"

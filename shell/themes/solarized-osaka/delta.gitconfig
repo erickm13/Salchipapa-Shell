@@ -1,0 +1,19 @@
+# delta con solarized: la versión de solarized-osaka (extras/delta) + decoraciones del tema.
+    minus-style                   = syntax "#380605"
+    minus-non-emph-style          = syntax "#380605"
+    minus-emph-style              = syntax "#570f0e"
+    minus-empty-line-marker-style = syntax "#380605"
+    line-numbers-minus-style      = "#ff6c6a"
+    plus-style                    = syntax "#103a3c"
+    plus-non-emph-style           = syntax "#103a3c"
+    plus-emph-style               = syntax "#2c3300"
+    plus-empty-line-marker-style  = syntax "#103a3c"
+    line-numbers-plus-style       = "#a2bb00"
+    line-numbers-zero-style       = "#7b99a2"
+    line-numbers-left-style = "#063540"
+    line-numbers-right-style = "#063540"
+[delta "decorations"]
+    commit-decoration-style = "#dba500" ol
+    hunk-header-decoration-style = "#063540" box
+    hunk-header-file-style = "#fb724a"
+    hunk-header-line-number-style = "#a2bb00"

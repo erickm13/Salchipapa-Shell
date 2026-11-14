@@ -1,0 +1,4 @@
+# herdr con su tema integrado solarized (como craftzdog, el de solarized-osaka).
+[theme]
+name = "solarized"
+auto_switch = false

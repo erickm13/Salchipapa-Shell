@@ -1,0 +1,28 @@
+# lazygit con solarized: la versión de solarized-osaka (extras/lazygit), sin el nerdFontsVersion
+# (ya lo pone el config.yml de los dotfiles).
+gui:
+  theme:
+    activeBorderColor:
+      - "#fb724a"
+      - "bold"
+    inactiveBorderColor:
+      - "#664c00"
+    searchingActiveBorderColor:
+      - "#fb724a"
+      - "bold"
+    optionsTextColor:
+      - "#5aaefa"
+    selectedLineBgColor:
+      - "#1a6397"
+    cherryPickedCommitFgColor:
+      - "#5aaefa"
+    cherryPickedCommitBgColor:
+      - "#fe67a8"
+    markedBaseCommitFgColor:
+      - "#5aaefa"
+    markedBaseCommitBgColor:
+      - "#dba500"
+    unstagedChangesColor:
+      - "#ff8c8a"
+    defaultFgColor:
+      - "#a0b4b6"

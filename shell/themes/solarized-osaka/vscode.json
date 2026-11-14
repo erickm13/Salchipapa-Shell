@@ -1,0 +1,125 @@
+{
+    "workbench.colorTheme": "Solarized Dark",
+    "workbench.colorCustomizations": {
+        "[Solarized Dark]": {
+            "editor.background": "#001419",
+            "editorGutter.background": "#001419",
+            "sideBar.background": "#001419",
+            "panel.background": "#001419",
+            "statusBar.background": "#001419",
+            "statusBar.noFolderBackground": "#001419",
+            "titleBar.activeBackground": "#001419",
+            "titleBar.inactiveBackground": "#001419",
+            "tab.inactiveBackground": "#001419",
+            "editorGroupHeader.tabsBackground": "#001419",
+            "terminal.background": "#001419",
+            "activityBar.background": "#001419",
+            "sideBarSectionHeader.background": "#001419",
+            "breadcrumb.background": "#001419",
+            "tab.activeBackground": "#002c38",
+            "editor.lineHighlightBackground": "#002c38",
+            "editor.lineHighlightBorder": "#00000000",
+            "editor.selectionBackground": "#063540",
+            "editor.inactiveSelectionBackground": "#002c38",
+            "list.activeSelectionBackground": "#063540",
+            "list.inactiveSelectionBackground": "#002c38",
+            "list.hoverBackground": "#002c38",
+            "editorWidget.background": "#002c38",
+            "input.background": "#002c38",
+            "dropdown.background": "#002c38",
+            "editorLineNumber.foreground": "#664c00",
+            "editorLineNumber.activeForeground": "#fb724a",
+            "editor.foreground": "#b6c5c6",
+            "focusBorder": "#063540",
+            "sideBar.border": "#063540",
+            "panel.border": "#063540"
+        }
+    },
+    "editor.tokenColorCustomizations": {
+        "[Solarized Dark]": {
+            "textMateRules": [
+                {
+                    "scope": [
+                        "entity.name.command.shell",
+                        "entity.name.function.call.shell",
+                        "entity.name.function.shell"
+                    ],
+                    "settings": {
+                        "foreground": "#5aaefa",
+                        "fontStyle": ""
+                    }
+                },
+                {
+                    "scope": "support.function.builtin.shell",
+                    "settings": {
+                        "foreground": "#fb724a",
+                        "fontStyle": ""
+                    }
+                },
+                {
+                    "scope": [
+                        "keyword.control.shell",
+                        "keyword.control"
+                    ],
+                    "settings": {
+                        "foreground": "#a2bb00",
+                        "fontStyle": "bold italic"
+                    }
+                },
+                {
+                    "scope": [
+                        "string.unquoted.argument.shell",
+                        "constant.other.option.shell",
+                        "constant.other.option.dash.shell"
+                    ],
+                    "settings": {
+                        "foreground": "#fb724a",
+                        "fontStyle": ""
+                    }
+                },
+                {
+                    "scope": [
+                        "meta.expression.assignment.shell string.unquoted.shell",
+                        "punctuation.section.array.shell string.unquoted.shell"
+                    ],
+                    "settings": {
+                        "foreground": "#b6c5c6",
+                        "fontStyle": ""
+                    }
+                },
+                {
+                    "scope": [
+                        "string",
+                        "string.quoted"
+                    ],
+                    "settings": {
+                        "foreground": "#34c5b9"
+                    }
+                },
+                {
+                    "scope": "punctuation.definition.variable.shell",
+                    "settings": {
+                        "foreground": "#fb724a"
+                    }
+                },
+                {
+                    "scope": [
+                        "variable.language.special.shell",
+                        "constant.numeric",
+                        "constant.numeric.integer.shell"
+                    ],
+                    "settings": {
+                        "foreground": "#34c5b9"
+                    }
+                },
+                {
+                    "scope": "comment",
+                    "settings": {
+                        "foreground": "#7b99a2",
+                        "fontStyle": "italic"
+                    }
+                }
+            ]
+        }
+    }
+}

@@ -65,7 +65,7 @@ c() { printf '%s' "${COL[$1]:-808080}"; }
 # Helper: color ANSI i (0-15) de la terminal (casilla 1 = rojo, 2 = verde, 3 = amarillo...).
 # Los temas con la paleta de terminal oficial usan su term0-term15. El resto (los generados por
 # caelestia, salchipapa y matugen) traen term* sin ese orden y se rellenan con los roles.
-ANSI_SCHEMES=" gruvbox "
+ANSI_SCHEMES=" gruvbox solarized-osaka gentleman-kanagawa-blur "
 TERM_ROLES=(surfaceContainerLowest error tertiary secondary primary tertiary secondary onSurfaceVariant
     outline error tertiary secondary primary tertiary secondary onBackground)
 use_term=false
@@ -742,6 +742,21 @@ if status is-interactive
     cat "$HOME/.local/state/salchipapa-shell/sequences.txt"
 end
 FISH
+fi
+
+# ------------------------------------------------------------------ Fondo del tema
+# Si el tema tiene carpeta de fondos (~/Pictures/Wallpapers/<tema>/) y el fondo actual no es de
+# ella, se pone uno al azar de ahí (wallpaper.sh … nocolors: solo el fondo). No cuando el tema lo
+# aplica wallpaper.sh por haber elegido un fondo de esa carpeta.
+if [ "$mode" = "scheme" ] && [ -z "${SALCHIPAPA_FROM_WALLPAPER:-}" ]; then
+    wdir="${XDG_PICTURES_DIR:-$HOME/Pictures}/Wallpapers/$arg"
+    cur=$(cat "$state/wallpaper" 2>/dev/null || true)
+    if [ -d "$wdir" ] && [ "${cur%/*}" != "$wdir" ]; then
+        pick=$(find "$wdir" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) | shuf -n1)
+        if [ -n "$pick" ]; then
+            "$repo/scripts/wallpaper.sh" "$pick" nocolors >/dev/null 2>&1 || true
+        fi
+    fi
 fi
 
 # -------------------------------- Color de carpeta Papirus (en SEGUNDO PLANO) --------------------------------

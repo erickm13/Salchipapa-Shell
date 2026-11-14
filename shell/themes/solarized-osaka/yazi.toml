@@ -1,0 +1,123 @@
+# yazi con solarized, repartido como solarized-osaka.nvim (y su extras/yazi): directorios =
+# Directory (azul), línea actual = CursorLine (002c38), búsqueda = naranja, bordes = WinSeparator
+# (063540), modo normal azul y selección magenta como la versión de yazi de osaka.
+[indicator]
+parent = { bg = "#002c38" }
+current = { bg = "#002c38", bold = true }
+preview = { underline = true }
+
+[mgr]
+cwd = { fg = "#5aaefa", bold = true }
+find_keyword = { fg = "#fb724a", bold = true, underline = true }
+find_position = { fg = "#fe67a8", bold = true }
+marker_copied = { fg = "#5aaefa", bg = "#5aaefa" }
+marker_cut = { fg = "#ff6c6a", bg = "#ff6c6a" }
+marker_marked = { fg = "#34c5b9", bg = "#34c5b9" }
+marker_selected = { fg = "#fb724a", bg = "#fb724a" }
+count_copied = { fg = "#001419", bg = "#5aaefa" }
+count_cut = { fg = "#001419", bg = "#ff6c6a" }
+count_selected = { fg = "#001419", bg = "#fb724a" }
+border_symbol = "│"
+border_style = { fg = "#063540" }
+
+[tabs]
+active = { fg = "#001419", bg = "#5aaefa", bold = true }
+inactive = { fg = "#5aaefa", bg = "#002c38" }
+
+[mode]
+normal_main = { fg = "#001419", bg = "#5aaefa", bold = true }
+normal_alt = { fg = "#5aaefa", bg = "#002c38" }
+select_main = { fg = "#001419", bg = "#fe67a8", bold = true }
+select_alt = { fg = "#fe67a8", bg = "#002c38" }
+unset_main = { fg = "#001419", bg = "#ff6c6a", bold = true }
+unset_alt = { fg = "#ff6c6a", bg = "#002c38" }
+
+[status]
+perm_sep = { fg = "#7b99a2" }
+perm_type = { fg = "#5aaefa" }
+perm_read = { fg = "#fb724a" }
+perm_write = { fg = "#ff6c6a" }
+perm_exec = { fg = "#34c5b9" }
+progress_label = { fg = "#b6c5c6", bold = true }
+progress_normal = { fg = "#5aaefa", bg = "#002c38" }
+progress_error = { fg = "#fb724a", bg = "#ff6c6a" }
+
+[which]
+border = { fg = "#063540" }
+cand = { fg = "#34c5b9" }
+rest = { fg = "#7b99a2" }
+desc = { fg = "#fe67a8" }
+separator_style = { fg = "#7b99a2" }
+
+[confirm]
+border = { fg = "#063540" }
+title = { fg = "#fb724a" }
+
+[spot]
+border = { fg = "#063540" }
+title = { fg = "#fb724a" }
+tbl_col = { fg = "#5aaefa" }
+tbl_cell = { fg = "#fb724a", reversed = true }
+
+[notify]
+title_info = { fg = "#5aaefa" }
+title_warn = { fg = "#fb724a" }
+title_error = { fg = "#ff6c6a" }
+
+[pick]
+border = { fg = "#063540" }
+active = { fg = "#fb724a", bold = true }
+
+[input]
+border = { fg = "#063540" }
+
+[cmp]
+border = { fg = "#063540" }
+
+[tasks]
+border = { fg = "#063540" }
+hovered = { fg = "#fb724a", bold = true }
+
+[help]
+border = { fg = "#063540" }
+chord = { fg = "#34c5b9" }
+
+[filetype]
+rules = [
+	{ mime = "**/image/*", fg = "#fb724a" },
+	{ mime = "**/{audio,video}/*", fg = "#fe67a8" },
+	{ mime = "**/application/{zip,rar,7z*,tar,gzip,xz,zstd,bzip*,lzma,compress,archive,cpio,arj,xar,ms-cab*}", fg = "#ff6c6a" },
+	{ mime = "**/application/{pdf,doc,rtf}", fg = "#34c5b9" },
+	{ mime = "vfs/{absent,stale}", fg = "#7b99a2" },
+	{ url = "*", is = "orphan", bg = "#ff6c6a" },
+	{ url = "*", is = "exec", fg = "#a2bb00" },
+	{ url = "*", is = "dummy", bg = "#ff6c6a" },
+	{ url = "*/", is = "dummy", bg = "#ff6c6a" },
+	{ url = "*/", fg = "#5aaefa", bold = true },
+]
+
+[icon]
+# Iconos de carpeta (los de yazi, con su glifo) en el verde de las carpetas, como eza;
+# los de archivos conservan sus colores de devicons, como en nvim.
+prepend_dirs = [
+	{ name = ".config", text = "", fg = "#5aaefa" },
+	{ name = ".git", text = "", fg = "#5aaefa" },
+	{ name = ".github", text = "", fg = "#5aaefa" },
+	{ name = ".npm", text = "", fg = "#5aaefa" },
+	{ name = "Desktop", text = "", fg = "#5aaefa" },
+	{ name = "Development", text = "", fg = "#5aaefa" },
+	{ name = "Documents", text = "", fg = "#5aaefa" },
+	{ name = "Downloads", text = "", fg = "#5aaefa" },
+	{ name = "Library", text = "", fg = "#5aaefa" },
+	{ name = "Movies", text = "", fg = "#5aaefa" },
+	{ name = "Music", text = "", fg = "#5aaefa" },
+	{ name = "Pictures", text = "", fg = "#5aaefa" },
+	{ name = "Public", text = "", fg = "#5aaefa" },
+	{ name = "Videos", text = "", fg = "#5aaefa" },
+]
+prepend_conds = [
+	{ if = "dir & hovered", text = "", fg = "#5aaefa" },
+	{ if = "dir", text = "", fg = "#5aaefa" },
+	{ if = "exec", text = "", fg = "#a2bb00" },
+	{ if = "!dir", text = "", fg = "#b6c5c6" },
+]

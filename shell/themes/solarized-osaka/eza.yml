@@ -1,0 +1,4 @@
+# eza (ls) con solarized: directorios en el azul de Directory de solarized-osaka.nvim.
+colourful: true
+filekinds:
+  directory: {foreground: "#5AAEFA", is_bold: true}

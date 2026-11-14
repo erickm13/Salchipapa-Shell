@@ -1,0 +1,16 @@
+# delta con Gentleman Kanagawa Blur, como los diffs de su nvim: fondos de DiffAdd/DiffDelete,
+# palabras cambiadas = DiffText; números de línea = LineNr; decoraciones con su acento amarillo.
+    minus-style = syntax "#2d211e"
+    minus-emph-style = syntax "#332f1e"
+    plus-style = syntax "#1e2d1e"
+    plus-emph-style = syntax "#332f1e"
+    line-numbers-zero-style = "#5c6170"
+    line-numbers-minus-style = "#c4746e"
+    line-numbers-plus-style = "#b7cc85"
+    line-numbers-left-style = "#232a40"
+    line-numbers-right-style = "#232a40"
+[delta "decorations"]
+    commit-decoration-style = "#e0c15a" ol
+    hunk-header-decoration-style = "#232a40" box
+    hunk-header-file-style = "#c99ad6"
+    hunk-header-line-number-style = "#b7cc85"

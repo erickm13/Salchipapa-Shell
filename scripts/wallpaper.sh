@@ -2,7 +2,9 @@
 # Cambia el fondo (independiente de caelestia). Guarda el estado que lee la shell y,
 # si procede, genera los colores del fondo con matugen y los aplica (apply-colors.sh).
 #   wallpaper.sh <archivo> [nocolors]   -> ese fondo (por defecto genera colores)
-#   wallpaper.sh random   [nocolors]    -> aleatorio de ~/Pictures/Wallpapers
+#   wallpaper.sh random   [nocolors]    -> aleatorio de ~/Pictures/Wallpapers (y sus carpetas)
+# Fondos de un tema: ~/Pictures/Wallpapers/<tema>/ (gruvbox, solarized-osaka…). Elegir uno de ahí
+# aplica ese tema (apply-colors.sh scheme <tema>) en vez de los colores de matugen.
 #   wallpaper.sh --colors-only <imagen>  -> solo genera y aplica los colores de esa imagen
 set -euo pipefail
 
@@ -23,7 +25,7 @@ if [ "$arg" = "--colors-only" ]; then
 fi
 
 if [ "$arg" = "random" ] || [ ! -f "$arg" ]; then
-    wp=$(find "$dir" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) | shuf -n1)
+    wp=$(find "$dir" -maxdepth 2 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) | shuf -n1)
 else
     wp="$arg"
 fi
@@ -36,6 +38,16 @@ fi
 if [ "$colors_only" -eq 0 ]; then
     printf '%s' "$wp" >"$state/wallpaper"
     ln -sf "$wp" "$state/current"
+fi
+
+# Fondo de la carpeta de un tema -> ese tema (no matugen). SALCHIPAPA_FROM_WALLPAPER evita que
+# apply-colors.sh vuelva a cambiar el fondo.
+theme=""
+case "$wp" in "$dir"/*/*) theme=$(basename "$(dirname "$wp")") ;; esac
+if [ -n "$theme" ] && [ "$colors_only" -eq 0 ] && [ "$colors" != "nocolors" ] &&
+    jq -e --arg t "$theme" 'has($t)' "$repo/shell/themes/schemes.json" >/dev/null 2>&1; then
+    SALCHIPAPA_FROM_WALLPAPER=1 "$repo/scripts/apply-colors.sh" scheme "$theme"
+    exit 0
 fi
 
 # Colores del wallpaper con matugen (Material You) -> apply-colors.sh

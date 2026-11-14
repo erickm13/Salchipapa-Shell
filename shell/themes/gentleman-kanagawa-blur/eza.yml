@@ -1,0 +1,4 @@
+# eza (ls) con Gentleman Kanagawa Blur: directorios en el lavanda de su Directory.
+colourful: true
+filekinds:
+  directory: {foreground: "#A3B5D6", is_bold: true}
