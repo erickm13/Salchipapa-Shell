@@ -20,7 +20,7 @@ Rectangle {
         startDelay.restart();
     }
 
-    height: rowSize >= 2 ? 82 : 60
+    height: rowSize >= 2 ? 102 : 75  // como ControlContent (×1.25)
     radius: Theme.radiusLarge
     color: Theme.panelCard
 
@@ -37,9 +37,9 @@ Rectangle {
         anchors.left: parent.left
         anchors.leftMargin: 12
         anchors.verticalCenter: parent.verticalCenter
-        width: 36
-        height: 36
-        radius: 18
+        width: 45
+        height: 45
+        radius: 22.5
         color: Recorder.recording ? (Recorder.paused ? Theme.yellow : Theme.red) : Theme.panelCardHi
         Text {
             anchors.centerIn: parent
@@ -61,7 +61,7 @@ Rectangle {
             text: "Screen recording"
             color: Theme.text
             font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(12)
+            font.pixelSize: Theme.fontPx(15)
             font.bold: true
             elide: Text.ElideRight
         }
@@ -70,7 +70,7 @@ Rectangle {
             text: Recorder.recording ? (Recorder.paused ? "Paused · " : "Recording · ") + Recorder.elapsedText : (Config.recordSound ? "With sound" : "No sound") + " · ~/Videos/Recordings"
             color: Recorder.recording ? (Recorder.paused ? Theme.yellow : Theme.red) : Theme.secondaryText
             font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(11)
+            font.pixelSize: Theme.fontPx(13.75)
             elide: Text.ElideRight
         }
     }
@@ -125,8 +125,8 @@ Rectangle {
         property bool danger: false
         signal clicked
         width: pillRow.implicitWidth + 18
-        height: 30
-        radius: 15
+        height: 38
+        radius: 19
         color: danger ? (pillMouse.containsMouse ? Qt.lighter(Theme.red, 1.15) : Theme.red) : (pillMouse.containsMouse ? Qt.tint(Theme.panelCardHi, Theme.hoverFill) : Theme.panelCardHi)
         Row {
             id: pillRow
@@ -142,7 +142,7 @@ Rectangle {
             Text {
                 text: pill.label
                 font.family: Theme.bodyFontFamily
-                font.pixelSize: Theme.fontPx(11)
+                font.pixelSize: Theme.fontPx(13.75)
                 font.bold: pill.danger
                 color: pill.danger ? Theme.crust : Theme.text
                 anchors.verticalCenter: parent.verticalCenter
@@ -166,9 +166,9 @@ Rectangle {
         property string glyph: ""
         property bool active: false
         signal clicked
-        width: 30
-        height: 30
-        radius: 15
+        width: 38
+        height: 38
+        radius: 19
         color: active ? Theme.green : (ipMouse.containsMouse ? Qt.tint(Theme.panelCardHi, Theme.hoverFill) : Theme.panelCardHi)
         Text {
             anchors.centerIn: parent

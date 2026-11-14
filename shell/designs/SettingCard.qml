@@ -18,7 +18,7 @@ Rectangle {
     signal sliderMoved(real v)
     signal sliderIconTapped
 
-    height: rowSize >= 2 ? 82 : 60
+    height: rowSize >= 2 ? 102 : 75  // como ControlContent (×1.25)
     radius: Theme.radiusLarge
     border.width: activeFocus ? 2 : 0
     border.color: Theme.green
@@ -68,7 +68,7 @@ Rectangle {
         elide: Text.ElideRight
         text: card.label
         color: Theme.secondaryText
-        font.pixelSize: Theme.fontPx(11)
+        font.pixelSize: Theme.fontPx(13.75)
         font.bold: true
     }
     Text {
@@ -85,7 +85,7 @@ Rectangle {
         x: card.compact ? cardLabel.x + card.labelW + 8 : 14
         y: card.compact ? (card.height - height) / 2 : cardLabel.y + cardLabel.height + 8
         width: card.compact ? chevron.x - 8 - x : card.width - 28
-        height: 30
+        height: 38
         glyph: card.sliderGlyph
         value: card.sliderValue
         accent: card.sliderAccent

@@ -10,6 +10,8 @@ import "../services"
 
 Item {
     id: root
+    // Más grande que el resto de la shell (Theme.fontPx con su escala): se lee mejor
+    readonly property real uiScale: 1.25
 
     property bool wifiDetailsOpen: false
     property bool bluetoothDetailsOpen: false
@@ -37,18 +39,18 @@ Item {
         const item = activeControls.find(entry => entry.id === id);
         return item ? item.size : 1;
     }
-    // Alto de los interruptores: filas de 2; una fila es grande (72) si alguno de los dos lo es.
-    // Nunca menos que la columna de botones redondos (2 x 56 + 8).
+    // Alto de los interruptores: filas de 2; una fila es grande (90) si alguno de los dos lo es.
+    // Nunca menos que la columna de botones redondos (2 x 70 + 8).
     readonly property real togglesHeight: {
         let h = 0;
         for (let i = 0; i < activeToggles.length; i += 2) {
             const big = activeToggles[i].size >= 2 || (activeToggles[i + 1]?.size ?? 1) >= 2;
-            h += (big ? 72 : 56) + (i > 0 ? 8 : 0);
+            h += (big ? 90 : 70) + (i > 0 ? 8 : 0);
         }
-        return Math.max(120, h);
+        return Math.max(148, h);
     }
     readonly property real powerTop: togglesHeight + 12
-    readonly property real powerHeight: 74
+    readonly property real powerHeight: 92
     readonly property real cardsTop: powerTop + powerHeight + 10
     function cardOffset(id: string): real {
         let offset = 0;
@@ -56,7 +58,7 @@ Item {
             const item = activeControls[i];
             if (item.id === id) return offset;
             if (cardIds.includes(item.id))
-                offset += (item.size >= 2 ? 82 : 60) + 10;
+                offset += (item.size >= 2 ? 102 : 75) + 10;
         }
         return offset;
     }
@@ -65,11 +67,11 @@ Item {
         for (let i = 0; i < activeControls.length; ++i) {
             const item = activeControls[i];
             if (cardIds.includes(item.id))
-                height += (item.size >= 2 ? 82 : 60) + 10;
+                height += (item.size >= 2 ? 102 : 75) + 10;
         }
         return height > 0 ? height - 10 : 0;
     }
-    readonly property real notificationTop: (wifiDetailsOpen || bluetoothDetailsOpen) ? togglesHeight + 224 : cardsTop + cardsHeight + 12
+    readonly property real notificationTop: (wifiDetailsOpen || bluetoothDetailsOpen) ? togglesHeight + 274 : cardsTop + cardsHeight + 12
     readonly property int notificationControlHeight: controlSize("notifications") >= 2 ? Config.notificationHistoryHeight : Math.min(100, Config.notificationHistoryHeight)
     // Alto que necesita el contenido: la isla lo usa para no sobrar ni recortar
     readonly property real preferredHeight: (hasControl("notifications") ? notificationTop + notificationControlHeight : notificationTop - 12) + 4
@@ -114,7 +116,7 @@ Item {
             id: roundCol
             anchors.right: parent.right
             anchors.top: parent.top
-            width: 56
+            width: 70
             spacing: 8
 
             RoundBtn {
@@ -150,7 +152,7 @@ Item {
                 BigToggle {
                     required property var modelData
                     width: grid.cellW
-                    height: modelData.size >= 2 ? 72 : 56
+                    height: modelData.size >= 2 ? 90 : 70
                     glyph: modelData.id === "wifi" ? (Net.wifiEnabled ? "wifi" : "wifi_off") : modelData.id === "focus" ? (Quick.dnd ? "do_not_disturb_on" : "do_not_disturb_off") : modelData.id === "bluetooth" ? "bluetooth" : modelData.id === "keys" ? "keyboard" : "sports_esports"
                     title: modelData.id === "gameMode" ? "Game Mode" : modelData.id === "wifi" ? "Wi-Fi" : modelData.id === "bluetooth" ? "Bluetooth" : modelData.id === "keys" ? "Show keys" : "Focus"
                     subtitle: modelData.id === "wifi" ? (Net.type === "wifi" ? (Net.connectedSsid || Net.name || "On") : (Net.wifiEnabled ? (Net.type === "ethernet" ? "Ethernet" : "On") : "Off")) : modelData.id === "bluetooth" ? (Bluetooth.enabled ? (Bluetooth.connectedCount > 0 ? Bluetooth.connectedCount + " connected" + (Bluetooth.connectedCount > 1 ? "s" : "") : "On") : "Off") : modelData.id === "focus" ? (Quick.dnd ? "On" : "Off") : modelData.id === "keys" ? (KeyCast.active ? "On" : "Off") : (Quick.gameMode ? "On" : "Off")
@@ -193,7 +195,7 @@ Item {
             text: "Power mode"
             color: Theme.secondaryText
             font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(11)
+            font.pixelSize: Theme.fontPx((11) * root.uiScale)
             font.bold: true
         }
 
@@ -217,8 +219,8 @@ Item {
                     id: profileChip
                     required property var modelData
                     width: (powerPanel.width - 24) / 3
-                    height: 34
-                    radius: 12
+                    height: 42
+                    radius: 14
                     color: PowerProfiles.mode === modelData.id ? modelData.accent : Theme.surface0
 
                     Row {
@@ -235,7 +237,7 @@ Item {
                             text: profileChip.modelData.title
                             color: PowerProfiles.mode === profileChip.modelData.id ? Theme.panelBg : Theme.text
                             font.family: Theme.bodyFontFamily
-                            font.pixelSize: Theme.fontPx(11)
+                            font.pixelSize: Theme.fontPx((11) * root.uiScale)
                             font.bold: PowerProfiles.mode === profileChip.modelData.id
                             anchors.verticalCenter: parent.verticalCenter
                         }
@@ -301,7 +303,7 @@ Item {
         anchors.topMargin: 12
         anchors.left: parent.left
         anchors.right: parent.right
-        height: 200
+        height: 250
         active: root.wifiDetailsOpen
         visible: root.wifiDetailsOpen
         onCloseRequested: root.wifiDetailsOpen = false
@@ -313,7 +315,7 @@ Item {
         anchors.topMargin: 12
         anchors.left: parent.left
         anchors.right: parent.right
-        height: 200
+        height: 250
         active: root.bluetoothDetailsOpen
         visible: root.bluetoothDetailsOpen
         onCloseRequested: root.bluetoothDetailsOpen = false
@@ -340,7 +342,7 @@ Item {
             anchors.leftMargin: 16
             text: "Notifications"
             color: Theme.secondaryText
-            font.pixelSize: Theme.fontPx(11)
+            font.pixelSize: Theme.fontPx((11) * root.uiScale)
             font.bold: true
         }
         Text {
@@ -350,7 +352,7 @@ Item {
             anchors.rightMargin: 16
             text: "Clear"
             color: clearMouse.containsMouse ? "#ffffff" : Theme.overlay1
-            font.pixelSize: Theme.fontPx(11)
+            font.pixelSize: Theme.fontPx((11) * root.uiScale)
             visible: Notifs.activeCount > 0
             MouseArea {
                 id: clearMouse
@@ -375,7 +377,7 @@ Item {
             anchors.leftMargin: 16
             text: "No notifications"
             color: Theme.tertiaryText
-            font.pixelSize: Theme.fontPx(12)
+            font.pixelSize: Theme.fontPx((12) * root.uiScale)
             visible: Notifs.activeCount === 0
         }
 
@@ -435,7 +437,7 @@ Item {
                         width: parent.width
                         text: nItem.modelData.appName || "Notification"
                         color: Theme.mauve
-                        font.pixelSize: Theme.fontPx(11)
+                        font.pixelSize: Theme.fontPx((11) * root.uiScale)
                         font.bold: true
                         elide: Text.ElideRight
                     }
@@ -444,7 +446,7 @@ Item {
                         width: parent.width
                         text: nItem.modelData.summary || (Config.notificationShowBody ? nItem.modelData.body : "") || ""
                         color: "#ffffff"
-                        font.pixelSize: Theme.fontPx(12)
+                        font.pixelSize: Theme.fontPx((12) * root.uiScale)
                         elide: Text.ElideRight
                     }
                     Text {
@@ -452,7 +454,7 @@ Item {
                         width: parent.width
                         text: Config.notificationShowBody ? (nItem.modelData.body || "") : ""
                         color: Theme.secondaryText
-                        font.pixelSize: Theme.fontPx(11)
+                        font.pixelSize: Theme.fontPx((11) * root.uiScale)
                         elide: Text.ElideRight
                         visible: text.length > 0 && text !== nItem.modelData.summary
                     }
@@ -502,8 +504,8 @@ Item {
         signal clicked
         signal detailsClicked
 
-        height: 56
-        radius: 16
+        height: 70
+        radius: 20
         color: on ? Qt.rgba(bt.accent.r, bt.accent.g, bt.accent.b, btMouse.containsMouse ? 0.26 : 0.16) : (btMouse.containsMouse ? Theme.panelCardHi : Theme.panelCard)
         Behavior on color {
             ColorAnimation {
@@ -516,9 +518,9 @@ Item {
             anchors.left: parent.left
             anchors.leftMargin: 9
             anchors.verticalCenter: parent.verticalCenter
-            width: 38
-            height: 38
-            radius: 19
+            width: 48
+            height: 48
+            radius: 24
             color: bt.on ? bt.accent : Theme.panelCardHi
             Behavior on color {
                 ColorAnimation {
@@ -544,7 +546,7 @@ Item {
                 width: parent.width
                 text: bt.title
                 color: "#ffffff"
-                font.pixelSize: Theme.fontPx(12)
+                font.pixelSize: Theme.fontPx((12) * root.uiScale)
                 font.bold: true
                 elide: Text.ElideRight
             }
@@ -553,7 +555,7 @@ Item {
                 width: parent.width
                 text: bt.subtitle
                 color: Theme.secondaryText
-                font.pixelSize: Theme.fontPx(11)
+                font.pixelSize: Theme.fontPx((11) * root.uiScale)
                 elide: Text.ElideRight
             }
         }
@@ -588,8 +590,8 @@ Item {
         property color accent: Theme.green
         signal clicked
 
-        width: 56
-        height: 56
+        width: 70
+        height: 70
         radius: height / 2
         color: on ? rb.accent : (rbMouse.containsMouse ? Theme.panelCardHi : Theme.panelCard)
         Behavior on color {

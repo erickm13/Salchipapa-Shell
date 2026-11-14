@@ -15,6 +15,8 @@ import "../services"
 
 Item {
     id: root
+    // Más grande que el resto de la shell (Theme.fontPx con su escala): se lee mejor
+    readonly property real uiScale: 1.25
 
     readonly property bool active: Overlay.mode === "music"
     readonly property var player: Media.active
@@ -145,13 +147,13 @@ Item {
         anchors.left: parent.left
         anchors.top: parent.top
         anchors.bottom: parent.bottom
-        width: 200
+        width: 250
 
         Item {
             id: ring
             anchors.centerIn: parent
-            width: 176
-            height: 176
+            width: 220
+            height: 220
             Repeater {
                 model: 48
                 delegate: Item {
@@ -176,9 +178,9 @@ Item {
         }
         ClippingRectangle {
             anchors.centerIn: parent
-            width: 124
-            height: 124
-            radius: 62
+            width: 155
+            height: 155
+            radius: 77.5
             color: Theme.panelCardHi
             Image {
                 anchors.fill: parent
@@ -204,7 +206,7 @@ Item {
         id: centerCol
         // Centrada en el panel: portada y letra miden lo mismo a cada lado, así los huecos son
         // iguales. Sin letra, centrada en el espacio a la derecha de la portada.
-        width: 280
+        width: 350
         x: root.showLyrics ? (root.width - width) / 2 : artArea.width + (root.width - artArea.width - width) / 2
         anchors.verticalCenter: parent.verticalCenter
         spacing: 6
@@ -215,7 +217,7 @@ Item {
             text: root.player ? (Media.title || "Unknown title") : "Nothing playing"
             color: Theme.text
             font.family: Theme.displayFontFamily
-            font.pixelSize: Theme.fontPx(26)
+            font.pixelSize: Theme.fontPx((26) * root.uiScale)
         }
         Text {
             width: parent.width
@@ -224,7 +226,7 @@ Item {
             visible: text !== ""
             color: Theme.tertiaryText
             font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(16)
+            font.pixelSize: Theme.fontPx((16) * root.uiScale)
             elide: Text.ElideRight
         }
         Text {
@@ -234,7 +236,7 @@ Item {
             visible: text !== ""
             color: Theme.secondaryText
             font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(16)
+            font.pixelSize: Theme.fontPx((16) * root.uiScale)
             elide: Text.ElideRight
         }
 
@@ -275,7 +277,7 @@ Item {
 
         WavyProgress {
             width: parent.width
-            height: 26
+            height: 32
             color: Theme.green
             trackColor: Theme.panelCardHi
             value: root.length > 0 ? root.position / root.length : 0
@@ -296,7 +298,7 @@ Item {
                 text: root.fmt(root.position)
                 color: Theme.secondaryText
                 font.family: Theme.bodyFontFamily
-                font.pixelSize: Theme.fontPx(11)
+                font.pixelSize: Theme.fontPx((11) * root.uiScale)
             }
             Text {
                 anchors.right: parent.right
@@ -304,7 +306,7 @@ Item {
                 text: root.length > 0 ? root.fmt(root.length) : "--:--"
                 color: Theme.secondaryText
                 font.family: Theme.bodyFontFamily
-                font.pixelSize: Theme.fontPx(11)
+                font.pixelSize: Theme.fontPx((11) * root.uiScale)
             }
         }
 
@@ -320,16 +322,16 @@ Item {
                     required property var modelData
                     readonly property bool current: modelData === root.player
                     width: chipRow.implicitWidth + 28
-                    height: 36
-                    radius: 18
+                    height: 44
+                    radius: 22
                     color: current ? Theme.green : (chipMouse.containsMouse ? Theme.panelCardHi : Theme.panelCard)
                     Row {
                         id: chipRow
                         anchors.centerIn: parent
                         spacing: 8
                         Image {
-                            width: 20
-                            height: 20
+                            width: 25
+                            height: 25
                             sourceSize: Qt.size(40, 40)
                             anchors.verticalCenter: parent.verticalCenter
                             source: Quickshell.iconPath(chip.modelData.desktopEntry || (chip.modelData.identity ?? "").toLowerCase(), "audio-x-generic")
@@ -338,7 +340,7 @@ Item {
                             text: chip.modelData.identity || "Player"
                             color: chip.current ? Theme.crust : Theme.text
                             font.family: Theme.bodyFontFamily
-                            font.pixelSize: Theme.fontPx(13)
+                            font.pixelSize: Theme.fontPx((13) * root.uiScale)
                             font.bold: chip.current
                             anchors.verticalCenter: parent.verticalCenter
                         }
@@ -368,7 +370,7 @@ Item {
         anchors.top: parent.top
         anchors.bottom: parent.bottom
         anchors.margins: 8
-        width: 200
+        width: 250
 
         // Las líneas se desvanecen al acercarse a los bordes de arriba y abajo: máscara de
         // transparencia (vale con cualquier fondo de la isla, también el del notch)
@@ -438,7 +440,7 @@ Item {
                 horizontalAlignment: Text.AlignHCenter
                 color: index === root.lyricIndex ? Theme.text : Theme.tertiaryText
                 font.family: Theme.bodyFontFamily
-                font.pixelSize: Theme.fontPx(index === root.lyricIndex ? 22 : 17)
+                font.pixelSize: Theme.fontPx((index === root.lyricIndex ? 22 : 17) * root.uiScale)
                 font.bold: index === root.lyricIndex
                 Behavior on color {
                     ColorAnimation { duration: 200 }
@@ -462,7 +464,7 @@ Item {
                 horizontalAlignment: Text.AlignHCenter
                 color: Theme.secondaryText
                 font.family: Theme.bodyFontFamily
-                font.pixelSize: Theme.fontPx(17)
+                font.pixelSize: Theme.fontPx((17) * root.uiScale)
             }
         }
 
@@ -475,7 +477,7 @@ Item {
             text: Lyrics.loading ? "Looking for lyrics…" : Lyrics.instrumental ? "Instrumental" : root.player ? "No lyrics found" : ""
             color: Theme.tertiaryText
             font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(12)
+            font.pixelSize: Theme.fontPx((12) * root.uiScale)
         }
     }
 

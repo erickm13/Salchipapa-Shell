@@ -358,9 +358,13 @@ PanelWindow {
         readonly property int widthSmall: 480
         readonly property int widthMedium: 600
         readonly property int widthLarge: 760
-        width: ["power", "polkit", "control", "display", "sound", "media"].includes(mode) ? widthSmall : ["clipboard", "emoji", "expanded"].includes(mode) ? widthMedium : ["themes", "wallpaper", "perf", "music", "binds"].includes(mode) ? widthLarge : mode === "launcher" ? Config.launcherWidth : mode === "notif" ? Config.notificationWidth : mode === "calendar" || mode === "volume" || mode === "brightness" ? 300 : mode === "keys" ? Math.max(160, keysRow.implicitWidth + 40) : Math.max(Config.collapsedWidth, idleRow.implicitWidth + Config.innerPadding * 2)
+        readonly property int widthExpanded: 750 // isla al pasar el ratón, más grande
+        readonly property int widthControl: 600 // centro de control (Super+N), más grande
+        readonly property int widthMusic: 950 // panel de música (Super+A), más grande
+        readonly property int widthWallpaper: 1000 // selectores de fondos y de temas: tarjetas grandes
+        width: mode === "control" ? widthControl : ["power", "polkit", "display", "sound", "media"].includes(mode) ? widthSmall : mode === "expanded" ? widthExpanded : ["clipboard", "emoji"].includes(mode) ? widthMedium : ["wallpaper", "themes"].includes(mode) ? widthWallpaper : mode === "music" ? widthMusic : ["perf", "binds"].includes(mode) ? widthLarge : mode === "launcher" ? Config.launcherWidth : mode === "notif" ? Config.notificationWidth : mode === "calendar" ? 450 : mode === "volume" || mode === "brightness" ? 300 : mode === "keys" ? Math.max(160, keysRow.implicitWidth + 40) : Math.max(Config.collapsedWidth, idleRow.implicitWidth + Config.innerPadding * 2)
         // Alto final del modo (sin animar): la ventana se ajusta a él una sola vez
-        readonly property real targetHeight: mode === "power" ? (powerMenu.confirmAction === "" ? 110 : 200) : mode === "polkit" ? 250 : mode === "control" ? Math.min(controlContent.preferredHeight + 32, (win.screen?.height ?? 1080) - Config.topMargin - 60) : mode === "display" ? (142 + (Hyprland.monitors?.values?.length ?? 1) * 206) : mode === "sound" ? (213 + Math.min(Audio.sinks?.length ?? 1, 5) * 42 + Math.min(Audio.sources?.length ?? 1, 4) * 42 + Math.max(1, Math.min(Audio.apps?.length ?? 0, 4)) * 62) : mode === "launcher" ? (85 + Config.launcherRowsBeforeScrolling * Config.launcherRowHeight + (Config.launcherRowsBeforeScrolling - 1) * 2) : mode === "clipboard" ? 470 : mode === "emoji" ? 440 : mode === "perf" ? 704 : mode === "binds" ? 640 : mode === "music" ? 300 : mode === "themes" ? 230 : mode === "wallpaper" ? 250 : mode === "calendar" ? 250 : mode === "expanded" ? 149 : mode === "notif" ? notifMainHeight + notifOlder.length * notifRowHeight : mode === "media" ? (Config.mediaShowControls ? 124 : 80) : mode === "volume" || mode === "brightness" ? 42 : mode === "keys" ? 56 : Config.barHeight
+        readonly property real targetHeight: mode === "power" ? (powerMenu.confirmAction === "" ? 110 : 200) : mode === "polkit" ? 250 : mode === "control" ? Math.min(controlContent.preferredHeight + 32, (win.screen?.height ?? 1080) - Config.topMargin - 60) : mode === "display" ? (142 + (Hyprland.monitors?.values?.length ?? 1) * 206) : mode === "sound" ? (213 + Math.min(Audio.sinks?.length ?? 1, 5) * 42 + Math.min(Audio.sources?.length ?? 1, 4) * 42 + Math.max(1, Math.min(Audio.apps?.length ?? 0, 4)) * 62) : mode === "launcher" ? (95 + Config.launcherRowsBeforeScrolling * Config.launcherRowHeight + (Config.launcherRowsBeforeScrolling - 1) * 2) : mode === "clipboard" ? 470 : mode === "emoji" ? 440 : mode === "perf" ? 704 : mode === "binds" ? 640 : mode === "music" ? 375 : mode === "themes" ? 320 : mode === "wallpaper" ? 380 : mode === "calendar" ? 375 : mode === "expanded" ? 186 : mode === "notif" ? notifMainHeight + notifOlder.length * notifRowHeight : mode === "media" ? (Config.mediaShowControls ? 124 : 80) : mode === "volume" || mode === "brightness" ? 42 : mode === "keys" ? 56 : Config.barHeight
         height: targetHeight
 
         Behavior on width {
@@ -799,8 +803,8 @@ PanelWindow {
             // ---------- expanded (hover): isla compacta horizontal ----------
             Item {
                 anchors.fill: parent
-                anchors.leftMargin: 22
-                anchors.rightMargin: 22
+                anchors.leftMargin: 28
+                anchors.rightMargin: 28
                 opacity: island.mode === "expanded" ? 1 : 0
                 visible: opacity > 0
                 Behavior on opacity {
@@ -811,12 +815,12 @@ PanelWindow {
                 Column {
                     anchors.left: parent.left
                     anchors.verticalCenter: parent.verticalCenter
-                    width: 150
-                    spacing: 8
+                    width: 188
+                    spacing: 10
 
                     Row {
                         width: parent.width
-                        spacing: 6
+                        spacing: 8
                         Icon {
                             text: "window"
                             px: 17
@@ -828,7 +832,7 @@ PanelWindow {
                             width: parent.width - 25
                             text: island.focusedApp
                             color: "#ffffff"
-                            font.pixelSize: Theme.fontPx(13)
+                            font.pixelSize: Theme.fontPx(16.2)
                             font.bold: true
                             elide: Text.ElideRight
                             anchors.verticalCenter: parent.verticalCenter
@@ -848,8 +852,8 @@ PanelWindow {
                 // Hora y fecha apiladas en el centro, con el reproductor debajo.
                 Column {
                     anchors.centerIn: parent
-                    spacing: 6
-                    width: 310
+                    spacing: 8
+                    width: 388
 
                     Item {
                         id: clockDateTarget
@@ -867,7 +871,7 @@ PanelWindow {
                                 width: parent.width
                                 text: Qt.formatDateTime(clock.date, Config.clock24Hour ? (Config.clockShowSeconds ? "HH:mm:ss" : "HH:mm") : (Config.clockShowSeconds ? "h:mm:ss AP" : "h:mm AP"))
                                 color: "#ffffff"
-                                font.pixelSize: Theme.fontPx(23)
+                                font.pixelSize: Theme.fontPx(28.8)
                                 font.bold: true
                                 horizontalAlignment: Text.AlignHCenter
                             }
@@ -876,7 +880,7 @@ PanelWindow {
                                 width: parent.width
                                 text: Qt.formatDateTime(clock.date, "ddd, MMM d")
                                 color: Theme.secondaryText
-                                font.pixelSize: Theme.fontPx(13)
+                                font.pixelSize: Theme.fontPx(16.2)
                                 horizontalAlignment: Text.AlignHCenter
                             }
                         }
@@ -894,12 +898,12 @@ PanelWindow {
                     // Música: la misma tarjeta que la pantalla de bloqueo, en una fila (variante mini)
                     Item {
                         width: parent.width
-                        height: 50
+                        height: 62
                         visible: Config.clockExpandedMedia
                         MediaCard {
                             anchors.fill: parent
                             mini: true
-                            radius: 14
+                            radius: 17.5
                             player: Media.active
                             art: Media.artPath
                             title: Media.title
@@ -921,17 +925,17 @@ PanelWindow {
                 Column {
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
-                    spacing: 10
+                    spacing: 12
                     visible: Config.clockExpandedStatus
 
                     Row {
                         anchors.right: parent.right
-                        spacing: 6
+                        spacing: 8
                         Text {
                             font.family: Theme.bodyFontFamily
                             text: Notifs.count > 0 ? (Notifs.count + " notifications") : "All caught up"
                             color: "#ffffff"
-                            font.pixelSize: Theme.fontPx(12)
+                            font.pixelSize: Theme.fontPx(15)
                             anchors.verticalCenter: parent.verticalCenter
                         }
                         Icon {
@@ -943,7 +947,7 @@ PanelWindow {
                     }
                     Row {
                         anchors.right: parent.right
-                        spacing: 7
+                        spacing: 9
                         Icon {
                             text: island.networkGlyph
                             iconFontFamily: batterySymbols.name !== "" ? batterySymbols.name : "Material Symbols Outlined"
@@ -988,33 +992,38 @@ PanelWindow {
 
                 Column {
                     anchors.fill: parent
-                    anchors.leftMargin: 16
-                    anchors.rightMargin: 16
-                    anchors.topMargin: 12
-                    anchors.bottomMargin: 12
-                    spacing: 8
+                    anchors.leftMargin: 24
+                    anchors.rightMargin: 24
+                    anchors.topMargin: 18
+                    anchors.bottomMargin: 18
+                    spacing: 12
 
                     Row {
                         width: parent.width
-                        height: 22
-                        spacing: 8
+                        height: 34
+                        spacing: 12
                         IslandButton {
-                            glyph: "‹"
-                            size: 22
+                            id: prevMonth
+                            glyph: "chevron_left"
+                            useIconFont: true
+                            size: 34
                             onTapped: island.calendarMonth = new Date(island.calendarMonth.getFullYear(), island.calendarMonth.getMonth() - 1, 1)
                         }
                         Text {
                             font.family: Theme.bodyFontFamily
-                            width: parent.width - 60
+                            // el resto de la fila, para que las flechas queden en los extremos
+                            width: parent.width - prevMonth.width - nextMonth.width - parent.spacing * 2
                             text: Qt.formatDateTime(island.calendarMonthDate, "MMMM yyyy")
                             color: Theme.secondaryText
-                            font.pixelSize: Theme.fontPx(14)
+                            font.pixelSize: Theme.fontPx(21)
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
                         }
                         IslandButton {
-                            glyph: "›"
-                            size: 22
+                            id: nextMonth
+                            glyph: "chevron_right"
+                            useIconFont: true
+                            size: 34
                             onTapped: island.calendarMonth = new Date(island.calendarMonth.getFullYear(), island.calendarMonth.getMonth() + 1, 1)
                         }
                     }
@@ -1030,11 +1039,11 @@ PanelWindow {
                             delegate: Text {
                                 required property int index
                                 width: (parent.width - 12) / 7
-                                height: 20
+                                height: 30
                                 text: ["S", "M", "T", "W", "T", "F", "S"][(index + Config.clockWeekStart) % 7]
                                 color: Theme.tertiaryText
                                 font.family: Theme.bodyFontFamily
-                                font.pixelSize: Theme.fontPx(10)
+                                font.pixelSize: Theme.fontPx(15)
                                 horizontalAlignment: Text.AlignHCenter
                                 verticalAlignment: Text.AlignVCenter
                             }
@@ -1050,16 +1059,18 @@ PanelWindow {
                                 readonly property var cellDate: new Date(island.calendarMonthDate.getFullYear(), island.calendarMonthDate.getMonth(), dayNumber)
                                 readonly property bool selected: inMonth && island.selectedDate.getFullYear() === cellDate.getFullYear() && island.selectedDate.getMonth() === cellDate.getMonth() && island.selectedDate.getDate() === cellDate.getDate()
                                 width: (parent.width - 12) / 7
-                                height: 25
-                                radius: 10
+                                height: 37
+                                radius: 15
                                 color: selected ? Theme.green : "transparent"
 
                                 Text {
                                     anchors.centerIn: parent
                                     text: calendarCell.inMonth || Config.clockShowNeighbouringMonths ? calendarCell.cellDate.getDate() : ""
-                                    color: calendarCell.selected ? Theme.islandBg : (calendarCell.inMonth ? Theme.secondaryText : Theme.tertiaryText)
+                                    // Días del mes en el color del texto; los de los meses vecinos, muy atenuados
+                                    // (se ven para mantener la forma de la cuadrícula, pero no se confunden)
+                                    color: calendarCell.selected ? Theme.islandBg : (calendarCell.inMonth ? Theme.text : Theme.alpha(Theme.tertiaryText, 35))
                                     font.family: Theme.bodyFontFamily
-                                    font.pixelSize: Theme.fontPx(11)
+                                    font.pixelSize: Theme.fontPx(16.6)
                                 }
                                 MouseArea {
                                     anchors.fill: parent

@@ -199,7 +199,7 @@ Item {
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
-        height: 44
+        height: 56
 
         Text {
             id: searchIcon
@@ -220,7 +220,7 @@ Item {
             anchors.rightMargin: 12
             anchors.verticalCenter: parent.verticalCenter
             color: "#ffffff"
-            font.pixelSize: Theme.fontPx(15)
+            font.pixelSize: Theme.fontPx(19)
             clip: true
             focus: Overlay.mode === "wallpaper"
             onTextChanged: {
@@ -259,7 +259,7 @@ Item {
             Rectangle {
                 visible: root.animatedTab && Wallpaper.animated !== ""
                 width: stopRow.implicitWidth + 16
-                height: 24
+                height: 32
                 radius: 12
                 color: stopMouse.containsMouse ? Theme.red : Theme.surface0
                 Row {
@@ -276,7 +276,7 @@ Item {
                     Text {
                         text: "Remove"
                         font.family: Theme.bodyFontFamily
-                        font.pixelSize: Theme.fontPx(11)
+                        font.pixelSize: Theme.fontPx(15)
                         color: stopMouse.containsMouse ? Theme.islandBg : Theme.secondaryText
                         anchors.verticalCenter: parent.verticalCenter
                     }
@@ -292,7 +292,7 @@ Item {
 
             Rectangle {
                 width: tabRow.implicitWidth + 6
-                height: 24
+                height: 32
                 radius: 12
                 color: Theme.surface0
                 Row {
@@ -306,7 +306,7 @@ Item {
                             required property var modelData
                             readonly property bool on: root.animatedTab === modelData.animated
                             width: tabContent.implicitWidth + 14
-                            height: 20
+                            height: 28
                             radius: 10
                             color: on ? Theme.green : "transparent"
                             Behavior on color {
@@ -328,7 +328,7 @@ Item {
                                 Text {
                                     text: tab.modelData.label
                                     font.family: Theme.bodyFontFamily
-                                    font.pixelSize: Theme.fontPx(11)
+                                    font.pixelSize: Theme.fontPx(15)
                                     font.bold: tab.on
                                     color: tab.on ? Theme.islandBg : Theme.secondaryText
                                     anchors.verticalCenter: parent.verticalCenter
@@ -355,7 +355,7 @@ Item {
             anchors.rightMargin: 12
             anchors.verticalCenter: parent.verticalCenter
             width: toggleRow.implicitWidth + 16
-            height: 24
+            height: 32
             radius: 12
             color: root.applyColors ? Theme.green : Theme.surface0
 
@@ -380,7 +380,7 @@ Item {
                     font.family: Theme.bodyFontFamily
                     text: "Colors"
                     color: root.applyColors ? Theme.islandBg : Theme.secondaryText
-                    font.pixelSize: Theme.fontPx(11)
+                    font.pixelSize: Theme.fontPx(15)
                     font.bold: root.applyColors
                     anchors.verticalCenter: parent.verticalCenter
                 }
@@ -400,7 +400,7 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             text: root.results.length > 0 ? (root.sel + 1) + "/" + root.results.length : "0/0"
             color: Theme.secondaryText
-            font.pixelSize: Theme.fontPx(11)
+            font.pixelSize: Theme.fontPx(15)
         }
     }
 
@@ -422,7 +422,7 @@ Item {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.topMargin: 12
-        height: 134
+        height: 230
         orientation: ListView.Horizontal
         spacing: 14
         clip: true
@@ -430,8 +430,8 @@ Item {
         currentIndex: root.sel
         highlightMoveDuration: 220
         highlightRangeMode: ListView.StrictlyEnforceRange
-        preferredHighlightBegin: (width - 180) / 2
-        preferredHighlightEnd: (width - 180) / 2
+        preferredHighlightBegin: (width - 310) / 2
+        preferredHighlightEnd: (width - 310) / 2
         snapMode: ListView.SnapToItem
         boundsBehavior: Flickable.StopAtBounds
 
@@ -441,14 +441,14 @@ Item {
             required property var modelData
             readonly property bool active: index === root.sel
 
-            width: 180
+            width: 310
             height: cards.height
 
             Rectangle {
                 id: ring
                 anchors.centerIn: parent
-                width: 172
-                height: 104
+                width: 300
+                height: 180
                 radius: 15
                 color: cell.active ? Theme.green : "transparent"
                 scale: cell.active ? 1.14 : 0.86
@@ -494,8 +494,8 @@ Item {
                         anchors.left: parent.left
                         anchors.margins: 6
                         width: themeText.implicitWidth + 12
-                        height: 18
-                        radius: 9
+                        height: 26
+                        radius: 13
                         color: "#b3000000"
                         Text {
                             id: themeText
@@ -503,7 +503,7 @@ Item {
                             text: root.themeOf(cell.modelData)
                             color: "#ffffff"
                             font.family: Theme.bodyFontFamily
-                            font.pixelSize: Theme.fontPx(10)
+                            font.pixelSize: Theme.fontPx(14)
                             font.bold: true
                         }
                     }
@@ -515,8 +515,8 @@ Item {
                         anchors.right: parent.right
                         anchors.margins: 6
                         width: typeText.implicitWidth + 12
-                        height: 18
-                        radius: 9
+                        height: 26
+                        radius: 13
                         color: "#b3000000"
                         Text {
                             id: typeText
@@ -524,7 +524,7 @@ Item {
                             text: typeof cell.modelData === "string" ? "" : ((cell.modelData.id === Wallpaper.animated ? "● " : "") + ({ scene: "Scene", video: "Video", web: "Web" }[cell.modelData.type] ?? cell.modelData.type))
                             color: typeof cell.modelData !== "string" && cell.modelData.id === Wallpaper.animated ? Theme.green : "#ffffff"
                             font.family: Theme.bodyFontFamily
-                            font.pixelSize: Theme.fontPx(10)
+                            font.pixelSize: Theme.fontPx(14)
                             font.bold: true
                         }
                     }
@@ -534,7 +534,7 @@ Item {
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.bottom: parent.bottom
-                        height: 22
+                        height: 34
                         color: "#b3000000"
                         Text {
                             font.family: Theme.bodyFontFamily
@@ -544,7 +544,7 @@ Item {
                             verticalAlignment: Text.AlignVCenter
                             text: root.titleOf(cell.modelData)
                             color: "#ffffff"
-                            font.pixelSize: Theme.fontPx(11)
+                            font.pixelSize: Theme.fontPx(16)
                             elide: Text.ElideRight
                         }
                     }
@@ -571,6 +571,6 @@ Item {
         anchors.margins: 12
         text: "Enter to apply · Tab: static/animated"
         color: Theme.overlay1
-        font.pixelSize: Theme.fontPx(10)
+        font.pixelSize: Theme.fontPx(14)
     }
 }

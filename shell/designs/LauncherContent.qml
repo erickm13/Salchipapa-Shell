@@ -8,6 +8,8 @@ import "../common"
 
 Item {
     id: root
+    // Más grande que el resto de la shell (Theme.fontPx con su escala): se lee mejor
+    readonly property real uiScale: 1.25
 
     property int sel: 0
     property string query: ""
@@ -109,7 +111,7 @@ Item {
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
-        height: 52
+        height: 62
 
         Text {
             id: searchIcon
@@ -130,7 +132,7 @@ Item {
             anchors.rightMargin: 20
             anchors.verticalCenter: parent.verticalCenter
             color: "#ffffff"
-            font.pixelSize: Theme.fontPx(15)
+            font.pixelSize: Theme.fontPx((15) * root.uiScale)
             clip: true
             focus: Overlay.mode === "launcher"
             onTextChanged: {
@@ -242,7 +244,7 @@ Item {
                     width: parent.width
                     text: item.modelData.name ?? ""
                     color: "#ffffff"
-                    font.pixelSize: Theme.fontPx(13 * item.rowScale)
+                    font.pixelSize: Theme.fontPx((13 * item.rowScale) * root.uiScale)
                     font.bold: true
                     elide: Text.ElideRight
                 }
@@ -251,7 +253,7 @@ Item {
                     width: parent.width
                     text: item.modelData.comment || item.modelData.genericName || ""
                     color: Theme.secondaryText
-                    font.pixelSize: Theme.fontPx(10 * item.rowScale)
+                    font.pixelSize: Theme.fontPx((10 * item.rowScale) * root.uiScale)
                     elide: Text.ElideRight
                     visible: text.length > 0
                 }

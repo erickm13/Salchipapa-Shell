@@ -107,7 +107,7 @@ Item {
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
-        height: 44
+        height: 56
 
         Text {
             id: searchIcon
@@ -128,7 +128,7 @@ Item {
             anchors.rightMargin: 12
             anchors.verticalCenter: parent.verticalCenter
             color: "#ffffff"
-            font.pixelSize: Theme.fontPx(15)
+            font.pixelSize: Theme.fontPx(19)
             clip: true
             focus: Overlay.mode === "themes"
             onTextChanged: {
@@ -158,7 +158,7 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             text: root.results.length > 0 ? (root.sel + 1) + "/" + root.results.length : "0/0"
             color: Theme.secondaryText
-            font.pixelSize: Theme.fontPx(11)
+            font.pixelSize: Theme.fontPx(15)
         }
     }
 
@@ -180,80 +180,106 @@ Item {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.topMargin: 12
-        height: 130
+        height: 200
         orientation: ListView.Horizontal
-        spacing: 12
+        spacing: 16
         clip: true
         model: root.results
         currentIndex: root.sel
-        highlightMoveDuration: 200
+        highlightMoveDuration: 220
         highlightRangeMode: ListView.StrictlyEnforceRange
-        preferredHighlightBegin: (width - 230) / 2
-        preferredHighlightEnd: (width - 230) / 2
+        preferredHighlightBegin: (width - 330) / 2
+        preferredHighlightEnd: (width - 330) / 2
         snapMode: ListView.SnapToItem
         boundsBehavior: Flickable.StopAtBounds
 
-        delegate: Rectangle {
-            id: card
+        // Como el selector de fondos: cada celda ocupa todo el alto del carrusel y la tarjeta va
+        // centrada dentro, así al crecer no se corta arriba ni abajo.
+        delegate: Item {
+            id: cell
             required property int index
             required property var modelData
+            readonly property bool active: index === root.sel
 
-            // 230 de ancho: caben nombres largos (gentleman-kanagawa-blur) con la letra a 15
-            width: 230
-            height: 120
-            radius: 16
-            // Oscuras como el fondo de la terminal (040e0d, el terminal-bg de los temas); la seleccionada,
-            // un poco más clara y con el borde del acento.
-            color: index === root.sel ? "#0f1f1d" : "#040e0d"
-            border.width: index === root.sel ? 2 : 0
-            border.color: Theme.green
+            width: 330
+            height: cards.height
 
-            Behavior on color {
-                ColorAnimation {
-                    duration: Theme.hoverDuration
-                }
-            }
-
-            // Marca de la card Dynamic (colores de matugen)
-            Text {
-                visible: card.modelData.dynamic === true
-                anchors.top: parent.top
-                anchors.right: parent.right
-                anchors.margins: 8
-                text: "auto_awesome"
-                font.family: "Material Symbols Rounded"
-                font.pixelSize: 13
-                color: Theme.green
-            }
-
-            Column {
+            Rectangle {
+                id: card
                 anchors.centerIn: parent
-                spacing: 12
+                // 320 de ancho: caben nombres largos (gentleman-kanagawa-blur) con la letra a 20
+                width: 320
+                height: 165
+                radius: 16
+                // Oscuras como el fondo de la terminal (040e0d, el terminal-bg de los temas); la seleccionada,
+                // un poco más clara y con el borde del acento.
+                color: cell.active ? "#0f1f1d" : "#040e0d"
+                border.width: cell.active ? 3 : 0
+                border.color: Theme.green
+                // Como el selector de fondos: la seleccionada crece y las demás se encogen y atenúan
+                scale: cell.active ? 1.14 : 0.86
+                opacity: cell.active ? 1 : 0.6
+                z: cell.active ? 1 : 0
 
-                Row {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    spacing: 6
-                    Repeater {
-                        model: card.modelData.swatches
-                        delegate: Rectangle {
-                            required property var modelData
-                            width: 15
-                            height: 15
-                            radius: 7.5
-                            color: modelData
-                        }
+                Behavior on scale {
+                    NumberAnimation {
+                        duration: Theme.movementDuration
+                        easing.type: Easing.OutCubic
                     }
                 }
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: Theme.fadeDuration
+                    }
+                }
+
+                Behavior on color {
+                    ColorAnimation {
+                        duration: Theme.hoverDuration
+                    }
+                }
+
+                // Marca de la card Dynamic (colores de matugen)
                 Text {
-                    font.family: Theme.bodyFontFamily
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    width: Math.min(implicitWidth, card.width - 20)
-                    horizontalAlignment: Text.AlignHCenter
-                    elide: Text.ElideRight
-                    text: card.modelData.name
-                    color: "#ffffff"
-                    font.pixelSize: Theme.fontPx(15)
-                    font.bold: index === root.sel
+                    visible: cell.modelData.dynamic === true
+                    anchors.top: parent.top
+                    anchors.right: parent.right
+                    anchors.margins: 8
+                    text: "auto_awesome"
+                    font.family: "Material Symbols Rounded"
+                    font.pixelSize: 13
+                    color: Theme.green
+                }
+
+                Column {
+                    anchors.centerIn: parent
+                    spacing: 16
+
+                    Row {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        spacing: 8
+                        Repeater {
+                            model: cell.modelData.swatches
+                            delegate: Rectangle {
+                                required property var modelData
+                                width: 22
+                                height: 22
+                                radius: 11
+                                color: modelData
+                            }
+                        }
+                    }
+                    Text {
+                        font.family: Theme.bodyFontFamily
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        width: Math.min(implicitWidth, card.width - 20)
+                        horizontalAlignment: Text.AlignHCenter
+                        elide: Text.ElideRight
+                        text: cell.modelData.name
+                        color: "#ffffff"
+                        font.pixelSize: Theme.fontPx(20)
+                        font.bold: cell.active
+                    }
                 }
             }
 
@@ -261,9 +287,9 @@ Item {
                 anchors.fill: parent
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-                onEntered: root.sel = card.index
+                onEntered: root.sel = cell.index
                 onClicked: {
-                    root.sel = card.index;
+                    root.sel = cell.index;
                     root.apply();
                 }
             }
@@ -277,6 +303,6 @@ Item {
         anchors.margins: 12
         text: "Enter to apply"
         color: Theme.overlay1
-        font.pixelSize: Theme.fontPx(10)
+        font.pixelSize: Theme.fontPx(14)
     }
 }
