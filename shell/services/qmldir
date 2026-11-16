@@ -8,6 +8,7 @@ singleton Bluetooth Bluetooth.qml
 singleton Quick Quick.qml
 singleton Brightness Brightness.qml
 singleton LockScreen LockScreen.qml
+LockPage 1.0 LockPage.qml
 singleton PolicyAuth PolicyAuth.qml
 singleton WindowBlur WindowBlur.qml
 singleton PowerProfiles PowerProfiles.qml

@@ -53,6 +53,19 @@ Item {
         width: parent.width
         spacing: Theme.space(4)
 
+        // Ver el diseño sin bloquear la sesión (se cierra con un clic)
+        Item {
+            width: parent.width
+            height: 36
+            PillButton {
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                label: "Preview lock screen"
+                accent: true
+                onClicked: LockScreen.previewing = true
+            }
+        }
+
         SettingGroup {
             title: "Clock & content"
             width: parent.width
@@ -60,6 +73,12 @@ Item {
             SettingToggleRow { label: "Show clock"; checked: Config.lockShowClock; onToggled: Config.opt.lockShowClock = !Config.lockShowClock }
             SettingToggleRow { label: "24-hour clock"; checked: Config.lockClock24Hour; onToggled: Config.opt.lockClock24Hour = !Config.lockClock24Hour }
             SettingToggleRow { label: "Music card"; checked: Config.lockShowMusic; onToggled: Config.opt.lockShowMusic = !Config.lockShowMusic }
+            SettingToggleRow { label: "Player cover as background"; checked: Config.lockPlayerArtBackground; onToggled: Config.opt.lockPlayerArtBackground = !Config.lockPlayerArtBackground }
+            SettingToggleRow { label: "Status icons"; checked: Config.lockShowStatus; onToggled: Config.opt.lockShowStatus = !Config.lockShowStatus }
+            SettingToggleRow { label: "Side cards (system, usage)"; checked: Config.lockShowSystemCards; onToggled: Config.opt.lockShowSystemCards = !Config.lockShowSystemCards }
+            SettingToggleRow { label: "Notifications"; checked: Config.lockShowNotifications; onToggled: Config.opt.lockShowNotifications = !Config.lockShowNotifications }
+            SettingToggleRow { label: "Notification text"; checked: Config.lockNotificationContent; onToggled: Config.opt.lockNotificationContent = !Config.lockNotificationContent }
+            SettingToggleRow { label: "Mascot"; checked: Config.lockShowMascot; onToggled: Config.opt.lockShowMascot = !Config.lockShowMascot }
         }
 
         // Foto de perfil (~/.face): imagen, encuadre, forma ondulada y animación

@@ -117,6 +117,12 @@ Singleton {
     readonly property bool lockShowClock: settings.lockShowClock
     readonly property bool lockClock24Hour: settings.lockClock24Hour
     readonly property bool lockShowMusic: settings.lockShowMusic
+    readonly property bool lockPlayerArtBackground: settings.lockPlayerArtBackground
+    readonly property bool lockShowStatus: settings.lockShowStatus
+    readonly property bool lockShowNotifications: settings.lockShowNotifications
+    readonly property bool lockShowMascot: settings.lockShowMascot
+    readonly property bool lockShowSystemCards: settings.lockShowSystemCards
+    readonly property bool lockNotificationContent: settings.lockNotificationContent
     readonly property int lockBackgroundBlur: settings.lockBackgroundBlur
     readonly property int lockBackgroundDim: settings.lockBackgroundDim
     readonly property int lockAvatarSize: settings.lockAvatarSize
@@ -291,6 +297,12 @@ Singleton {
             property bool lockShowClock: true
             property bool lockClock24Hour: false
             property bool lockShowMusic: true
+            property bool lockPlayerArtBackground: true // carátula de fondo del reproductor (false = en un cuadro)
+            property bool lockShowStatus: true // wifi, Bluetooth, mute y batería arriba a la derecha
+            property bool lockShowNotifications: true
+            property bool lockShowMascot: true // la mascota de la isla, si está activada
+            property bool lockShowSystemCards: true // columnas laterales (sistema, música, uso, notificaciones)
+            property bool lockNotificationContent: true // false = solo qué app avisó, sin el texto
             property int lockBackgroundBlur: 100
             property int lockBackgroundDim: 40
             // Foto de perfil (~/.face) en la pantalla de bloqueo
