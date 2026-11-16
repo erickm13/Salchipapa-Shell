@@ -2,6 +2,7 @@ pragma Singleton
 // Estado compartido de los "modos overlay" de la isla (launcher / selector de temas)
 // y los atajos globales que los abren. La UI vive DENTRO de la Dynamic Island.
 import Quickshell
+import Quickshell.Io
 import Quickshell.Hyprland
 
 Singleton {
@@ -19,6 +20,8 @@ Singleton {
     property int faceVersion: 0
     // Índice del buscador de ajustes ([{ cat, label }]): se arma la primera vez que se abre el panel
     property var settingsIndex: []
+    // Ajustes: mostrar también las subsecciones plegadas (al indexar para el buscador y al abrir un resultado)
+    property bool settingsRevealAll: false
 
     // Monitor principal (isla cuando no va en todos, Display > Primary monitor): el elegido en
     // ajustes si está conectado; si no, el del workspace 1; si no, el primero. Nunca el enfocado:
@@ -38,6 +41,20 @@ Singleton {
 
     function close(): void {
         mode = "";
+    }
+
+    // Abrir Ajustes en una sección desde fuera: `qs ipc call salchipapa-settings open <n>`
+    // (n = posición en la barra lateral, desde 0) y `… close`
+    IpcHandler {
+        target: "salchipapa-settings"
+        function open(category: int): void {
+            root.settingsCategory = Math.max(0, category);
+            if (!root.settings)
+                root.toggleSettings();
+        }
+        function close(): void {
+            root.settings = false;
+        }
     }
 
     GlobalShortcut {

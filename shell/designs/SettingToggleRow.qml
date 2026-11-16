@@ -12,6 +12,7 @@ Item {
 
     width: parent.width
     height: sublabel !== "" ? 64 : 48
+    opacity: enabled ? 1 : 0.45 // depende de otro ajuste que está apagado
 
     activeFocusOnTab: true
     onActiveFocusChanged: if (activeFocus) KeyNav.ensureVisible(row)

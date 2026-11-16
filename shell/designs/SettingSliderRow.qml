@@ -58,16 +58,15 @@ Item {
         font.pixelSize: Theme.fontPx(14)
         elide: Text.ElideRight
     }
-    Text {
+    // Valor con − / + para ajustarlo de `snap` en `snap`
+    SliderStepper {
         id: valueText
         anchors.right: parent.right
-        anchors.rightMargin: 16
+        anchors.rightMargin: 12
         anchors.top: parent.top
-        anchors.topMargin: 12
+        anchors.topMargin: 7
         text: Number((row.value / row.divisor).toFixed(row.decimals)) + row.unit
-        color: Theme.secondaryText
-        font.family: Theme.bodyFontFamily
-        font.pixelSize: Theme.fontPx(13)
+        onStep: dir => row.nudge(dir, true)
     }
 
     Rectangle {
@@ -78,23 +77,25 @@ Item {
         anchors.rightMargin: 16
         anchors.top: rowLabel.bottom
         anchors.topMargin: 12
-        height: 4
-        radius: 2
+        height: 6
+        radius: 3
         color: Theme.panelCardHi
         Rectangle {
             id: fill
             width: track.width * Math.max(0, Math.min(1, (row.value - row.from) / Math.max(1, row.to - row.from)))
             height: parent.height
-            radius: 2
+            radius: 3
             color: Theme.green
         }
         Rectangle {
-            width: 14
-            height: 14
-            radius: 7
+            width: 18
+            height: 18
+            radius: 9
             x: Math.max(0, Math.min(track.width - width, fill.width - width / 2))
             anchors.verticalCenter: parent.verticalCenter
             color: "#ffffff"
+            border.width: 3
+            border.color: Theme.green
         }
         MouseArea {
             anchors.fill: parent

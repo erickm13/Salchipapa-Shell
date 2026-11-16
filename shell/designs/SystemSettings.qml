@@ -292,6 +292,15 @@ Item {
             }
         }
 
+        Text {
+            width: parent.width
+            text: "Number of workspace indicators in the island."
+            color: Theme.tertiaryText
+            wrapMode: Text.Wrap
+            font.family: Theme.bodyFontFamily
+            font.pixelSize: Theme.fontPx(12)
+        }
+
         Rectangle {
             width: parent.width
             height: infoColumn.implicitHeight + 24
@@ -315,14 +324,6 @@ Item {
             }
         }
 
-        Text {
-            width: parent.width
-            text: "Number of workspace indicators in the island."
-            color: Theme.tertiaryText
-            wrapMode: Text.Wrap
-            font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(12)
-        }
     }
 
     component InfoRow: Row {

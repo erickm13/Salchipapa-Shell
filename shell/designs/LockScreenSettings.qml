@@ -67,23 +67,53 @@ Item {
         }
 
         SettingGroup {
-            title: "Clock & content"
+            title: "Clock"
             width: parent.width
-            SettingToggleRow { label: "Show date"; checked: Config.lockShowDate; onToggled: Config.opt.lockShowDate = !Config.lockShowDate }
-            SettingToggleRow { label: "Show clock"; checked: Config.lockShowClock; onToggled: Config.opt.lockShowClock = !Config.lockShowClock }
-            SettingToggleRow { label: "24-hour clock"; checked: Config.lockClock24Hour; onToggled: Config.opt.lockClock24Hour = !Config.lockClock24Hour }
-            SettingToggleRow { label: "Music card"; checked: Config.lockShowMusic; onToggled: Config.opt.lockShowMusic = !Config.lockShowMusic }
-            SettingToggleRow { label: "Player cover as background"; checked: Config.lockPlayerArtBackground; onToggled: Config.opt.lockPlayerArtBackground = !Config.lockPlayerArtBackground }
-            SettingToggleRow { label: "Status icons"; checked: Config.lockShowStatus; onToggled: Config.opt.lockShowStatus = !Config.lockShowStatus }
-            SettingToggleRow { label: "Side cards (system, usage)"; checked: Config.lockShowSystemCards; onToggled: Config.opt.lockShowSystemCards = !Config.lockShowSystemCards }
-            SettingToggleRow { label: "Notifications"; checked: Config.lockShowNotifications; onToggled: Config.opt.lockShowNotifications = !Config.lockShowNotifications }
-            SettingToggleRow { label: "Notification text"; checked: Config.lockNotificationContent; onToggled: Config.opt.lockNotificationContent = !Config.lockNotificationContent }
-            SettingToggleRow { label: "Mascot"; checked: Config.lockShowMascot; onToggled: Config.opt.lockShowMascot = !Config.lockShowMascot }
+            SettingChipsRow {
+                label: "Show"
+                chips: [
+                    { label: "Clock", key: "lockShowClock" },
+                    { label: "Date", key: "lockShowDate" },
+                    { label: "24-hour time", key: "lockClock24Hour" }
+                ]
+            }
+        }
+
+        SettingGroup {
+            title: "Content"
+            width: parent.width
+            SettingChipsRow {
+                label: "Show on the lock screen"
+                hint: "Cards around the clock. Side cards only fit on wide screens."
+                chips: [
+                    { label: "Side cards", key: "lockShowSystemCards" },
+                    { label: "Wi-Fi & battery", key: "lockShowStatus" },
+                    { label: "Music player", key: "lockShowMusic" },
+                    { label: "Notifications", key: "lockShowNotifications" },
+                    { label: "Mascot", key: "lockShowMascot" }
+                ]
+            }
+            SettingToggleRow {
+                label: "Player cover as background"
+                sublabel: "Off: the cover goes in a box next to the title"
+                enabled: Config.lockShowMusic
+                checked: Config.lockPlayerArtBackground
+                onToggled: Config.opt.lockPlayerArtBackground = !Config.lockPlayerArtBackground
+            }
+            SettingToggleRow {
+                label: "Notification text"
+                sublabel: "Off: only which app sent it, not what it says"
+                enabled: Config.lockShowNotifications
+                checked: Config.lockNotificationContent
+                onToggled: Config.opt.lockNotificationContent = !Config.lockNotificationContent
+            }
         }
 
         // Foto de perfil (~/.face): imagen, encuadre, forma ondulada y animación
         SettingGroup {
             title: "Profile picture"
+            hint: "Photo, wavy shape and animation"
+            collapsible: true
             width: parent.width
             // Miniatura (con el encuadre guardado) + "Adjust…" (editor de encuadre) + "Change…" (elige
             // una imagen con zenity, la copia a ~/.face —la anterior queda en ~/.face.bak— y abre el editor)
@@ -340,6 +370,8 @@ Item {
 
         SettingGroup {
             title: "Background"
+            hint: "Blur and dim of the wallpaper"
+            collapsible: true
             width: parent.width
             SettingSliderRow {
                 label: "Background blur"
@@ -358,6 +390,8 @@ Item {
         // Enchufado (o equipo sin batería): claves idle*. Con la batería: idleBattery*.
         IdleGroup {
             title: Battery.available ? "When idle · plugged in" : "When idle"
+            hint: "Lock and suspend after a while without use"
+            collapsible: true
             width: parent.width
             lockEnabled: Config.idleLockEnabled
             lockMinutes: Config.idleLockMinutes
@@ -372,6 +406,8 @@ Item {
         IdleGroup {
             visible: Battery.available
             title: "When idle · on battery"
+            hint: "Lock and suspend sooner on battery"
+            collapsible: true
             width: parent.width
             lockEnabled: Config.idleBatteryLockEnabled
             lockMinutes: Config.idleBatteryLockMinutes

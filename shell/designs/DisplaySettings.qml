@@ -105,8 +105,9 @@ Item {
             return;
         }
         monitors = list;
+        // Sin elección previa, el monitor donde está abierto Ajustes (no el primero de la lista)
         if (!monitors.find(m => m.name === selectedName))
-            selectedName = (enabledMonitors[0] ?? monitors[0])?.name ?? "";
+            selectedName = (enabledMonitors.find(m => m.name === Overlay.settingsMonitor) ?? enabledMonitors[0] ?? monitors[0])?.name ?? "";
         if (!hasUnsavedPositions && countdown === 0)
             pendingPositions = ({});
         if (saveAfterRefresh) {
@@ -243,7 +244,7 @@ Item {
         width: parent.width
         spacing: Theme.space(4)
 
-        SectionLabel { text: "LAYOUT" }
+        SectionTitle { text: "Layout" }
 
         // ---- Vista previa: arrastra los monitores para colocarlos ----
         Rectangle {

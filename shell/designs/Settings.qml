@@ -6,6 +6,7 @@ import QtQuick
 import Qt.labs.folderlistmodel
 import Quickshell
 import Quickshell.Io
+import Quickshell.Widgets
 import QtQuick.Effects
 import "../common"
 import "../services"
@@ -23,9 +24,12 @@ FloatingWindow {
     screen: openScreen
     // Todo el panel se diseña a 1080×620 y se amplía con `scale` (el texto sigue nítido): para
     // agrandarlo o achicarlo entero basta con cambiar el 1.3. Si la pantalla no da, se reduce.
+    // Ese es el tamaño al abrir; al redimensionar la ventana el panel la llena (la escala no cambia:
+    // hay más sitio para el contenido, no letras más grandes).
     readonly property real uiScale: Math.min(1.3, (openScreen.width - 96) / 1080, (openScreen.height - 144) / 620)
     implicitWidth: Math.round(1080 * uiScale)
     implicitHeight: Math.round(620 * uiScale)
+    minimumSize: Qt.size(Math.round(820 * uiScale), Math.round(460 * uiScale))
 
     // Ordenadas por uso: las que más se tocan primero. Las páginas se eligen por índice
     // (win.category === N), así que al reordenar hay que renumerar esas condiciones.
@@ -97,9 +101,23 @@ FloatingWindow {
         }
     ]
 
+    // Subsecciones desplegables (bloques con muchos ajustes finos): plegadas al abrir
+    property bool openShape: false
+    property bool openSurfaces: false
+    property bool openShadow: false
+    property bool openIslandSize: false
+
+    // Barra lateral: un color por sección para su icono, y dónde empieza cada grupo de secciones
+    readonly property var categoryTints: [Theme.purple, Theme.blue, Theme.aqua, Theme.red, Theme.orange, Theme.overlay1,
+        Theme.yellow, Theme.blue, Theme.purple, Theme.aqua, Theme.overlay1, Theme.orange, Theme.red]
+    readonly property var groupStarts: [3, 6, 10]
+
     // La ventana se destruye al cerrar: la categoría abierta se guarda en Overlay
     property int category: Overlay.settingsCategory
-    onCategoryChanged: Overlay.settingsCategory = category
+    onCategoryChanged: {
+        Overlay.settingsCategory = category;
+        regroupTimer.restart();
+    }
     property string query: ""
     property string currentScheme: "Dynamic"
 
@@ -129,6 +147,57 @@ FloatingWindow {
         onFileChanged: reload()
         onLoaded: win.currentScheme = text().trim() || "Dynamic"
         onLoadFailed: win.currentScheme = "Dynamic"
+    }
+
+    // Fondo de la terminal (foot): color de salchipapa-colors.ini y opacidad de foot.ini. Lo usa la
+    // franja translúcida de la barra lateral. Si no hay foot, el fondo del tema al 80 %.
+    property color terminalBg: Theme.crust
+    property real terminalAlpha: 0.8
+    FileView {
+        path: Quickshell.env("HOME") + "/.config/foot/salchipapa-colors.ini"
+        watchChanges: true
+        printErrors: false
+        onFileChanged: reload()
+        onLoaded: {
+            const m = text().match(/^background\s*=\s*([0-9a-fA-F]{6})\s*$/m);
+            if (m)
+                win.terminalBg = "#" + m[1];
+        }
+    }
+    FileView {
+        path: Quickshell.env("HOME") + "/.config/foot/foot.ini"
+        watchChanges: true
+        printErrors: false
+        onFileChanged: reload()
+        onLoaded: {
+            const m = text().match(/^alpha\s*=\s*([0-9.]+)\s*$/m);
+            if (m)
+                win.terminalAlpha = Math.max(0.2, Math.min(1, parseFloat(m[1])));
+        }
+    }
+
+    // Agrupa visualmente las filas de ajustes seguidas (las tarjetas con `radius` hijas directas de
+    // la columna): redondea solo la primera por arriba y la última por abajo
+    function regroup(): void {
+        const rows = [];
+        for (const c of controlsCol.children)
+            if (c.visible && c.height > 0)
+                rows.push(c);
+        const isRow = c => c && typeof c.radius === "number" && c.topLeftRadius !== undefined;
+        const r = Theme.radiusMedium;
+        for (let i = 0; i < rows.length; i++) {
+            const c = rows[i];
+            if (!isRow(c))
+                continue;
+            const up = isRow(rows[i - 1]), down = isRow(rows[i + 1]);
+            c.topLeftRadius = c.topRightRadius = up ? 0 : r;
+            c.bottomLeftRadius = c.bottomRightRadius = down ? 0 : r;
+        }
+    }
+    Timer {
+        id: regroupTimer
+        interval: 0
+        onTriggered: win.regroup()
     }
 
     function openThemeSelector(): void {
@@ -183,8 +252,10 @@ FloatingWindow {
         category = r.cat;
         if (r.setting === "")
             KeyNav.move(searchInput, true);
-        else
+        else {
+            Overlay.settingsRevealAll = true; // puede estar en una subsección plegada
             focusTimer.start(); // tras recolocar la columna, para que el ajuste quede a la vista
+        }
     }
     property string pendingSetting: results[sel]?.setting ?? ""
     Timer {
@@ -199,6 +270,14 @@ FloatingWindow {
         // Los botones (señal clicked) no son ajustes, y de una fila con opciones solo cuenta su título
         if (typeof item.clicked === "function")
             return;
+        // Fila de pastillas: su título y el nombre de cada ajuste que agrupa
+        if (item.chips !== undefined) {
+            if (typeof item.label === "string" && item.label !== "")
+                out.push(item.label.trim());
+            for (const c of item.chips)
+                out.push(c.label);
+            return;
+        }
         if (item.options !== undefined) {
             if (typeof item.label === "string" && item.label !== "")
                 out.push(item.label.trim());
@@ -207,7 +286,7 @@ FloatingWindow {
         const l = item.label;
         if (typeof l === "string" && l.trim() !== "")
             out.push(l.trim());
-        else if (typeof item.text === "string" && item.echoMode === undefined && !String(item.font?.family).startsWith("Material")
+        else if (typeof item.text === "string" && item.color !== undefined && item.echoMode === undefined && !String(item.font?.family).startsWith("Material")
                  && (Qt.colorEqual(item.color, "#ffffff") || item.font?.bold)) {
             const t = item.text.trim();
             if (t.length >= 3 && t.length <= 40)
@@ -222,6 +301,7 @@ FloatingWindow {
     function buildIndex(): void {
         const saved = category;
         const out = [];
+        Overlay.settingsRevealAll = true; // también lo que está en subsecciones plegadas
         for (let i = 0; i < categories.length; i++) {
             category = i;
             const labels = [];
@@ -232,6 +312,7 @@ FloatingWindow {
                 out.push({ cat: i, label: label });
         }
         category = saved;
+        Overlay.settingsRevealAll = false;
         Overlay.settingsIndex = out;
     }
 
@@ -283,20 +364,38 @@ FloatingWindow {
     // ===== Card =====
     Rectangle {
         id: cardBg
-        width: 1080
-        height: 620
+        // Llena la ventana (en unidades de diseño, antes de escalar)
+        width: win.width > 0 ? win.width / win.uiScale : 1080
+        height: win.height > 0 ? win.height / win.uiScale : 620
         scale: win.uiScale
         transformOrigin: Item.TopLeft
         // Dividido por la escala: las esquinas quedan del mismo radio que las de la pantalla
         radius: (Config.appearanceScreenCorners ? Config.appearanceScreenCornerRadius : 0) / win.uiScale
-        color: Theme.panelBg
+        // Translúcida: Hyprland desenfoca lo que hay detrás de la ventana, y eso se ve en la franja
+        // de la barra lateral. El contenido lleva su propio fondo opaco (contentBg).
+        // Mismo color y opacidad que el fondo de la terminal (ver win.terminalBg), para que el
+        // desenfoque se vea igual en las dos
+        color: Qt.rgba(win.terminalBg.r, win.terminalBg.g, win.terminalBg.b, win.terminalAlpha)
         border.width: 0
         border.color: Theme.divider
+
+        // Fondo opaco del contenido: de la barra lateral al borde derecho de la ventana
+        Rectangle {
+            id: contentBg
+            x: sidebar.x + sidebar.width + 8
+            width: parent.width - x
+            height: parent.height
+            // Del tono de las tarjetas pero más oscuro: se distinguen sin el contraste duro del negro
+            color: Qt.darker(Theme.panelCard, 1.7)
+            topRightRadius: parent.radius
+            bottomRightRadius: parent.radius
+        }
 
         focus: Overlay.settings
         // Al abrir, el foco en el buscador: ↑/↓ cambian de sección desde el primer momento
         // (con `focus: true` solo, al crearse la ventana a veces no lo recibía nadie)
         Component.onCompleted: {
+            Overlay.settingsRevealAll = false;
             if (Overlay.settingsIndex.length === 0)
                 win.buildIndex();
             Qt.callLater(() => searchInput.forceActiveFocus());
@@ -333,34 +432,26 @@ FloatingWindow {
         // ---------- Sidebar ----------
         Rectangle {
             id: sidebar
+            // Panel propio, algo más claro que el contenido y separado del borde de la ventana
             anchors.left: parent.left
             anchors.top: parent.top
             anchors.bottom: parent.bottom
-            anchors.topMargin: 18
-            anchors.bottomMargin: 18
-            width: 220
-            radius: parent.radius
-            color: Theme.panelBg
-            // Cuadra el borde derecho (tapa las esquinas redondeadas de ese lado)
-            Rectangle {
-                anchors.right: parent.right
-                anchors.top: parent.top
-                anchors.bottom: parent.bottom
-                width: 20
-                color: Theme.panelBg
-            }
+            anchors.margins: 8
+            width: 228
+            radius: 16
+            color: Qt.rgba(1, 1, 1, 0.06)
 
             Rectangle {
                 id: search
                 anchors.top: parent.top
                 anchors.left: parent.left
                 anchors.right: parent.right
-                anchors.leftMargin: 12
-                anchors.rightMargin: 12
-                anchors.topMargin: 0
-                height: 34
-                radius: Theme.radiusSmall
-                color: Theme.panelCard
+                anchors.leftMargin: 10
+                anchors.rightMargin: 10
+                anchors.topMargin: 12
+                height: 30
+                radius: 9
+                color: Qt.rgba(1, 1, 1, 0.07)
 
                 Text {
                     id: sIcon
@@ -398,8 +489,8 @@ FloatingWindow {
                     Keys.onEnterPressed: enterContent()
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
-                        text: "Search Settings"
-                        color: Theme.text
+                        text: "Search"
+                        color: Theme.secondaryText
                         font: parent.font
                         visible: parent.text.length === 0
                     }
@@ -407,17 +498,72 @@ FloatingWindow {
                 }
             }
 
-            ListView {
+            // Quién eres: foto (~/.face) y usuario
+            Item {
+                id: profileRow
                 anchors.top: search.bottom
                 anchors.left: parent.left
                 anchors.right: parent.right
+                anchors.topMargin: 10
+                anchors.leftMargin: 12
+                anchors.rightMargin: 12
+                height: 44
+                // El recorte redondo se dibuja al triple de tamaño y se reduce: a su tamaño real
+                // (38 px, y la ventana va ampliada) la foto salía borrosa
+                Item {
+                    id: profilePhoto
+                    width: 38
+                    height: 38
+                    anchors.verticalCenter: parent.verticalCenter
+                    ClippingRectangle {
+                        width: parent.width * 3
+                        height: parent.height * 3
+                        radius: width / 2
+                        scale: 1 / 3
+                        transformOrigin: Item.TopLeft
+                        color: Theme.panelCardHi
+                        FacePhoto {
+                            anchors.fill: parent
+                        }
+                    }
+                }
+                Column {
+                    anchors.left: profilePhoto.right
+                    anchors.leftMargin: 10
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 1
+                    Text {
+                        width: parent.width
+                        text: Quickshell.env("USER") || "user"
+                        color: "#ffffff"
+                        elide: Text.ElideRight
+                        font.family: Theme.bodyFontFamily
+                        font.pixelSize: Theme.fontPx(14)
+                        font.bold: true
+                    }
+                    Text {
+                        width: parent.width
+                        text: "Salchipapa Shell"
+                        color: Theme.secondaryText
+                        elide: Text.ElideRight
+                        font.family: Theme.bodyFontFamily
+                        font.pixelSize: Theme.fontPx(11)
+                    }
+                }
+            }
+
+            ListView {
+                anchors.top: profileRow.bottom
+                anchors.left: parent.left
+                anchors.right: parent.right
                 anchors.bottom: parent.bottom
-                anchors.topMargin: 6
+                anchors.topMargin: 10
                 anchors.leftMargin: 8
                 anchors.rightMargin: 8
                 anchors.bottomMargin: 8
                 clip: true
-                spacing: 2
+                spacing: 1
                 model: win.results
                 boundsBehavior: Flickable.StopAtBounds
                 currentIndex: win.query.trim() === "" ? win.category : win.sel
@@ -425,18 +571,38 @@ FloatingWindow {
                 onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
 
                 // Un ajuste se muestra con el icono de su sección y el nombre de la sección a la derecha
-                delegate: NavItem {
+                // Las secciones van en grupos: un hueco antes de la primera de cada uno (no al buscar)
+                delegate: Item {
+                    id: navSlot
                     required property int index
                     required property var modelData
+                    readonly property real gap: win.query.trim() === "" && win.groupStarts.includes(modelData.cat) ? 8 : 0
                     width: ListView.view.width
+                    height: navItem.height + gap
+                  NavItem {
+                    id: navItem
+                    readonly property int index: navSlot.index
+                    readonly property var modelData: navSlot.modelData
+                    y: navSlot.gap
+                    width: parent.width
+                    tint: win.categoryTints[modelData.cat] ?? Theme.overlay1
                     iconName: win.categories[modelData.cat].icon
                     label: modelData.setting || win.categories[modelData.cat].name
                     hint: modelData.setting ? win.categories[modelData.cat].name : ""
                     active: win.query.trim() === "" ? win.category === modelData.cat : win.sel === index
+                    // Con el ratón, elegir una sección solo la muestra: el foco se queda en el
+                    // buscador (si pasara al primer control, saldría marcado sin haberlo tocado).
+                    // Entrar a los controles con el teclado sigue siendo Enter.
                     onClicked: {
                         win.sel = index;
-                        win.openResult(modelData);
+                        if (modelData.setting === "") {
+                            win.category = modelData.cat;
+                            searchInput.forceActiveFocus();
+                        } else {
+                            win.openResult(modelData);
+                        }
                     }
+                  }
                 }
             }
         }
@@ -444,83 +610,91 @@ FloatingWindow {
         // ---------- Contenido ----------
         Item {
             id: content
-            anchors.left: sidebar.right
-            anchors.right: parent.right
+            // Ocupa lo que deja la barra lateral, hasta un ancho cómodo de leer: en una ventana muy
+            // grande se centra en vez de estirar las filas de lado a lado
+            readonly property real room: parent.width - sidebar.width - 36
+            width: Math.min(room, 1100)
+            x: sidebar.x + sidebar.width + 18 + (room - width) / 2
             anchors.top: parent.top
             anchors.bottom: parent.bottom
-            anchors.margins: 18
+            anchors.topMargin: 18
+            anchors.bottomMargin: 18
 
             readonly property var cat: win.categories[win.category]
 
             Row {
                 id: navArrows
-                anchors.top: parent.top
-                anchors.left: parent.left
-                spacing: 6
+                // Barra de herramientas: flechas de sección a la izquierda del título
+                z: 1
+                anchors.left: headerCard.left
+                anchors.verticalCenter: headerCard.verticalCenter
+                spacing: 4
+                // Sección anterior / siguiente
                 NavArrow {
                     glyph: "arrow_back"
+                    onClicked: win.stepCategory(-1)
                 }
                 NavArrow {
                     glyph: "arrow_forward"
+                    onClicked: win.stepCategory(1)
                 }
             }
 
-            // Header
-            Rectangle {
+            // Cabecera sin tarjeta: (flechas) + nombre de la sección y, debajo, su descripción
+            Item {
                 id: headerCard
-                anchors.top: navArrows.bottom
+                anchors.top: parent.top
                 anchors.left: parent.left
                 anchors.right: parent.right
-                anchors.topMargin: 10
-                height: 118
-                radius: 16
-                color: Theme.panelCard
+                height: 44
 
-                Rectangle {
-                    id: hIcon
-                    anchors.top: parent.top
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    anchors.topMargin: 14
-                    width: 50
-                    height: 50
-                    radius: 14
-                    color: Theme.panelCardHi
+                Column {
+                    anchors.left: parent.left
+                    anchors.leftMargin: 74 // las flechas
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 0
                     Text {
-                        anchors.centerIn: parent
-                        text: content.cat ? content.cat.icon : ""
-                        font.family: "Material Symbols Rounded"
-                        font.pixelSize: Theme.iconPx(26)
-                        font.weight: Theme.iconWeight
-                        color: Theme.green
+                        id: hTitle
+                        width: parent.width
+                        font.family: Theme.displayFontFamily
+                        text: content.cat ? content.cat.name : ""
+                        color: "#ffffff"
+                        font.pixelSize: Theme.fontPx(17)
+                        font.bold: true
+                        elide: Text.ElideRight
+                    }
+                    Text {
+                        width: parent.width
+                        font.family: Theme.bodyFontFamily
+                        text: content.cat ? content.cat.desc : ""
+                        color: Theme.secondaryText
+                        font.pixelSize: Theme.fontPx(11)
+                        elide: Text.ElideRight
                     }
                 }
-                Text {
-                    font.family: Theme.displayFontFamily
-                    id: hTitle
-                    anchors.top: hIcon.bottom
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    anchors.topMargin: 6
-                    text: content.cat ? content.cat.name : ""
-                    color: "#ffffff"
-                    font.pixelSize: Theme.fontPx(15)
-                    font.bold: true
-                }
-                Text {
-                    font.family: Theme.bodyFontFamily
-                    anchors.top: hTitle.bottom
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    anchors.topMargin: 2
-                    width: parent.width - 48
-                    horizontalAlignment: Text.AlignHCenter
-                    text: content.cat ? content.cat.desc : ""
-                    color: Theme.secondaryText
-                    font.pixelSize: Theme.fontPx(11)
-                    wrapMode: Text.Wrap
+            }
+
+            // Barra de desplazamiento: solo si hay más contenido del que cabe
+            Rectangle {
+                z: 2
+                visible: controlsFlick.contentHeight > controlsFlick.height + 1
+                anchors.right: parent.right
+                anchors.rightMargin: -11
+                y: controlsFlick.y + controlsFlick.visibleArea.yPosition * controlsFlick.height
+                width: 4
+                height: Math.max(24, controlsFlick.visibleArea.heightRatio * controlsFlick.height)
+                radius: 2
+                color: Theme.secondaryText
+                opacity: controlsFlick.moving ? 0.9 : 0.4
+                Behavior on opacity {
+                    NumberAnimation { duration: 200 }
                 }
             }
 
             // Controles (scroll)
             Flickable {
+                id: controlsFlick
                 anchors.top: headerCard.bottom
                 anchors.left: parent.left
                 anchors.right: parent.right
@@ -533,7 +707,11 @@ FloatingWindow {
                 Column {
                     id: controlsCol
                     width: parent.width
-                    spacing: Theme.space(3)
+                    // Las filas seguidas forman una sola tarjeta: 1 px entre ellas (deja ver el
+                    // fondo como línea divisoria) y esquinas redondeadas solo en los extremos
+                    spacing: 1
+                    onHeightChanged: regroupTimer.restart()
+                    Component.onCompleted: regroupTimer.restart()
 
                     // ---- Bar & Island ----
                     SectionTitle {
@@ -571,40 +749,26 @@ FloatingWindow {
                         checked: Config.islandCloseOnClickOutside
                         onToggled: Config.opt.islandCloseOnClickOutside = !Config.islandCloseOnClickOutside
                     }
-                    ToggleRow {
+                    SectionTitle {
                         visible: win.category === 1
-                        width: parent.width
-                        label: "Battery percentage"
-                        checked: Config.clockShowBatteryPercent
-                        onToggled: Config.opt.clockShowBatteryPercent = !Config.clockShowBatteryPercent
+                        text: "Indicators"
                     }
-                    ToggleRow {
+                    SettingChipsRow {
                         visible: win.category === 1
-                        width: parent.width
-                        label: "Now playing indicator"
-                        checked: Config.clockShowNowPlaying
-                        onToggled: Config.opt.clockShowNowPlaying = !Config.clockShowNowPlaying
+                        card: true
+                        label: "Show in the island"
+                        hint: "What appears next to the clock while the island is at rest."
+                        chips: [
+                            { label: "Battery percentage", key: "clockShowBatteryPercent" },
+                            { label: "Now playing", key: "clockShowNowPlaying" },
+                            { label: "Unread notifications", key: "clockShowUnreadNotifs" },
+                            { label: "Bluetooth", key: "clockShowBluetooth" },
+                            { label: "Downloads", key: "clockShowDownloads" }
+                        ]
                     }
-                    ToggleRow {
+                    SectionTitle {
                         visible: win.category === 1
-                        width: parent.width
-                        label: "Unread notifications"
-                        checked: Config.clockShowUnreadNotifs
-                        onToggled: Config.opt.clockShowUnreadNotifs = !Config.clockShowUnreadNotifs
-                    }
-                    ToggleRow {
-                        visible: win.category === 1
-                        width: parent.width
-                        label: "Bluetooth icon"
-                        checked: Config.clockShowBluetooth
-                        onToggled: Config.opt.clockShowBluetooth = !Config.clockShowBluetooth
-                    }
-                    ToggleRow {
-                        visible: win.category === 1
-                        width: parent.width
-                        label: "Downloads indicator"
-                        checked: Config.clockShowDownloads
-                        onToggled: Config.opt.clockShowDownloads = !Config.clockShowDownloads
+                        text: "Mascot"
                     }
                     ToggleRow {
                         visible: win.category === 1
@@ -734,12 +898,16 @@ FloatingWindow {
                             }
                         }
                     }
-                    SectionTitle {
+                    SubsectionRow {
                         visible: win.category === 1
-                        text: "Size"
+                        width: parent.width
+                        label: "Size & spacing"
+                        hint: "Island height, width, gaps and padding"
+                        open: win.openIslandSize || Overlay.settingsRevealAll
+                        onToggled: win.openIslandSize = !win.openIslandSize
                     }
                     PxSlider {
-                        visible: win.category === 1
+                        visible: win.category === 1 && (win.openIslandSize || Overlay.settingsRevealAll)
                         width: parent.width
                         label: "Bar height"
                         from: 20
@@ -748,7 +916,7 @@ FloatingWindow {
                         onMoved: v => Config.opt.barHeight = v
                     }
                     PxSlider {
-                        visible: win.category === 1
+                        visible: win.category === 1 && (win.openIslandSize || Overlay.settingsRevealAll)
                         width: parent.width
                         label: "Collapsed width"
                         from: 60
@@ -757,7 +925,7 @@ FloatingWindow {
                         onMoved: v => Config.opt.collapsedWidth = v
                     }
                     PxSlider {
-                        visible: win.category === 1
+                        visible: win.category === 1 && (win.openIslandSize || Overlay.settingsRevealAll)
                         width: parent.width
                         label: "Expanded height"
                         from: 120
@@ -766,7 +934,7 @@ FloatingWindow {
                         onMoved: v => Config.opt.expandedHeight = v
                     }
                     PxSlider {
-                        visible: win.category === 1
+                        visible: win.category === 1 && (win.openIslandSize || Overlay.settingsRevealAll)
                         width: parent.width
                         label: "Edge gap"
                         from: 0
@@ -775,7 +943,7 @@ FloatingWindow {
                         onMoved: v => Config.opt.gapFromEdge = v
                     }
                     PxSlider {
-                        visible: win.category === 1
+                        visible: win.category === 1 && (win.openIslandSize || Overlay.settingsRevealAll)
                         width: parent.width
                         label: "Inner padding"
                         from: 4
@@ -811,33 +979,16 @@ FloatingWindow {
                         visible: win.category === 4
                         text: "What to show"
                     }
-                    ToggleRow {
+                    SettingChipsRow {
                         visible: win.category === 4
-                        width: parent.width
-                        label: "Album line"
-                        checked: Config.mediaShowAlbum
-                        onToggled: Config.opt.mediaShowAlbum = !Config.mediaShowAlbum
-                    }
-                    ToggleRow {
-                        visible: win.category === 4
-                        width: parent.width
-                        label: "Artist line"
-                        checked: Config.mediaShowArtist
-                        onToggled: Config.opt.mediaShowArtist = !Config.mediaShowArtist
-                    }
-                    ToggleRow {
-                        visible: win.category === 4
-                        width: parent.width
-                        label: "Transport buttons"
-                        checked: Config.mediaShowControls
-                        onToggled: Config.opt.mediaShowControls = !Config.mediaShowControls
-                    }
-                    ToggleRow {
-                        visible: win.category === 4
-                        width: parent.width
-                        label: "Lyrics"
-                        checked: Config.mediaShowLyrics
-                        onToggled: Config.opt.mediaShowLyrics = !Config.mediaShowLyrics
+                        card: true
+                        label: "Show in the media card"
+                        chips: [
+                            { label: "Album", key: "mediaShowAlbum" },
+                            { label: "Artist", key: "mediaShowArtist" },
+                            { label: "Playback buttons", key: "mediaShowControls" },
+                            { label: "Lyrics", key: "mediaShowLyrics" }
+                        ]
                     }
                     ToggleRow {
                         visible: win.category === 4
@@ -852,72 +1003,48 @@ FloatingWindow {
                         visible: win.category === 7
                         text: "Bar clock"
                     }
-                    ToggleRow {
+                    SettingChipsRow {
                         visible: win.category === 7
-                        width: parent.width
-                        label: "24-hour time"
-                        checked: Config.clock24Hour
-                        onToggled: Config.opt.clock24Hour = !Config.clock24Hour
-                    }
-                    ToggleRow {
-                        visible: win.category === 7
-                        width: parent.width
-                        label: "Show seconds"
-                        checked: Config.clockShowSeconds
-                        onToggled: Config.opt.clockShowSeconds = !Config.clockShowSeconds
-                    }
-                    ToggleRow {
-                        visible: win.category === 7
-                        width: parent.width
-                        label: "Workspace dots"
-                        checked: Config.clockShowWorkspaceDots
-                        onToggled: Config.opt.clockShowWorkspaceDots = !Config.clockShowWorkspaceDots
-                    }
-                    ToggleRow {
-                        visible: win.category === 7
-                        width: parent.width
-                        label: "Battery & Wi-Fi"
-                        checked: Config.clockShowBatteryWifi
-                        onToggled: Config.opt.clockShowBatteryWifi = !Config.clockShowBatteryWifi
+                        card: true
+                        label: "Clock in the island"
+                        hint: "What the island shows at rest, around the time."
+                        chips: [
+                            { label: "24-hour time", key: "clock24Hour" },
+                            { label: "Seconds", key: "clockShowSeconds" },
+                            { label: "Workspace dots", key: "clockShowWorkspaceDots" },
+                            { label: "Battery & Wi-Fi", key: "clockShowBatteryWifi" }
+                        ]
                     }
                     SectionTitle {
                         visible: win.category === 7
                         text: "Expanded island"
                     }
-                    ToggleRow {
+                    SettingChipsRow {
                         visible: win.category === 7
-                        width: parent.width
-                        label: "Workspaces on the left"
-                        checked: Config.clockExpandedWorkspaces
-                        onToggled: Config.opt.clockExpandedWorkspaces = !Config.clockExpandedWorkspaces
-                    }
-                    ToggleRow {
-                        visible: win.category === 7
-                        width: parent.width
-                        label: "Status on the right"
-                        checked: Config.clockExpandedStatus
-                        onToggled: Config.opt.clockExpandedStatus = !Config.clockExpandedStatus
-                    }
-                    ToggleRow {
-                        visible: win.category === 7
-                        width: parent.width
-                        label: "Media card"
-                        checked: Config.clockExpandedMedia
-                        onToggled: Config.opt.clockExpandedMedia = !Config.clockExpandedMedia
+                        card: true
+                        label: "When you hover the island"
+                        hint: "What the expanded island adds."
+                        chips: [
+                            { label: "Workspaces", key: "clockExpandedWorkspaces" },
+                            { label: "Status", key: "clockExpandedStatus" },
+                            { label: "Media card", key: "clockExpandedMedia" }
+                        ]
                     }
                     SectionTitle {
                         visible: win.category === 7
                         text: "Calendar"
                     }
-                    PxSlider {
+                    ChoiceRow {
                         visible: win.category === 7
                         width: parent.width
                         label: "Week starts on"
-                        from: 0
-                        to: 6
-                        unit: ""
-                        value: Config.clockWeekStart
-                        onMoved: v => Config.opt.clockWeekStart = v
+                        options: [
+                            { value: "0", label: "Sun" }, { value: "1", label: "Mon" }, { value: "2", label: "Tue" },
+                            { value: "3", label: "Wed" }, { value: "4", label: "Thu" }, { value: "5", label: "Fri" },
+                            { value: "6", label: "Sat" }
+                        ]
+                        current: "" + Config.clockWeekStart
+                        onPicked: value => Config.opt.clockWeekStart = parseInt(value)
                     }
                     PxSlider {
                         visible: win.category === 7
@@ -1536,45 +1663,57 @@ FloatingWindow {
                         }
                     }
 
-                    SectionTitle {
+                    SubsectionRow {
                         visible: win.category === 0
-                        text: "Shape & depth"
+                        width: parent.width
+                        label: "Shape & spacing"
+                        hint: "Spacing, corner radius and icon size"
+                        open: win.openShape || Overlay.settingsRevealAll
+                        onToggled: win.openShape = !win.openShape
                     }
-                    PxSlider { visible: win.category === 0; width: parent.width; label: "Spacing"; from: 2; to: 8; value: Config.appearanceSpacingUnit; unit: "%"; divisor: 0.04; onMoved: v => Config.opt.appearanceSpacingUnit = v }
-                    PxSlider { visible: win.category === 0; width: parent.width; label: "Small radius"; from: 0; to: 24; value: Config.appearanceSmallRadius; onMoved: v => Config.opt.appearanceSmallRadius = v }
-                    PxSlider { visible: win.category === 0; width: parent.width; label: "Medium radius"; from: 0; to: 32; value: Config.appearanceMediumRadius; onMoved: v => Config.opt.appearanceMediumRadius = v }
-                    PxSlider { visible: win.category === 0; width: parent.width; label: "Large radius"; from: 0; to: 40; value: Config.appearanceLargeRadius; onMoved: v => Config.opt.appearanceLargeRadius = v }
+                    PxSlider { visible: win.category === 0 && (win.openShape || Overlay.settingsRevealAll); width: parent.width; label: "Spacing"; from: 2; to: 8; value: Config.appearanceSpacingUnit; unit: "%"; divisor: 0.04; onMoved: v => Config.opt.appearanceSpacingUnit = v }
+                    PxSlider { visible: win.category === 0 && (win.openShape || Overlay.settingsRevealAll); width: parent.width; label: "Small radius"; from: 0; to: 24; value: Config.appearanceSmallRadius; onMoved: v => Config.opt.appearanceSmallRadius = v }
+                    PxSlider { visible: win.category === 0 && (win.openShape || Overlay.settingsRevealAll); width: parent.width; label: "Medium radius"; from: 0; to: 32; value: Config.appearanceMediumRadius; onMoved: v => Config.opt.appearanceMediumRadius = v }
+                    PxSlider { visible: win.category === 0 && (win.openShape || Overlay.settingsRevealAll); width: parent.width; label: "Large radius"; from: 0; to: 40; value: Config.appearanceLargeRadius; onMoved: v => Config.opt.appearanceLargeRadius = v }
                     ToggleRow {
-                        visible: win.category === 0
+                        visible: win.category === 0 && (win.openShape || Overlay.settingsRevealAll)
                         width: parent.width
                         label: "Screen corners"
                         checked: Config.appearanceScreenCorners
                         onToggled: Config.opt.appearanceScreenCorners = !Config.appearanceScreenCorners
                     }
-                    PxSlider { visible: win.category === 0 && Config.appearanceScreenCorners; width: parent.width; label: "Screen corner radius"; from: 0; to: 32; value: Config.appearanceScreenCornerRadius; onMoved: v => Config.opt.appearanceScreenCornerRadius = v }
-                    PxSlider { visible: win.category === 0; width: parent.width; label: "Icon size"; from: 12; to: 32; value: Config.appearanceIconSize; unit: "%"; divisor: 0.18; onMoved: v => Config.opt.appearanceIconSize = v }
-                    PxSlider { visible: win.category === 0; width: parent.width; label: "Icon stroke"; from: 1; to: 20; value: Config.appearanceIconStroke; unit: ""; onMoved: v => Config.opt.appearanceIconStroke = v }
+                    PxSlider { visible: win.category === 0 && (win.openShape || Overlay.settingsRevealAll) && Config.appearanceScreenCorners; width: parent.width; label: "Screen corner radius"; from: 0; to: 32; value: Config.appearanceScreenCornerRadius; onMoved: v => Config.opt.appearanceScreenCornerRadius = v }
+                    PxSlider { visible: win.category === 0 && (win.openShape || Overlay.settingsRevealAll); width: parent.width; label: "Icon size"; from: 12; to: 32; value: Config.appearanceIconSize; unit: "%"; divisor: 0.18; onMoved: v => Config.opt.appearanceIconSize = v }
+                    PxSlider { visible: win.category === 0 && (win.openShape || Overlay.settingsRevealAll); width: parent.width; label: "Icon stroke"; from: 1; to: 20; value: Config.appearanceIconStroke; unit: ""; onMoved: v => Config.opt.appearanceIconStroke = v }
 
-                    SectionTitle {
+                    SubsectionRow {
                         visible: win.category === 0
-                        text: "Surfaces & ink"
+                        width: parent.width
+                        label: "Surfaces & text contrast"
+                        hint: "How strong cards, dividers, hover and secondary text look"
+                        open: win.openSurfaces || Overlay.settingsRevealAll
+                        onToggled: win.openSurfaces = !win.openSurfaces
                     }
-                    PxSlider { visible: win.category === 0; width: parent.width; label: "Surface lift"; from: 0; to: 20; value: Config.appearanceSurfaceLift; unit: "%"; onMoved: v => Config.opt.appearanceSurfaceLift = v }
-                    PxSlider { visible: win.category === 0; width: parent.width; label: "Divider strength"; from: 0; to: 100; value: Config.appearanceDividerStrength; unit: "%"; onMoved: v => Config.opt.appearanceDividerStrength = v }
-                    PxSlider { visible: win.category === 0; width: parent.width; label: "Secondary text"; from: 0; to: 100; value: Config.appearanceSecondaryText; unit: "%"; onMoved: v => Config.opt.appearanceSecondaryText = v }
-                    PxSlider { visible: win.category === 0; width: parent.width; label: "Tertiary text"; from: 0; to: 100; value: Config.appearanceTertiaryText; unit: "%"; onMoved: v => Config.opt.appearanceTertiaryText = v }
-                    PxSlider { visible: win.category === 0; width: parent.width; label: "Hover fill"; from: 0; to: 30; value: Config.appearanceHoverFill; unit: "%"; onMoved: v => Config.opt.appearanceHoverFill = v }
-                    PxSlider { visible: win.category === 0; width: parent.width; label: "Selected fill"; from: 0; to: 30; value: Config.appearanceSelectedFill; unit: "%"; onMoved: v => Config.opt.appearanceSelectedFill = v }
-                    PxSlider { visible: win.category === 0; width: parent.width; label: "Modal dim"; from: 0; to: 90; value: Config.appearanceModalDim; unit: "%"; onMoved: v => Config.opt.appearanceModalDim = v }
+                    PxSlider { visible: win.category === 0 && (win.openSurfaces || Overlay.settingsRevealAll); width: parent.width; label: "Surface lift"; from: 0; to: 20; value: Config.appearanceSurfaceLift; unit: "%"; onMoved: v => Config.opt.appearanceSurfaceLift = v }
+                    PxSlider { visible: win.category === 0 && (win.openSurfaces || Overlay.settingsRevealAll); width: parent.width; label: "Divider strength"; from: 0; to: 100; value: Config.appearanceDividerStrength; unit: "%"; onMoved: v => Config.opt.appearanceDividerStrength = v }
+                    PxSlider { visible: win.category === 0 && (win.openSurfaces || Overlay.settingsRevealAll); width: parent.width; label: "Secondary text"; from: 0; to: 100; value: Config.appearanceSecondaryText; unit: "%"; onMoved: v => Config.opt.appearanceSecondaryText = v }
+                    PxSlider { visible: win.category === 0 && (win.openSurfaces || Overlay.settingsRevealAll); width: parent.width; label: "Tertiary text"; from: 0; to: 100; value: Config.appearanceTertiaryText; unit: "%"; onMoved: v => Config.opt.appearanceTertiaryText = v }
+                    PxSlider { visible: win.category === 0 && (win.openSurfaces || Overlay.settingsRevealAll); width: parent.width; label: "Hover fill"; from: 0; to: 30; value: Config.appearanceHoverFill; unit: "%"; onMoved: v => Config.opt.appearanceHoverFill = v }
+                    PxSlider { visible: win.category === 0 && (win.openSurfaces || Overlay.settingsRevealAll); width: parent.width; label: "Selected fill"; from: 0; to: 30; value: Config.appearanceSelectedFill; unit: "%"; onMoved: v => Config.opt.appearanceSelectedFill = v }
+                    PxSlider { visible: win.category === 0 && (win.openSurfaces || Overlay.settingsRevealAll); width: parent.width; label: "Modal dim"; from: 0; to: 90; value: Config.appearanceModalDim; unit: "%"; onMoved: v => Config.opt.appearanceModalDim = v }
 
-                    SectionTitle {
+                    SubsectionRow {
                         visible: win.category === 0
-                        text: "Shadow"
+                        width: parent.width
+                        label: "Window shadow"
+                        hint: "Opacity, blur, offset and spread"
+                        open: win.openShadow || Overlay.settingsRevealAll
+                        onToggled: win.openShadow = !win.openShadow
                     }
-                    PxSlider { visible: win.category === 0; width: parent.width; label: "Opacity"; from: 0; to: 100; value: Config.appearanceShadowOpacity; unit: "%"; onMoved: v => { Config.opt.appearanceShadowOpacity = v; WindowShadowSync.scheduleSync(); } }
-                    PxSlider { visible: win.category === 0; width: parent.width; label: "Blur"; from: 0; to: 100; value: Config.appearanceShadowBlur; unit: "%"; onMoved: v => { Config.opt.appearanceShadowBlur = v; WindowShadowSync.scheduleSync(); } }
-                    PxSlider { visible: win.category === 0; width: parent.width; label: "Vertical offset"; from: 0; to: 30; value: Config.appearanceShadowOffset; onMoved: v => { Config.opt.appearanceShadowOffset = v; WindowShadowSync.scheduleSync(); } }
-                    PxSlider { visible: win.category === 0; width: parent.width; label: "Spread"; from: 0; to: 450; value: Config.appearanceShadowSpread; onMoved: v => { Config.opt.appearanceShadowSpread = v; WindowShadowSync.scheduleSync(); } }
+                    PxSlider { visible: win.category === 0 && (win.openShadow || Overlay.settingsRevealAll); width: parent.width; label: "Opacity"; from: 0; to: 100; value: Config.appearanceShadowOpacity; unit: "%"; onMoved: v => { Config.opt.appearanceShadowOpacity = v; WindowShadowSync.scheduleSync(); } }
+                    PxSlider { visible: win.category === 0 && (win.openShadow || Overlay.settingsRevealAll); width: parent.width; label: "Blur"; from: 0; to: 100; value: Config.appearanceShadowBlur; unit: "%"; onMoved: v => { Config.opt.appearanceShadowBlur = v; WindowShadowSync.scheduleSync(); } }
+                    PxSlider { visible: win.category === 0 && (win.openShadow || Overlay.settingsRevealAll); width: parent.width; label: "Vertical offset"; from: 0; to: 30; value: Config.appearanceShadowOffset; onMoved: v => { Config.opt.appearanceShadowOffset = v; WindowShadowSync.scheduleSync(); } }
+                    PxSlider { visible: win.category === 0 && (win.openShadow || Overlay.settingsRevealAll); width: parent.width; label: "Spread"; from: 0; to: 450; value: Config.appearanceShadowSpread; onMoved: v => { Config.opt.appearanceShadowSpread = v; WindowShadowSync.scheduleSync(); } }
                     SectionTitle {
                         visible: win.category === 0
                         text: "Wallpaper"
@@ -1607,33 +1746,35 @@ FloatingWindow {
         property string label: ""
         property string hint: ""
         property bool active: false
+        property color tint: Theme.overlay1
         signal clicked
 
-        height: 40
-        radius: Theme.radiusMedium
-        color: active ? Theme.panelCard : (navMouse.containsMouse ? Qt.tint(Theme.panelCard, Theme.hoverFill) : "transparent")
+        height: 32
+        radius: 9
+        color: active ? Theme.green : (navMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.07) : "transparent")
         Behavior on color {
             ColorAnimation {
                 duration: Theme.hoverDuration
             }
         }
 
+        // Icono en un círculo neutro (más oscuro sobre la fila elegida)
         Rectangle {
             id: ic
             anchors.left: parent.left
-            anchors.leftMargin: 8
+            anchors.leftMargin: 6
             anchors.verticalCenter: parent.verticalCenter
-            width: 26
-            height: 26
-            radius: 13
-            color: nav.active ? Theme.green : Theme.panelCardHi
+            width: 22
+            height: 22
+            radius: 11
+            color: nav.active ? Qt.rgba(0, 0, 0, 0.16) : Theme.panelCardHi
             Text {
                 anchors.centerIn: parent
                 text: nav.iconName
                 font.family: "Material Symbols Rounded"
                 font.pixelSize: Theme.iconPx(15)
                 font.weight: Theme.iconWeight
-                color: nav.active ? Theme.islandBg : Theme.secondaryText
+                color: nav.active ? Theme.crust : Theme.secondaryText
             }
         }
         Text {
@@ -1644,19 +1785,19 @@ FloatingWindow {
             anchors.rightMargin: 6
             anchors.verticalCenter: parent.verticalCenter
             text: nav.label
-            color: nav.active ? "#ffffff" : Theme.text
-            font.pixelSize: Theme.fontPx(nav.hint !== "" ? 13 : 15)
+            color: nav.active ? Theme.crust : Theme.text
+            font.pixelSize: Theme.fontPx(13)
             font.bold: nav.active
             elide: Text.ElideRight
         }
         Text {
             id: hintText
             anchors.right: parent.right
-            anchors.rightMargin: 10
+            anchors.rightMargin: 8
             anchors.verticalCenter: parent.verticalCenter
             width: nav.hint !== "" ? Math.min(implicitWidth, 80) : 0
             text: nav.hint
-            color: Theme.tertiaryText
+            color: nav.active ? Theme.crust : Theme.tertiaryText
             font.family: Theme.bodyFontFamily
             font.pixelSize: Theme.fontPx(10)
             elide: Text.ElideRight
@@ -1667,6 +1808,77 @@ FloatingWindow {
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             onClicked: nav.clicked()
+        }
+    }
+
+    // Cabecera de una subsección desplegable: título, resumen y flecha; al pulsarla aparecen debajo
+    // sus ajustes (las filas que la siguen, con `win.open…` en su `visible`)
+    component SubsectionRow: Rectangle {
+        id: sub
+        property string label: ""
+        property string hint: ""
+        property bool open: false
+        signal toggled
+
+        height: 58
+        radius: Theme.radiusMedium
+        color: subMouse.containsMouse ? Qt.tint(Theme.panelCard, Theme.hoverFill) : Theme.panelCard
+        border.width: activeFocus ? 2 : 0
+        border.color: Theme.green
+
+        activeFocusOnTab: true
+        onActiveFocusChanged: if (activeFocus) KeyNav.ensureVisible(sub)
+        Keys.onUpPressed: KeyNav.move(sub, false)
+        Keys.onDownPressed: KeyNav.move(sub, true)
+        Keys.onSpacePressed: sub.toggled()
+        Keys.onReturnPressed: sub.toggled()
+        Keys.onEnterPressed: sub.toggled()
+
+        Column {
+            anchors.left: parent.left
+            anchors.leftMargin: 16
+            anchors.right: chevron.left
+            anchors.rightMargin: 12
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 2
+            Text {
+                width: parent.width
+                text: sub.label
+                color: "#ffffff"
+                elide: Text.ElideRight
+                font.family: Theme.bodyFontFamily
+                font.pixelSize: Theme.fontPx(14)
+            }
+            Text {
+                width: parent.width
+                visible: sub.hint !== ""
+                text: sub.hint
+                color: Theme.secondaryText
+                elide: Text.ElideRight
+                font.family: Theme.bodyFontFamily
+                font.pixelSize: Theme.fontPx(11)
+            }
+        }
+        Text {
+            id: chevron
+            anchors.right: parent.right
+            anchors.rightMargin: 14
+            anchors.verticalCenter: parent.verticalCenter
+            text: "chevron_right"
+            color: Theme.secondaryText
+            font.family: "Material Symbols Rounded"
+            font.pixelSize: Theme.iconPx(20)
+            rotation: sub.open ? 90 : 0
+            Behavior on rotation {
+                NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
+            }
+        }
+        MouseArea {
+            id: subMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: sub.toggled()
         }
     }
 
@@ -1903,16 +2115,15 @@ FloatingWindow {
             color: "#ffffff"
             font.pixelSize: Theme.fontPx(14)
         }
-        Text {
-            font.family: Theme.bodyFontFamily
+        // Valor con − / + para ajustarlo de `snap` en `snap`
+        SliderStepper {
             anchors.top: parent.top
             anchors.right: parent.right
-            anchors.topMargin: 12
-            anchors.rightMargin: 14
+            anchors.topMargin: 7
+            anchors.rightMargin: 10
             readonly property real shown: Number((ps.value / ps.divisor).toFixed(ps.decimals))
             text: ps.unit === "" ? ("" + shown) : ps.unit === "%" ? (shown + "%") : (shown + " " + ps.unit)
-            color: Theme.secondaryText
-            font.pixelSize: Theme.fontPx(13)
+            onStep: dir => ps.nudge(dir, true)
         }
 
         Rectangle {
@@ -1923,8 +2134,8 @@ FloatingWindow {
             anchors.rightMargin: 14
             anchors.top: pl.bottom
             anchors.topMargin: 12
-            height: 4
-            radius: 2
+            height: 6
+            radius: 3
             color: Theme.panelCardHi
 
             Rectangle {
@@ -1932,15 +2143,17 @@ FloatingWindow {
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
                 height: parent.height
-                radius: 2
+                radius: 3
                 width: parent.width * (ps.value - ps.from) / Math.max(1, ps.to - ps.from)
                 color: Theme.green
             }
             Rectangle {
-                width: 14
-                height: 14
-                radius: 7
+                width: 18
+                height: 18
+                radius: 9
                 color: "#ffffff"
+                border.width: 3
+                border.color: Theme.green
                 anchors.verticalCenter: parent.verticalCenter
                 x: Math.max(0, Math.min(track.width - width, fillr.width - width / 2))
             }

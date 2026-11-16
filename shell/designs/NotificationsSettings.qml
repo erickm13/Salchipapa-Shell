@@ -15,7 +15,36 @@ Item {
         spacing: Theme.space(4)
 
         SettingGroup {
-            title: "Popups & history"
+            title: "Popups"
+            width: parent.width
+            SettingToggleRow {
+                label: "Queue hidden notifications"
+                sublabel: "Ones in the +N badge move up when the visible ones leave"
+                checked: Config.opt.notificationQueueHidden
+                onToggled: Config.opt.notificationQueueHidden = !Config.opt.notificationQueueHidden
+            }
+            SettingToggleRow {
+                label: "Show time left"
+                sublabel: "Bar under the notification that empties until it hides"
+                checked: Config.opt.notificationTimeoutBar
+                onToggled: Config.opt.notificationTimeoutBar = !Config.opt.notificationTimeoutBar
+            }
+            SettingToggleRow {
+                label: "Show body text"
+                checked: Config.opt.notificationShowBody
+                onToggled: Config.opt.notificationShowBody = !Config.opt.notificationShowBody
+            }
+            SettingToggleRow {
+                label: "Play sound"
+                checked: Config.opt.notificationSound
+                onToggled: Config.opt.notificationSound = !Config.opt.notificationSound
+            }
+        }
+
+        SettingGroup {
+            title: "Timing & size"
+            hint: "How long popups stay, how wide they are and how many show at once"
+            collapsible: true
             width: parent.width
             SettingSliderRow {
                 label: "Popup timeout"
@@ -43,11 +72,16 @@ Item {
                 from: 1; to: 3
                 onMoved: v => Config.opt.notificationMaxVisible = v
             }
+        }
+
+        SettingGroup {
+            title: "Alerts"
+            width: parent.width
             SettingToggleRow {
-                label: "Queue hidden notifications"
-                sublabel: "Ones in the +N badge move up when the visible ones leave"
-                checked: Config.opt.notificationQueueHidden
-                onToggled: Config.opt.notificationQueueHidden = !Config.opt.notificationQueueHidden
+                label: "Finished downloads"
+                sublabel: "Notify when a new file finishes downloading"
+                checked: Config.opt.notificationDownloads
+                onToggled: Config.opt.notificationDownloads = !Config.opt.notificationDownloads
             }
             SettingSliderRow {
                 label: "Wait for progress (0 = off)"
@@ -55,12 +89,6 @@ Item {
                 from: 0; to: 120; unit: " s"
                 snap: 5
                 onMoved: v => Config.opt.notificationProgressWait = v
-            }
-            SettingToggleRow {
-                label: "Finished downloads"
-                sublabel: "Notify when a new file finishes downloading"
-                checked: Config.opt.notificationDownloads
-                onToggled: Config.opt.notificationDownloads = !Config.opt.notificationDownloads
             }
             SettingToggleRow {
                 visible: Battery.available
@@ -86,22 +114,13 @@ Item {
                 enabled: Config.opt.notificationBatteryLow
                 onMoved: v => Config.opt.notificationBatteryCriticalPercent = v
             }
-            SettingToggleRow {
-                label: "Show time left"
-                sublabel: "Bar under the notification that empties until it hides"
-                checked: Config.opt.notificationTimeoutBar
-                onToggled: Config.opt.notificationTimeoutBar = !Config.opt.notificationTimeoutBar
-            }
-            SettingToggleRow {
-                label: "Show body text"
-                checked: Config.opt.notificationShowBody
-                onToggled: Config.opt.notificationShowBody = !Config.opt.notificationShowBody
-            }
-            SettingToggleRow {
-                label: "Play sound"
-                checked: Config.opt.notificationSound
-                onToggled: Config.opt.notificationSound = !Config.opt.notificationSound
-            }
+        }
+
+        SettingGroup {
+            title: "History"
+            hint: "Height of the history list in the control center"
+            collapsible: true
+            width: parent.width
             SettingSliderRow {
                 label: "History height"
                 value: Config.opt.notificationHistoryHeight
@@ -111,7 +130,9 @@ Item {
         }
 
         SettingGroup {
-            title: "Volume & brightness"
+            title: "Volume & brightness popup"
+            hint: "How long it stays and how thick the bar is"
+            collapsible: true
             width: parent.width
             SettingSliderRow {
                 label: "Duration"
