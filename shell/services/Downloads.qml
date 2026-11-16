@@ -40,6 +40,33 @@ Singleton {
         }
         known = seen;
         scanned = true;
+        let temps = 0;
+        for (let i = 0; i < model.count; i++)
+            if (isTemp(model.get(i, "fileName")))
+                temps++;
+        tempCount = temps;
+        if (temps === 0)
+            activeCount = 0;
+    }
+
+    // Descargas en curso, para el indicador de la isla. Un temporal puede quedarse huérfano si se
+    // cancela la descarga, así que solo cuentan los que se han escrito en los últimos 20 s; eso no
+    // cambia el listado de la carpeta, por lo que se consulta con find mientras haya temporales.
+    property int tempCount: 0
+    property int activeCount: 0
+    Timer {
+        interval: 3000
+        repeat: true
+        triggeredOnStart: true
+        running: root.tempCount > 0 && root.dir !== ""
+        onTriggered: activeProc.running = true
+    }
+    Process {
+        id: activeProc
+        command: ["find", root.dir, "-maxdepth", "1", "-type", "f", "(", "-name", "*.part", "-o", "-name", "*.crdownload", ")", "-newermt", "-20 seconds"]
+        stdout: StdioCollector {
+            onStreamFinished: root.activeCount = root.tempCount > 0 ? text.split("\n").filter(l => l !== "").length : 0
+        }
     }
 
     property var pending: []

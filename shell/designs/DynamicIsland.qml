@@ -55,7 +55,7 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.keyboardFocus: (Overlay.mode !== "" || island.showPolkit || island.notifReplying) ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
     // -10: Hyprland ya deja 10 px de gaps_out arriba (lua/general.lua)
-    exclusiveZone: Math.max(0, 34 + Config.topMargin - 10)
+    exclusiveZone: Math.max(0, Config.barHeight + 4 + Config.topMargin - 10)
 
     // Solo la píldora captura el ratón; el resto deja pasar los clics (salvo con catchOutside)
     mask: Region {
@@ -108,6 +108,13 @@ PanelWindow {
         // Nivel con battery_android_* (están en la fuente del sistema y en la de la shell); al cargar
         // se añade un rayo al lado. Los battery_charging_*_2 solo existen en la fuente nueva y, como
         // las dos se llaman igual, tras reiniciar qs a veces se usaba la del sistema y salía "_2".
+        // El contenido en reposo crece con el alto de la barra (Ajustes > Bar height); 30 = tamaño base
+        readonly property real idleScale: Config.barHeight / 30
+        function s(v: real): int {
+            return Math.round(v * idleScale);
+        }
+        // Batería baja y sin cargar: en rojo
+        readonly property color batteryColor: Battery.percent <= 20 && !Battery.charging ? Theme.red : Theme.green
         readonly property string batteryGlyph: Battery.percent >= 95 ? "battery_android_full" : Battery.percent >= 80 ? "battery_android_6" : Battery.percent >= 65 ? "battery_android_5" : Battery.percent >= 50 ? "battery_android_4" : Battery.percent >= 35 ? "battery_android_3" : Battery.percent >= 20 ? "battery_android_2" : Battery.percent >= 5 ? "battery_android_1" : "battery_android_0"
         readonly property string networkGlyph: Net.type === "ethernet" ? "lan" : Net.type === "wifi" ? (Net.wifiSignal >= 80 ? "signal_wifi_4_bar" : Net.wifiSignal >= 60 ? "network_wifi_3_bar" : Net.wifiSignal >= 35 ? "network_wifi_2_bar" : Net.wifiSignal >= 10 ? "network_wifi_1_bar" : "signal_wifi_0_bar") : "wifi_off"
 
@@ -610,6 +617,8 @@ PanelWindow {
                 Item {
                     id: idleRow
                     anchors.fill: parent
+                    // En notch la isla sube 2 px fuera de la pantalla: compensarlo para centrar el contenido
+                    anchors.topMargin: Config.notchMode ? 2 : 0
                     // Reserva espacio simétrico según el lateral más ancho para que los
                     // scratchpads (p. ej. Spotify) no queden debajo del reloj centrado.
                     implicitWidth: Math.max(leftStatus.implicitWidth, rightStatus.implicitWidth) * 2 + idleClock.contentWidth + 100 - Config.innerPadding * 2
@@ -618,7 +627,7 @@ PanelWindow {
                     Row {
                         id: leftStatus
                         anchors.left: parent.left
-                        anchors.leftMargin: 16
+                        anchors.leftMargin: island.s(16)
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 4
                         visible: !Quick.gameMode
@@ -629,7 +638,7 @@ PanelWindow {
                             anchors.verticalCenter: parent.verticalCenter
                             text: "keyboard"
                             font.family: "Material Symbols Rounded"
-                            font.pixelSize: Theme.fontPx(15)
+                            font.pixelSize: Theme.fontPx(island.s(15))
                             color: Theme.red
                         }
 
@@ -640,9 +649,9 @@ PanelWindow {
                             anchors.verticalCenter: parent.verticalCenter
                             Rectangle {
                                 id: recDot
-                                width: 8
-                                height: 8
-                                radius: 4
+                                width: island.s(8)
+                                height: island.s(8)
+                                radius: width / 2
                                 anchors.verticalCenter: parent.verticalCenter
                                 color: Recorder.paused ? Theme.yellow : Theme.red
                                 SequentialAnimation on opacity {
@@ -657,15 +666,15 @@ PanelWindow {
                                 text: Recorder.elapsedText
                                 color: Recorder.paused ? Theme.yellow : Theme.red
                                 font.family: Theme.bodyFontFamily
-                                font.pixelSize: Theme.fontPx(11)
+                                font.pixelSize: Theme.fontPx(island.s(11))
                                 font.bold: true
                                 anchors.verticalCenter: parent.verticalCenter
                             }
                         }
 
                         WsRow {
-                            barWidth: 7
-                            baseLen: 7
+                            barWidth: island.s(7)
+                            baseLen: island.s(7)
                             anchors.verticalCenter: parent.verticalCenter
                             visible: Config.clockShowWorkspaceDots && !island.inSpecial // ocultar ws normales si estás en un scratchpad
                             layer.enabled: Config.notchMode && !Config.gameMode
@@ -680,14 +689,14 @@ PanelWindow {
                         }
                         // Scratchpads con ventanas; el activo se resalta al mostrarse.
                         SpecialRow {
-                            cell: 22
+                            cell: island.s(22)
                             anchors.verticalCenter: parent.verticalCenter
                             visible: island.inSpecial
                         }
                         Rectangle {
-                            width: 7
-                            height: 7
-                            radius: 4
+                            width: island.s(7)
+                            height: island.s(7)
+                            radius: width / 2
                             anchors.verticalCenter: parent.verticalCenter
                             color: Theme.red
                             visible: Audio.micMuted
@@ -701,6 +710,68 @@ PanelWindow {
                                 autoPaddingEnabled: true
                             }
                         }
+
+                        // Suena música: barritas que suben y bajan (decorativas, no leen el audio)
+                        Item {
+                            visible: Config.clockShowNowPlaying && Media.isPlaying
+                            width: playingBars.width + island.s(6)
+                            height: island.s(14)
+                            anchors.verticalCenter: parent.verticalCenter
+                            Row {
+                                id: playingBars
+                                anchors.right: parent.right
+                                height: parent.height
+                                spacing: island.s(2)
+                                Repeater {
+                                    model: [
+                                        { lo: 0.35, hi: 1.0, ms: 420 },
+                                        { lo: 0.25, hi: 0.8, ms: 560 },
+                                        { lo: 0.45, hi: 1.0, ms: 340 },
+                                        { lo: 0.3, hi: 0.7, ms: 480 }
+                                    ]
+                                    delegate: Rectangle {
+                                        id: playBar
+                                        required property var modelData
+                                        width: island.s(3)
+                                        radius: width / 2
+                                        color: Theme.green
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        height: parent.height * modelData.hi * 0.7
+                                        SequentialAnimation on height {
+                                            running: playBar.visible && Config.clockShowNowPlaying && Media.isPlaying && island.mode === "idle" && !Theme.reduceMotion
+                                            loops: Animation.Infinite
+                                            NumberAnimation { to: playBar.parent.height * playBar.modelData.lo; duration: playBar.modelData.ms; easing.type: Easing.InOutSine }
+                                            NumberAnimation { to: playBar.parent.height * playBar.modelData.hi; duration: playBar.modelData.ms; easing.type: Easing.InOutSine }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        // ...y el título de lo que suena; si no cabe, se desplaza en bucle
+                        MarqueeText {
+                            visible: Config.clockShowNowPlaying && Media.isPlaying && Media.title !== ""
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: Math.min(contentWidth, island.s(110))
+                            text: Media.title
+                            color: Theme.green
+                            font.family: Theme.bodyFontFamily
+                            font.pixelSize: Theme.fontPx(island.s(11))
+                            font.bold: false
+                            font.weight: 600
+                        }
+                    }
+
+                    // Mascota que pasea por el hueco libre más grande a un lado de la hora
+                    // (designs/IslandMascot.qml). No reserva sitio: solo aparece si cabe en el que ya hay.
+                    IslandMascot {
+                        anchors.verticalCenter: parent.verticalCenter
+                        scaleFactor: island.idleScale
+                        leftGapStart: leftStatus.x + leftStatus.width
+                        leftGapEnd: (idleRow.width - idleClock.contentWidth) / 2
+                        rightGapStart: (idleRow.width + idleClock.contentWidth) / 2
+                        rightGapEnd: rightStatus.x
+                        allowed: island.mode === "idle" && !Quick.gameMode && rightStatus.visible
+                        sprite: Config.mascotSprite
                     }
 
                     // Hora estática centrada en la cápsula, independientemente de los laterales.
@@ -710,7 +781,9 @@ PanelWindow {
                         anchors.fill: parent
                         text: Qt.formatDateTime(clock.date, Config.clock24Hour ? (Config.clockShowSeconds ? "HH:mm:ss" : "HH:mm") : (Config.clockShowSeconds ? "h:mm:ss AP" : "h:mm AP"))
                         color: "#ffffff"
-                        font.pixelSize: Theme.fontPx(16)
+                        font.pixelSize: Theme.fontPx(island.s(16))
+                        font.letterSpacing: 0.6
+                        renderType: Text.NativeRendering
                         font.bold: true
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
@@ -727,7 +800,7 @@ PanelWindow {
 
                         Icon {
                             text: "sports_esports"
-                            px: 18
+                            px: island.s(18)
                             color: Theme.yellow
                             anchors.verticalCenter: parent.verticalCenter
                         }
@@ -735,7 +808,7 @@ PanelWindow {
                             text: "GAME MODE"
                             color: Theme.yellow
                             font.family: Theme.bodyFontFamily
-                            font.pixelSize: Theme.fontPx(10)
+                            font.pixelSize: Theme.fontPx(island.s(10))
                             font.bold: true
                             anchors.verticalCenter: parent.verticalCenter
                         }
@@ -745,7 +818,7 @@ PanelWindow {
                     Row {
                         id: rightStatus
                         anchors.right: parent.right
-                        anchors.rightMargin: 32
+                        anchors.rightMargin: island.s(32)
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 8
                         visible: Config.clockShowBatteryWifi && !Quick.gameMode
@@ -761,11 +834,80 @@ PanelWindow {
                             autoPaddingEnabled: true
                         }
 
+                        // Audio silenciado: altavoz tachado en rojo
+                        Icon {
+                            visible: Audio.muted
+                            text: "volume_off"
+                            px: island.s(17)
+                            color: Theme.red
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        // Descargas en curso: flecha que late (+ número si hay más de una)
+                        Row {
+                            visible: Config.clockShowDownloads && Downloads.activeCount > 0
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 1
+                            Icon {
+                                id: downloadIcon
+                                text: "download"
+                                px: island.s(17)
+                                color: Theme.green
+                                anchors.verticalCenter: parent.verticalCenter
+                                SequentialAnimation on opacity {
+                                    running: downloadIcon.visible && island.mode === "idle" && !Theme.reduceMotion
+                                    loops: Animation.Infinite
+                                    onRunningChanged: if (!running) downloadIcon.opacity = 1
+                                    NumberAnimation { to: 0.35; duration: 700; easing.type: Easing.InOutSine }
+                                    NumberAnimation { to: 1; duration: 700; easing.type: Easing.InOutSine }
+                                }
+                            }
+                            Text {
+                                visible: Downloads.activeCount > 1
+                                text: Downloads.activeCount
+                                color: Theme.green
+                                font.family: Theme.displayFontFamily
+                                font.pixelSize: Theme.fontPx(island.s(11))
+                                font.weight: 700
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                        }
+
+                        // Notificaciones sin descartar (las del centro de control): campana + número
+                        Row {
+                            visible: Config.clockShowUnreadNotifs && Notifs.activeCount > 0
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 2
+                            Icon {
+                                text: "notifications"
+                                px: island.s(16)
+                                color: Theme.green
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                            Text {
+                                text: Notifs.activeCount > 99 ? "99+" : Notifs.activeCount
+                                color: Theme.green
+                                font.family: Theme.displayFontFamily
+                                font.pixelSize: Theme.fontPx(island.s(11))
+                                font.weight: 700
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                        }
+
                         Icon {
                             text: island.networkGlyph
                             iconFontFamily: batterySymbols.name !== "" ? batterySymbols.name : "Material Symbols Outlined"
-                            px: 18
+                            px: island.s(18)
                             color: Net.online ? Theme.green : Theme.surface1
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        // Bluetooth: gris si está apagado, del color del wifi si está encendido
+                        Icon {
+                            visible: Config.clockShowBluetooth
+                            text: Bluetooth.connectedCount > 0 ? "bluetooth_connected" : "bluetooth"
+                            px: island.s(20)
+                            color: Bluetooth.enabled ? Theme.green : Theme.surface1
                             anchors.verticalCenter: parent.verticalCenter
                         }
 
@@ -779,30 +921,64 @@ PanelWindow {
                                 anchors.verticalCenter: parent.verticalCenter
                                 spacing: -2
                                 Icon {
+                                    visible: !Config.clockShowBatteryPercent
                                     text: island.batteryGlyph
                                     iconFontFamily: batterySymbols.name !== "" ? batterySymbols.name : "Material Symbols Outlined"
-                                    px: 22
-                                    color: Theme.green
+                                    px: island.s(22)
+                                    color: island.batteryColor
                                     anchors.verticalCenter: parent.verticalCenter
+                                }
+                                // Con porcentaje: batería dibujada a mano, con el número dentro en su mismo color
+                                Row {
+                                    visible: Config.clockShowBatteryPercent
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    spacing: 1
+                                    rightPadding: 3
+                                    Rectangle {
+                                        id: batteryBody
+                                        width: Math.max(batteryPercentText.implicitWidth + island.s(10), island.s(28))
+                                        height: batteryPercentText.implicitHeight + 3
+                                        radius: island.s(5)
+                                        color: "transparent"
+                                        border.color: island.batteryColor
+                                        border.width: 1.5
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        // Nivel de carga, tenue para que el número se lea
+                                        Rectangle {
+                                            x: 3
+                                            y: 3
+                                            height: parent.height - 6
+                                            width: (parent.width - 6) * Math.max(0, Math.min(100, Battery.percent)) / 100
+                                            radius: 2.5
+                                            color: island.batteryColor
+                                            opacity: 0.3
+                                        }
+                                        Text {
+                                            id: batteryPercentText
+                                            anchors.centerIn: parent
+                                            text: Battery.percent
+                                            color: island.batteryColor
+                                            font.family: Theme.displayFontFamily
+                                            font.pixelSize: Theme.fontPx(island.s(10))
+                                            font.weight: 700
+                                        }
+                                    }
+                                    Rectangle {
+                                        width: 2
+                                        height: island.s(6)
+                                        radius: 1
+                                        color: island.batteryColor
+                                        anchors.verticalCenter: parent.verticalCenter
+                                    }
                                 }
                                 Icon {
                                     visible: Battery.charging
                                     text: "bolt"
                                     iconFontFamily: batterySymbols.name !== "" ? batterySymbols.name : "Material Symbols Outlined"
-                                    px: 15
+                                    px: island.s(15)
                                     color: Theme.green
                                     anchors.verticalCenter: parent.verticalCenter
                                 }
-                            }
-
-                            Text {
-                                visible: Config.clockShowBatteryPercent
-                                text: Battery.percent + "%"
-                                color: Theme.text
-                                font.family: Theme.displayFontFamily
-                                font.pixelSize: Theme.fontPx(13)
-                                font.weight: 600
-                                verticalAlignment: Text.AlignVCenter
                             }
                         }
                     }

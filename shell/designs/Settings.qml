@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
 // buscador + contenido. Fase 1: "Bar & Island" funcional (escribe en Config, persistente);
 // el resto de categorías son marcadores por ahora.
 import QtQuick
+import Qt.labs.folderlistmodel
 import Quickshell
 import Quickshell.Io
 import QtQuick.Effects
@@ -576,6 +577,162 @@ FloatingWindow {
                         label: "Battery percentage"
                         checked: Config.clockShowBatteryPercent
                         onToggled: Config.opt.clockShowBatteryPercent = !Config.clockShowBatteryPercent
+                    }
+                    ToggleRow {
+                        visible: win.category === 1
+                        width: parent.width
+                        label: "Now playing indicator"
+                        checked: Config.clockShowNowPlaying
+                        onToggled: Config.opt.clockShowNowPlaying = !Config.clockShowNowPlaying
+                    }
+                    ToggleRow {
+                        visible: win.category === 1
+                        width: parent.width
+                        label: "Unread notifications"
+                        checked: Config.clockShowUnreadNotifs
+                        onToggled: Config.opt.clockShowUnreadNotifs = !Config.clockShowUnreadNotifs
+                    }
+                    ToggleRow {
+                        visible: win.category === 1
+                        width: parent.width
+                        label: "Bluetooth icon"
+                        checked: Config.clockShowBluetooth
+                        onToggled: Config.opt.clockShowBluetooth = !Config.clockShowBluetooth
+                    }
+                    ToggleRow {
+                        visible: win.category === 1
+                        width: parent.width
+                        label: "Downloads indicator"
+                        checked: Config.clockShowDownloads
+                        onToggled: Config.opt.clockShowDownloads = !Config.clockShowDownloads
+                    }
+                    ToggleRow {
+                        visible: win.category === 1
+                        width: parent.width
+                        label: "Mascot"
+                        checked: Config.mascotEnabled
+                        onToggled: Config.opt.mascotEnabled = !Config.mascotEnabled
+                    }
+                    // Qué mascota: la salchipapa de serie o cualquier hoja de sprites (PNG) que haya en
+                    // ~/.config/salchipapa-shell/mascots. Rejilla con el primer fotograma de cada una
+                    // (pueden ser cientos, y así el nombre del archivo da igual).
+                    Rectangle {
+                        id: mascotPicker
+                        visible: win.category === 1 && Config.mascotEnabled
+                        width: parent.width
+                        height: mascotGrid.y + mascotGrid.height + 12
+                        radius: Theme.radiusMedium
+                        color: Theme.panelCard
+                        readonly property var options: {
+                            const list = [
+                                { value: "random", label: "Random", icon: "" },
+                                { value: "", label: "Salchipapa", icon: Qt.resolvedUrl("../assets/mascot/salchipapa.png") }
+                            ];
+                            for (let i = 0; i < mascotFiles.count; i++) {
+                                const base = mascotFiles.get(i, "fileName").replace(/\.png$/i, "");
+                                const path = mascotFiles.get(i, "filePath");
+                                list.push({
+                                    value: path,
+                                    label: base.length <= 3 ? base.toUpperCase() : base.charAt(0).toUpperCase() + base.slice(1),
+                                    icon: "file://" + path
+                                });
+                            }
+                            return list;
+                        }
+                        FolderListModel {
+                            id: mascotFiles
+                            folder: "file://" + Quickshell.env("HOME") + "/.config/salchipapa-shell/mascots"
+                            nameFilters: ["*.png"]
+                            showDirs: false
+                        }
+                        Text {
+                            x: 16
+                            y: 14
+                            text: "Mascot character"
+                            color: "#ffffff"
+                            font.family: Theme.bodyFontFamily
+                            font.pixelSize: Theme.fontPx(14)
+                        }
+                        Text {
+                            anchors.right: parent.right
+                            anchors.rightMargin: 16
+                            y: 15
+                            text: (mascotPicker.options.find(o => o.value === Config.mascotSprite)?.label ?? "Custom") + " · " + mascotPicker.options.length
+                            color: Theme.secondaryText
+                            font.family: Theme.bodyFontFamily
+                            font.pixelSize: Theme.fontPx(12)
+                        }
+                        GridView {
+                            id: mascotGrid
+                            x: 12
+                            y: 44
+                            width: parent.width - 24
+                            height: Math.min(Math.ceil(count / Math.max(1, Math.floor(width / cellWidth))), 4) * cellHeight
+                            cellWidth: 46
+                            cellHeight: 46
+                            clip: true
+                            boundsBehavior: Flickable.StopAtBounds
+                            model: mascotPicker.options
+                            delegate: Item {
+                                id: mascotCell
+                                required property var modelData
+                                // Hoja con varias animaciones (.json junto al PNG): la miniatura es su
+                                // primer fotograma, no la hoja entera
+                                property var meta: null
+                                FileView {
+                                    path: mascotCell.modelData.value.toLowerCase().endsWith(".png") ? mascotCell.modelData.value.slice(0, -4) + ".json" : ""
+                                    printErrors: false
+                                    onLoaded: {
+                                        try {
+                                            mascotCell.meta = JSON.parse(text());
+                                        } catch (e) {
+                                            mascotCell.meta = null;
+                                        }
+                                    }
+                                }
+                                readonly property bool on: Config.mascotSprite === modelData.value
+                                width: mascotGrid.cellWidth
+                                height: mascotGrid.cellHeight
+                                Rectangle {
+                                    anchors.fill: parent
+                                    anchors.margins: 2
+                                    radius: 10
+                                    color: mascotCellMouse.containsMouse || mascotCell.on ? Theme.panelCardHi : "transparent"
+                                    border.width: mascotCell.on ? 2 : 0
+                                    border.color: Theme.green
+                                    // "Random": va cambiando de mascota cada pocos minutos
+                                    Text {
+                                        visible: mascotCell.modelData.value === "random"
+                                        anchors.centerIn: parent
+                                        text: "shuffle"
+                                        color: mascotCell.on ? Theme.green : Theme.text
+                                        font.family: "Material Symbols Rounded"
+                                        font.pixelSize: Theme.fontPx(24)
+                                    }
+                                    // Primer fotograma: la hoja se escala a la altura y se recorta por la izquierda
+                                    Image {
+                                        visible: mascotCell.modelData.value !== "random"
+                                        anchors.centerIn: parent
+                                        width: 32
+                                        height: 32
+                                        source: mascotCell.modelData.icon
+                                        sourceClipRect: mascotCell.meta ? Qt.rect(0, 0, mascotCell.meta.frameWidth, mascotCell.meta.frameHeight) : undefined
+                                        fillMode: mascotCell.meta ? Image.PreserveAspectFit : Image.PreserveAspectCrop
+                                        horizontalAlignment: mascotCell.meta ? Image.AlignHCenter : Image.AlignLeft
+                                        clip: true
+                                        smooth: false
+                                        asynchronous: true
+                                    }
+                                    MouseArea {
+                                        id: mascotCellMouse
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: Config.opt.mascotSprite = mascotCell.modelData.value
+                                    }
+                                }
+                            }
+                        }
                     }
                     SectionTitle {
                         visible: win.category === 1

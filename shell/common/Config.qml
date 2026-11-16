@@ -43,6 +43,13 @@ Singleton {
     readonly property bool clockShowWorkspaceDots: settings.clockShowWorkspaceDots
     readonly property bool clockShowBatteryWifi: settings.clockShowBatteryWifi
     readonly property bool clockShowBatteryPercent: settings.clockShowBatteryPercent
+    readonly property bool clockShowNowPlaying: settings.clockShowNowPlaying
+    readonly property bool mascotEnabled: settings.mascotEnabled
+    readonly property string mascotSprite: settings.mascotSprite
+    readonly property int mascotRandomMinutes: settings.mascotRandomMinutes
+    readonly property bool clockShowDownloads: settings.clockShowDownloads
+    readonly property bool clockShowBluetooth: settings.clockShowBluetooth
+    readonly property bool clockShowUnreadNotifs: settings.clockShowUnreadNotifs
     readonly property bool clockExpandedWorkspaces: settings.clockExpandedWorkspaces
     readonly property bool clockExpandedStatus: settings.clockExpandedStatus
     readonly property bool clockExpandedMedia: settings.clockExpandedMedia
@@ -201,6 +208,16 @@ Singleton {
             property bool clockShowWorkspaceDots: true
             property bool clockShowBatteryWifi: true
             property bool clockShowBatteryPercent: true
+            property bool clockShowUnreadNotifs: true // campana + número de notificaciones sin descartar
+            property bool clockShowBluetooth: true // icono de Bluetooth (gris apagado, verde encendido)
+            property bool clockShowDownloads: true // flecha de descarga en la isla mientras baja algo
+            property bool mascotEnabled: false // mascota que pasea por el hueco vacío de la isla
+            // Hoja de sprites propia (ruta a un PNG con fotogramas cuadrados en fila, mirando a la
+            // derecha); vacío = la salchipapa de assets/mascot. Ajustes lista las que haya en
+            // ~/.config/salchipapa-shell/mascots
+            property string mascotSprite: "" // "random" = va cambiando sola
+            property int mascotRandomMinutes: 5 // cada cuánto cambia con "random"
+            property bool clockShowNowPlaying: true // barritas animadas en la isla mientras suena música
             property bool clockExpandedWorkspaces: true
             property bool clockExpandedStatus: true
             property bool clockExpandedMedia: true

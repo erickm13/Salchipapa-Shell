@@ -9,6 +9,7 @@ Item {
     property alias font: label.font
     property alias color: label.color
     property bool centered: false
+    readonly property real contentWidth: label.implicitWidth // ancho del texto completo, para dimensionar desde fuera
     readonly property bool overflowing: label.implicitWidth > width
     readonly property real gap: 40
     property real shift: 0 // desplazamiento de la animación
