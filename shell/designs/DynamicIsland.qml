@@ -373,7 +373,7 @@ PanelWindow {
         readonly property int widthSmall: 480
         readonly property int widthMedium: 600
         readonly property int widthLarge: 760
-        readonly property int widthExpanded: 750 // isla al pasar el ratón, más grande
+        readonly property int widthExpanded: 860 // isla al pasar el ratón, más grande
         readonly property int widthControl: 600 // centro de control (Super+N), más grande
         readonly property int widthMusic: 950 // panel de música (Super+A), más grande
         readonly property int widthWallpaper: 1000 // selectores de fondos y de temas: tarjetas grandes
@@ -985,52 +985,94 @@ PanelWindow {
                 }
             }
 
-            // ---------- expanded (hover): isla compacta horizontal ----------
+            // ---------- expanded (hover): tres bloques ----------
+            // Tarjeta de escritorios a la izquierda, hora y música en el centro (sin tarjeta) y
+            // tarjeta de estado a la derecha, con el mismo lenguaje que la pantalla de bloqueo.
             Item {
+                id: expandedView
                 anchors.fill: parent
-                anchors.leftMargin: 28
-                anchors.rightMargin: 28
+                anchors.leftMargin: 18
+                anchors.rightMargin: 18
+                anchors.topMargin: 16
+                anchors.bottomMargin: 16
                 opacity: island.mode === "expanded" ? 1 : 0
                 visible: opacity > 0
                 Behavior on opacity {
                     NumberAnimation { duration: Theme.fadeDuration }
                 }
+                readonly property real sideWidth: 214
+                readonly property color cardColor: Qt.rgba(1, 1, 1, 0.07)
 
-                // Marca y escritorios a la izquierda.
-                Column {
+                // Izquierda: la app activa, los escritorios y los scratchpads
+                Rectangle {
                     anchors.left: parent.left
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: 188
-                    spacing: 10
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    width: expandedView.sideWidth
+                    radius: 22
+                    color: expandedView.cardColor
+                    visible: Config.clockExpandedWorkspaces
 
-                    Row {
-                        width: parent.width
-                        spacing: 8
-                        Icon {
-                            text: "window"
-                            px: 17
-                            color: Theme.green
-                            anchors.verticalCenter: parent.verticalCenter
+                    Column {
+                        anchors.fill: parent
+                        anchors.margins: 16
+                        spacing: 12
+
+                        Row {
+                            width: parent.width
+                            spacing: 10
+                            Rectangle {
+                                width: 36
+                                height: 36
+                                radius: 18
+                                color: Qt.rgba(Theme.green.r, Theme.green.g, Theme.green.b, 0.18)
+                                Icon {
+                                    anchors.centerIn: parent
+                                    text: "web_asset"
+                                    px: 19
+                                    color: Theme.green
+                                }
+                            }
+                            Column {
+                                width: parent.width - 46
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: 0
+                                Text {
+                                    font.family: Theme.bodyFontFamily
+                                    text: "Active window"
+                                    color: Theme.secondaryText
+                                    font.pixelSize: Theme.fontPx(11)
+                                }
+                                Text {
+                                    font.family: Theme.bodyFontFamily
+                                    width: parent.width
+                                    text: island.focusedApp
+                                    color: "#ffffff"
+                                    font.pixelSize: Theme.fontPx(15)
+                                    font.bold: true
+                                    elide: Text.ElideRight
+                                }
+                            }
+                        }
+                        Rectangle {
+                            width: parent.width
+                            height: 1
+                            color: Qt.rgba(1, 1, 1, 0.08)
                         }
                         Text {
                             font.family: Theme.bodyFontFamily
-                            width: parent.width - 25
-                            text: island.focusedApp
-                            color: "#ffffff"
-                            font.pixelSize: Theme.fontPx(16.2)
-                            font.bold: true
-                            elide: Text.ElideRight
-                            anchors.verticalCenter: parent.verticalCenter
+                            text: island.inSpecial ? "Scratchpads" : "Workspaces"
+                            color: Theme.secondaryText
+                            font.pixelSize: Theme.fontPx(11)
                         }
-                    }
-                    WsRow {
-                        barWidth: 7
-                        baseLen: 8
-                        visible: Config.clockExpandedWorkspaces && Config.clockShowWorkspaceDots && !island.inSpecial
-                    }
-                    SpecialRow {
-                        cell: 16
-                        visible: Config.clockExpandedWorkspaces
+                        WsRow {
+                            barWidth: 9
+                            baseLen: 10
+                            visible: Config.clockShowWorkspaceDots && !island.inSpecial
+                        }
+                        SpecialRow {
+                            cell: 20
+                        }
                     }
                 }
 
@@ -1038,7 +1080,7 @@ PanelWindow {
                 Column {
                     anchors.centerIn: parent
                     spacing: 8
-                    width: 388
+                    width: 372
 
                     Item {
                         id: clockDateTarget
@@ -1106,57 +1148,81 @@ PanelWindow {
                     }
                 }
 
-                // Notificaciones y estado de red/energía a la derecha.
-                Column {
+                // Derecha: cuatro datos de un vistazo; al pulsarlos se abre su panel
+                Rectangle {
                     anchors.right: parent.right
-                    anchors.verticalCenter: parent.verticalCenter
-                    spacing: 12
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    width: expandedView.sideWidth
+                    radius: 22
+                    color: expandedView.cardColor
                     visible: Config.clockExpandedStatus
 
-                    Row {
-                        anchors.right: parent.right
+                    Grid {
+                        anchors.fill: parent
+                        anchors.margins: 10
+                        columns: 2
                         spacing: 8
-                        Text {
-                            font.family: Theme.bodyFontFamily
-                            text: Notifs.count > 0 ? (Notifs.count + " notifications") : "All caught up"
-                            color: "#ffffff"
-                            font.pixelSize: Theme.fontPx(15)
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
-                        Icon {
-                            text: "notifications"
-                            px: 15
-                            color: Notifs.count > 0 ? Theme.green : Theme.secondaryText
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
-                    }
-                    Row {
-                        anchors.right: parent.right
-                        spacing: 9
-                        Icon {
-                            text: island.networkGlyph
-                            iconFontFamily: batterySymbols.name !== "" ? batterySymbols.name : "Material Symbols Outlined"
-                            px: 20
-                            color: Net.online ? Theme.green : Theme.tertiaryText
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
-                        Row {
-                            anchors.verticalCenter: parent.verticalCenter
-                            spacing: -2
-                            Icon {
-                                text: island.batteryGlyph
-                                iconFontFamily: batterySymbols.name !== "" ? batterySymbols.name : "Material Symbols Outlined"
-                                px: 21
-                                color: Battery.percent <= 20 && !Battery.charging ? Theme.red : Theme.green
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-                            Icon {
-                                visible: Battery.charging
-                                text: "bolt"
-                                iconFontFamily: batterySymbols.name !== "" ? batterySymbols.name : "Material Symbols Outlined"
-                                px: 15
-                                color: Theme.green
-                                anchors.verticalCenter: parent.verticalCenter
+                        Repeater {
+                            model: [
+                                { glyph: island.networkGlyph, outlined: true, value: Net.type === "wifi" ? (Net.connectedSsid || Net.name || "Wi-Fi") : Net.type === "ethernet" ? "Ethernet" : "Offline",
+                                  label: "Network", on: Net.online, warn: false, mode: "wifi" },
+                                { glyph: Battery.available ? (Battery.charging ? "bolt" : island.batteryGlyph) : "power", outlined: true,
+                                  value: Battery.available ? Battery.percent + "%" : "AC", label: Battery.available ? (Battery.charging ? "Charging" : "Battery") : "Power",
+                                  on: true, warn: Battery.available && Battery.percent <= 20 && !Battery.charging, mode: "control" },
+                                { glyph: Audio.muted ? "volume_off" : "volume_up", outlined: false, value: Audio.muted ? "Muted" : Math.round(Audio.volume * 100) + "%",
+                                  label: "Volume", on: !Audio.muted, warn: Audio.muted, mode: "sound" },
+                                { glyph: Notifs.activeCount > 0 ? "notifications_active" : "notifications", outlined: false,
+                                  value: Notifs.activeCount > 0 ? "" + Notifs.activeCount : "None", label: "Alerts", on: Notifs.activeCount > 0, warn: false, mode: "control" }
+                            ]
+                            delegate: Rectangle {
+                                id: tile
+                                required property var modelData
+                                width: (parent.width - 8) / 2
+                                height: (parent.height - 8) / 2
+                                radius: 16
+                                color: tileMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.13) : Qt.rgba(1, 1, 1, 0.06)
+                                Column {
+                                    anchors.left: parent.left
+                                    anchors.leftMargin: 10
+                                    anchors.right: parent.right
+                                    anchors.rightMargin: 6
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    spacing: 2
+                                    Row {
+                                        spacing: 6
+                                        Icon {
+                                            text: tile.modelData.glyph
+                                            iconFontFamily: tile.modelData.outlined ? (batterySymbols.name !== "" ? batterySymbols.name : "Material Symbols Outlined") : "Material Symbols Rounded"
+                                            px: 17
+                                            color: tile.modelData.warn ? Theme.red : tile.modelData.on ? Theme.green : Theme.tertiaryText
+                                            anchors.verticalCenter: parent.verticalCenter
+                                        }
+                                        Text {
+                                            font.family: Theme.bodyFontFamily
+                                            text: tile.modelData.label
+                                            color: Theme.secondaryText
+                                            font.pixelSize: Theme.fontPx(10.5)
+                                            anchors.verticalCenter: parent.verticalCenter
+                                        }
+                                    }
+                                    Text {
+                                        font.family: Theme.displayFontFamily
+                                        width: parent.width
+                                        text: tile.modelData.value
+                                        color: tile.modelData.warn ? Theme.red : "#ffffff"
+                                        font.pixelSize: Theme.fontPx(15)
+                                        font.bold: true
+                                        elide: Text.ElideRight
+                                    }
+                                }
+                                MouseArea {
+                                    id: tileMouse
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: Overlay.mode = tile.modelData.mode
+                                }
                             }
                         }
                     }
