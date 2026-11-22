@@ -1,7 +1,7 @@
 pragma ComponentBehavior: Bound
 // Centro de control, para mostrarse DENTRO de la Dynamic Island (modo "control").
 // Interruptores rápidos (WiFi/Focus/Bluetooth/Game mode + lock/night light),
-// cards de Sound y Display (clic -> su subpágina), y la lista de notificaciones.
+// cards de Sound y Display (clic -> su subpágina; Wi-Fi y Bluetooth también tienen la suya), y la lista de notificaciones.
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
@@ -12,9 +12,6 @@ Item {
     id: root
     // Más grande que el resto de la shell (Theme.fontPx con su escala): se lee mejor
     readonly property real uiScale: 1.25
-
-    property bool wifiDetailsOpen: false
-    property bool bluetoothDetailsOpen: false
 
     readonly property var defaultControlLayout: [
         { id: "wifi", size: 1 }, { id: "focus", size: 1 },
@@ -71,7 +68,7 @@ Item {
         }
         return height > 0 ? height - 10 : 0;
     }
-    readonly property real notificationTop: (wifiDetailsOpen || bluetoothDetailsOpen) ? togglesHeight + 274 : cardsTop + cardsHeight + 12
+    readonly property real notificationTop: cardsTop + cardsHeight + 12
     readonly property int notificationControlHeight: controlSize("notifications") >= 2 ? Config.notificationHistoryHeight : Math.min(100, Config.notificationHistoryHeight)
     // Alto que necesita el contenido: la isla lo usa para no sobrar ni recortar
     readonly property real preferredHeight: (hasControl("notifications") ? notificationTop + notificationControlHeight : notificationTop - 12) + 4
@@ -83,25 +80,7 @@ Item {
     Keys.onRightPressed: KeyNav.move(root, true)
     Keys.onUpPressed: KeyNav.move(root, false)
     Keys.onLeftPressed: KeyNav.move(root, false)
-    Keys.onEscapePressed: {
-        if (wifiDetailsOpen)
-            wifiDetailsOpen = false;
-        else if (bluetoothDetailsOpen)
-            bluetoothDetailsOpen = false;
-        else
-            Overlay.close();
-        root.forceActiveFocus();
-    }
-
-    Connections {
-        target: Overlay
-        function onModeChanged(): void {
-            if (Overlay.mode !== "control")
-                root.wifiDetailsOpen = false;
-            if (Overlay.mode !== "control")
-                root.bluetoothDetailsOpen = false;
-        }
-    }
+    Keys.onEscapePressed: Overlay.close()
 
     // ===== Interruptores rápidos (arriba) =====
     Item {
@@ -166,11 +145,8 @@ Item {
                         else if (modelData.id === "keys") KeyCast.toggle();
                         else Quick.toggleGameMode();
                     }
-                    onDetailsClicked: {
-                        root.wifiDetailsOpen = modelData.id === "wifi";
-                        root.bluetoothDetailsOpen = modelData.id === "bluetooth";
-                        if (modelData.id === "wifi") Net.scanNetworks();
-                    }
+                    // Wi-Fi y Bluetooth abren su propio panel de la isla (como Sound y Display)
+                    onDetailsClicked: Overlay.mode = modelData.id
                 }
             }
         }
@@ -185,7 +161,6 @@ Item {
         height: root.powerHeight
         radius: 16
         color: Theme.panelCard
-        visible: !root.wifiDetailsOpen && !root.bluetoothDetailsOpen
 
         Text {
             anchors.left: parent.left
@@ -263,7 +238,7 @@ Item {
         y: root.cardsTop + root.cardOffset("sound")
         anchors.left: parent.left
         anchors.right: parent.right
-        visible: root.hasControl("sound") && !root.wifiDetailsOpen && !root.bluetoothDetailsOpen
+        visible: root.hasControl("sound")
         rowSize: root.controlSize("sound")
         label: "Sound"
         sliderGlyph: Audio.muted ? "volume_off" : "volume_up"
@@ -278,7 +253,7 @@ Item {
         y: root.cardsTop + root.cardOffset("display")
         anchors.left: parent.left
         anchors.right: parent.right
-        visible: root.hasControl("display") && !root.wifiDetailsOpen && !root.bluetoothDetailsOpen
+        visible: root.hasControl("display")
         rowSize: root.controlSize("display")
         label: "Display"
         sliderGlyph: "brightness_6"
@@ -293,33 +268,10 @@ Item {
         y: root.cardsTop + root.cardOffset("record")
         anchors.left: parent.left
         anchors.right: parent.right
-        visible: root.hasControl("record") && !root.wifiDetailsOpen && !root.bluetoothDetailsOpen
+        visible: root.hasControl("record")
         rowSize: root.controlSize("record")
     }
 
-    WifiContent {
-        id: wifiDetails
-        anchors.top: toggles.bottom
-        anchors.topMargin: 12
-        anchors.left: parent.left
-        anchors.right: parent.right
-        height: 250
-        active: root.wifiDetailsOpen
-        visible: root.wifiDetailsOpen
-        onCloseRequested: root.wifiDetailsOpen = false
-    }
-
-    BluetoothContent {
-        id: bluetoothDetails
-        anchors.top: toggles.bottom
-        anchors.topMargin: 12
-        anchors.left: parent.left
-        anchors.right: parent.right
-        height: 250
-        active: root.bluetoothDetailsOpen
-        visible: root.bluetoothDetailsOpen
-        onCloseRequested: root.bluetoothDetailsOpen = false
-    }
 
     // ===== Notificaciones =====
     Rectangle {
@@ -369,16 +321,25 @@ Item {
         }
 
         // Vacío
-        Text {
-            font.family: Theme.bodyFontFamily
-            anchors.top: notifTitle.bottom
-            anchors.topMargin: 14
-            anchors.left: parent.left
-            anchors.leftMargin: 16
-            text: "No notifications"
-            color: Theme.tertiaryText
-            font.pixelSize: Theme.fontPx((12) * root.uiScale)
+        Column {
+            anchors.centerIn: parent
+            anchors.verticalCenterOffset: 10
             visible: Notifs.activeCount === 0
+            spacing: 6
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "notifications_off"
+                color: Theme.tertiaryText
+                font.family: "Material Symbols Rounded"
+                font.pixelSize: Theme.iconPx(34 * root.uiScale)
+            }
+            Text {
+                font.family: Theme.bodyFontFamily
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "You're all caught up"
+                color: Theme.tertiaryText
+                font.pixelSize: Theme.fontPx((12) * root.uiScale)
+            }
         }
 
         // Lista

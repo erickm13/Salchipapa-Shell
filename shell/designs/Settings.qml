@@ -50,6 +50,16 @@ FloatingWindow {
             desc: "Monitor position, resolution, refresh rate and orientation."
         },
         {
+            name: "Wi-Fi",
+            icon: "wifi",
+            desc: "Turn Wi-Fi on or off and connect to networks."
+        },
+        {
+            name: "Bluetooth",
+            icon: "bluetooth",
+            desc: "Turn Bluetooth on or off, pair and connect devices."
+        },
+        {
             name: "Notifications",
             icon: "notifications",
             desc: "Notifications and Do Not Disturb."
@@ -108,9 +118,9 @@ FloatingWindow {
     property bool openIslandSize: false
 
     // Barra lateral: un color por sección para su icono, y dónde empieza cada grupo de secciones
-    readonly property var categoryTints: [Theme.purple, Theme.blue, Theme.aqua, Theme.red, Theme.orange, Theme.overlay1,
+    readonly property var categoryTints: [Theme.purple, Theme.blue, Theme.aqua, Theme.green, Theme.blue, Theme.red, Theme.orange, Theme.overlay1,
         Theme.yellow, Theme.blue, Theme.purple, Theme.aqua, Theme.overlay1, Theme.orange, Theme.red]
-    readonly property var groupStarts: [3, 6, 10]
+    readonly property var groupStarts: [3, 5, 8, 12]
 
     // La ventana se destruye al cerrar: la categoría abierta se guarda en Overlay
     property int category: Overlay.settingsCategory
@@ -954,11 +964,11 @@ FloatingWindow {
 
                     // ---- Media ----
                     SectionTitle {
-                        visible: win.category === 4
+                        visible: win.category === 6
                         text: "Layout"
                     }
                     PxSlider {
-                        visible: win.category === 4
+                        visible: win.category === 6
                         width: parent.width
                         label: "Title width"
                         from: 60
@@ -967,7 +977,7 @@ FloatingWindow {
                         onMoved: v => Config.opt.mediaTitleWidth = v
                     }
                     PxSlider {
-                        visible: win.category === 4
+                        visible: win.category === 6
                         width: parent.width
                         label: "Album art size"
                         from: 40
@@ -976,11 +986,11 @@ FloatingWindow {
                         onMoved: v => Config.opt.mediaAlbumArtSize = v
                     }
                     SectionTitle {
-                        visible: win.category === 4
+                        visible: win.category === 6
                         text: "What to show"
                     }
                     SettingChipsRow {
-                        visible: win.category === 4
+                        visible: win.category === 6
                         card: true
                         label: "Show in the media card"
                         chips: [
@@ -991,7 +1001,7 @@ FloatingWindow {
                         ]
                     }
                     ToggleRow {
-                        visible: win.category === 4
+                        visible: win.category === 6
                         width: parent.width
                         label: "Scroll to change track"
                         checked: Config.mediaScrollToChangeTrack
@@ -1000,11 +1010,11 @@ FloatingWindow {
 
                     // ---- Clock & Date ----
                     SectionTitle {
-                        visible: win.category === 7
+                        visible: win.category === 9
                         text: "Bar clock"
                     }
                     SettingChipsRow {
-                        visible: win.category === 7
+                        visible: win.category === 9
                         card: true
                         label: "Clock in the island"
                         hint: "What the island shows at rest, around the time."
@@ -1016,11 +1026,11 @@ FloatingWindow {
                         ]
                     }
                     SectionTitle {
-                        visible: win.category === 7
+                        visible: win.category === 9
                         text: "Expanded island"
                     }
                     SettingChipsRow {
-                        visible: win.category === 7
+                        visible: win.category === 9
                         card: true
                         label: "When you hover the island"
                         hint: "What the expanded island adds."
@@ -1031,11 +1041,11 @@ FloatingWindow {
                         ]
                     }
                     SectionTitle {
-                        visible: win.category === 7
+                        visible: win.category === 9
                         text: "Calendar"
                     }
                     ChoiceRow {
-                        visible: win.category === 7
+                        visible: win.category === 9
                         width: parent.width
                         label: "Week starts on"
                         options: [
@@ -1047,7 +1057,7 @@ FloatingWindow {
                         onPicked: value => Config.opt.clockWeekStart = parseInt(value)
                     }
                     PxSlider {
-                        visible: win.category === 7
+                        visible: win.category === 9
                         width: parent.width
                         label: "Day cell height"
                         from: 20
@@ -1056,7 +1066,7 @@ FloatingWindow {
                         onMoved: v => Config.opt.clockCalendarDayHeight = v
                     }
                     ToggleRow {
-                        visible: win.category === 7
+                        visible: win.category === 9
                         width: parent.width
                         label: "Show neighbouring months"
                         checked: Config.clockShowNeighbouringMonths
@@ -1065,18 +1075,18 @@ FloatingWindow {
 
                     // ---- Motion ----
                     SectionTitle {
-                        visible: win.category === 9
+                        visible: win.category === 11
                         text: "Animation"
                     }
                     ToggleRow {
-                        visible: win.category === 9
+                        visible: win.category === 11
                         width: parent.width
                         label: "Reduce motion"
                         checked: Config.opt.motionReduce
                         onToggled: Config.opt.motionReduce = !Config.opt.motionReduce
                     }
                     PxSlider {
-                        visible: win.category === 9
+                        visible: win.category === 11
                         width: parent.width
                         label: "Movement"
                         from: 0
@@ -1089,7 +1099,7 @@ FloatingWindow {
                         onMoved: v => Config.opt.motionMovementDuration = v
                     }
                     PxSlider {
-                        visible: win.category === 9
+                        visible: win.category === 11
                         width: parent.width
                         label: "Fades"
                         from: 0
@@ -1102,7 +1112,7 @@ FloatingWindow {
                         onMoved: v => Config.opt.motionFadeDuration = v
                     }
                     PxSlider {
-                        visible: win.category === 9
+                        visible: win.category === 11
                         width: parent.width
                         label: "Hover response"
                         from: 0
@@ -1115,7 +1125,7 @@ FloatingWindow {
                         onMoved: v => Config.opt.motionHoverDuration = v
                     }
                     PxSlider {
-                        visible: win.category === 9
+                        visible: win.category === 11
                         width: parent.width
                         label: "Bounce"
                         from: 0
@@ -1126,22 +1136,22 @@ FloatingWindow {
                     }
 
                     LauncherSettings {
-                        visible: win.category === 8
+                        visible: win.category === 10
                         width: parent.width
                         height: visible ? implicitHeight : 0
                     }
                     NotificationsSettings {
-                        visible: win.category === 3
-                        width: parent.width
-                        height: visible ? implicitHeight : 0
-                    }
-                    ControlCenterSettings {
                         visible: win.category === 5
                         width: parent.width
                         height: visible ? implicitHeight : 0
                     }
+                    ControlCenterSettings {
+                        visible: win.category === 7
+                        width: parent.width
+                        height: visible ? implicitHeight : 0
+                    }
                     LockScreenSettings {
-                        visible: win.category === 6
+                        visible: win.category === 8
                         width: parent.width
                         height: visible ? implicitHeight : 0
                     }
@@ -1150,18 +1160,35 @@ FloatingWindow {
                         width: parent.width
                         height: visible ? implicitHeight : 0
                     }
+                    // Wi-Fi y Bluetooth: las mismas páginas que abre la isla, sin la flecha de volver
+                    WifiContent {
+                        visible: win.category === 3
+                        width: parent.width
+                        height: visible ? 520 : 0
+                        inIsland: false
+                        k: 1
+                        active: visible && !Overlay.settingsRevealAll
+                    }
+                    BluetoothContent {
+                        visible: win.category === 4
+                        width: parent.width
+                        height: visible ? 520 : 0
+                        inIsland: false
+                        k: 1
+                        active: visible && !Overlay.settingsRevealAll
+                    }
                     BootThemesSettings {
-                        visible: win.category === 11
+                        visible: win.category === 13
                         width: parent.width
                         height: visible ? implicitHeight : 0
                     }
                     KeybindsSettings {
-                        visible: win.category === 12
+                        visible: win.category === 14
                         width: parent.width
                         height: visible ? implicitHeight : 0
                     }
                     SystemSettings {
-                        visible: win.category === 10
+                        visible: win.category === 12
                         width: parent.width
                         height: visible ? implicitHeight : 0
                     }

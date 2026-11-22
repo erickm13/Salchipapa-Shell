@@ -377,9 +377,9 @@ PanelWindow {
         readonly property int widthControl: 600 // centro de control (Super+N), más grande
         readonly property int widthMusic: 950 // panel de música (Super+A), más grande
         readonly property int widthWallpaper: 1000 // selectores de fondos y de temas: tarjetas grandes
-        width: mode === "control" ? widthControl : ["power", "polkit", "display", "sound", "media"].includes(mode) ? widthSmall : mode === "expanded" ? widthExpanded : ["clipboard", "emoji"].includes(mode) ? widthMedium : ["wallpaper", "themes"].includes(mode) ? widthWallpaper : mode === "music" ? widthMusic : ["perf", "binds"].includes(mode) ? widthLarge : mode === "launcher" ? Config.launcherWidth : mode === "notif" ? Config.notificationWidth : mode === "calendar" ? 450 : mode === "volume" || mode === "brightness" ? 300 : mode === "keys" ? Math.max(160, keysRow.implicitWidth + 40) : Math.max(Config.collapsedWidth, idleRow.implicitWidth + Config.innerPadding * 2)
+        width: ["control", "wifi", "bluetooth"].includes(mode) ? widthControl : ["power", "polkit", "display", "sound", "media"].includes(mode) ? widthSmall : mode === "expanded" ? widthExpanded : ["clipboard", "emoji"].includes(mode) ? widthMedium : ["wallpaper", "themes"].includes(mode) ? widthWallpaper : mode === "music" ? widthMusic : ["perf", "binds"].includes(mode) ? widthLarge : mode === "launcher" ? Config.launcherWidth : mode === "notif" ? Config.notificationWidth : mode === "calendar" ? 450 : mode === "volume" || mode === "brightness" ? 300 : mode === "keys" ? Math.max(160, keysRow.implicitWidth + 40) : Math.max(Config.collapsedWidth, idleRow.implicitWidth + Config.innerPadding * 2)
         // Alto final del modo (sin animar): la ventana se ajusta a él una sola vez
-        readonly property real targetHeight: mode === "power" ? (powerMenu.confirmAction === "" ? 110 : 200) : mode === "polkit" ? 250 : mode === "control" ? Math.min(controlContent.preferredHeight + 32, (win.screen?.height ?? 1080) - Config.topMargin - 60) : mode === "display" ? (142 + (Hyprland.monitors?.values?.length ?? 1) * 206) : mode === "sound" ? (213 + Math.min(Audio.sinks?.length ?? 1, 5) * 42 + Math.min(Audio.sources?.length ?? 1, 4) * 42 + Math.max(1, Math.min(Audio.apps?.length ?? 0, 4)) * 62) : mode === "launcher" ? (95 + Config.launcherRowsBeforeScrolling * Config.launcherRowHeight + (Config.launcherRowsBeforeScrolling - 1) * 2) : mode === "clipboard" ? 470 : mode === "emoji" ? 440 : mode === "perf" ? 704 : mode === "binds" ? 640 : mode === "music" ? 375 : mode === "themes" ? 320 : mode === "wallpaper" ? 380 : mode === "calendar" ? 375 : mode === "expanded" ? 186 : mode === "notif" ? notifMainHeight + notifOlder.length * notifRowHeight : mode === "media" ? (Config.mediaShowControls ? 124 : 80) : mode === "volume" || mode === "brightness" ? 42 : mode === "keys" ? 56 : Config.barHeight
+        readonly property real targetHeight: mode === "power" ? (powerMenu.confirmAction === "" ? 110 : 200) : mode === "polkit" ? 250 : mode === "control" ? Math.min(controlContent.preferredHeight + 32, (win.screen?.height ?? 1080) - Config.topMargin - 60) : mode === "wifi" || mode === "bluetooth" ? Math.min(600, (win.screen?.height ?? 1080) - Config.topMargin - 60) : mode === "display" ? (142 + (Hyprland.monitors?.values?.length ?? 1) * 186) : mode === "sound" ? (213 + Math.min(Audio.sinks?.length ?? 1, 5) * 42 + Math.min(Audio.sources?.length ?? 1, 4) * 42 + Math.max(1, Math.min(Audio.apps?.length ?? 0, 4)) * 62) : mode === "launcher" ? (95 + Config.launcherRowsBeforeScrolling * Config.launcherRowHeight + (Config.launcherRowsBeforeScrolling - 1) * 2) : mode === "clipboard" ? 470 : mode === "emoji" ? 440 : mode === "perf" ? 704 : mode === "binds" ? 640 : mode === "music" ? 375 : mode === "themes" ? 320 : mode === "wallpaper" ? 380 : mode === "calendar" ? 375 : mode === "expanded" ? 204 : mode === "notif" ? notifMainHeight + notifOlder.length * notifRowHeight : mode === "media" ? (Config.mediaShowControls ? 124 : 80) : mode === "volume" || mode === "brightness" ? 42 : mode === "keys" ? 56 : Config.barHeight
         height: targetHeight
 
         Behavior on width {
@@ -521,7 +521,7 @@ PanelWindow {
                 y: pillShadow.pad
                 width: pillShadow.width - pillShadow.pad * 2
                 height: pillShadow.height - pillShadow.pad * 2
-                readonly property real uni: (island.mode === "power" || island.mode === "media" || island.mode === "music" || island.mode === "polkit" || island.mode === "expanded" || island.mode === "calendar" || island.mode === "launcher" || island.mode === "clipboard" || island.mode === "emoji" || island.mode === "perf" || island.mode === "binds" || island.mode === "themes" || island.mode === "wallpaper" || island.mode === "control" || island.mode === "display" || island.mode === "sound") ? Theme.radiusLarge : (Config.notchMode ? Theme.radiusMedium : height / 2)
+                readonly property real uni: (island.mode === "power" || island.mode === "media" || island.mode === "music" || island.mode === "polkit" || island.mode === "expanded" || island.mode === "calendar" || island.mode === "launcher" || island.mode === "clipboard" || island.mode === "emoji" || island.mode === "perf" || island.mode === "binds" || island.mode === "themes" || island.mode === "wallpaper" || island.mode === "control" || island.mode === "display" || island.mode === "sound" || island.mode === "wifi" || island.mode === "bluetooth") ? Theme.radiusLarge : (Config.notchMode ? Theme.radiusMedium : height / 2)
                 topLeftRadius: Config.notchMode ? 0 : uni
                 topRightRadius: Config.notchMode ? 0 : uni
                 bottomLeftRadius: uni
@@ -550,7 +550,7 @@ PanelWindow {
             id: pill
             anchors.fill: parent
             // Radio base (uniforme). En notch, las esquinas superiores van rectas (pegadas al borde).
-                readonly property real uni: (island.mode === "power" || island.mode === "media" || island.mode === "music" || island.mode === "polkit" || island.mode === "expanded" || island.mode === "calendar" || island.mode === "launcher" || island.mode === "clipboard" || island.mode === "emoji" || island.mode === "perf" || island.mode === "binds" || island.mode === "themes" || island.mode === "wallpaper" || island.mode === "control" || island.mode === "display" || island.mode === "sound") ? Theme.radiusLarge : (Config.notchMode ? Theme.radiusMedium : height / 2)
+                readonly property real uni: (island.mode === "power" || island.mode === "media" || island.mode === "music" || island.mode === "polkit" || island.mode === "expanded" || island.mode === "calendar" || island.mode === "launcher" || island.mode === "clipboard" || island.mode === "emoji" || island.mode === "perf" || island.mode === "binds" || island.mode === "themes" || island.mode === "wallpaper" || island.mode === "control" || island.mode === "display" || island.mode === "sound" || island.mode === "wifi" || island.mode === "bluetooth") ? Theme.radiusLarge : (Config.notchMode ? Theme.radiusMedium : height / 2)
             topLeftRadius: Config.notchMode ? 0 : uni
             topRightRadius: Config.notchMode ? 0 : uni
             bottomLeftRadius: uni
@@ -2035,6 +2035,30 @@ PanelWindow {
                     NumberAnimation {
                         duration: Theme.fadeDuration
                     }
+                }
+            }
+
+            // ---------- wifi y bluetooth (paneles propios, desde el centro de control) ----------
+            WifiContent {
+                anchors.fill: parent
+                anchors.margins: 16
+                active: island.mode === "wifi"
+                onCloseRequested: Overlay.mode = "control"
+                opacity: island.mode === "wifi" ? 1 : 0
+                visible: opacity > 0
+                Behavior on opacity {
+                    NumberAnimation { duration: Theme.fadeDuration }
+                }
+            }
+            BluetoothContent {
+                anchors.fill: parent
+                anchors.margins: 16
+                active: island.mode === "bluetooth"
+                onCloseRequested: Overlay.mode = "control"
+                opacity: island.mode === "bluetooth" ? 1 : 0
+                visible: opacity > 0
+                Behavior on opacity {
+                    NumberAnimation { duration: Theme.fadeDuration }
                 }
             }
 
