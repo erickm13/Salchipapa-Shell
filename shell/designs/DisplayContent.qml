@@ -104,7 +104,7 @@ Item {
                 readonly property var modes: mon.modelData.lastIpcObject?.availableModes ?? []
 
                 width: parent.width
-                height: 196
+                height: 176
                 radius: 16
                 color: Qt.rgba(1, 1, 1, 0.04)
 

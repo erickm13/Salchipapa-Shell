@@ -34,13 +34,16 @@ Item {
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             radius: parent.radius
-            width: Math.max(height, parent.width * Math.max(0, Math.min(1, sr.value)))
-            color: sr.accent
-            Behavior on width {
+            // Se anima el nivel, no el ancho: si se animara el ancho, al encogerse el panel (la
+            // isla cambia de tamaño al abrirlo) el relleno iba con retraso y se salía de la barra
+            property real shown: Math.max(0, Math.min(1, sr.value))
+            Behavior on shown {
                 NumberAnimation {
                     duration: Theme.reduceMotion ? 0 : 90
                 }
             }
+            width: Math.min(parent.width, Math.max(height, parent.width * shown))
+            color: sr.accent
         }
 
         Text {
