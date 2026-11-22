@@ -25,6 +25,12 @@ Item {
         if (active) {
             selectedIndex = 0;
             confirmationIndex = 0;
+            if (Overlay.powerRequest !== "") {
+                const req = Overlay.powerRequest;
+                Overlay.powerRequest = "";
+                selectedIndex = Math.max(0, actions.findIndex(a => a.id === req));
+                activateAction(req);
+            }
             // Esperar a que la isla sea visible y la capa solicite el teclado.
             Qt.callLater(() => {
                 if (root.active)

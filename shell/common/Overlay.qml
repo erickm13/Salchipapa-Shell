@@ -10,6 +10,9 @@ Singleton {
 
     // "" = nada; el resto son overlays que se muestran dentro de la isla.
     property string mode: ""
+    // Acción que el menú de energía debe pedir confirmar nada más abrirse ("reboot", "poweroff",
+    // "logout"); la pone el launcher y la consume PowerMenu
+    property string powerRequest: ""
 
     // Panel de ajustes (ventana propia, no es un modo de la isla). La ventana se crea al abrirlo
     // (shell.qml), con el tamaño del monitor enfocado en ese momento; la categoría se recuerda aquí.
