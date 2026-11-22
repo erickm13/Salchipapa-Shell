@@ -103,7 +103,7 @@ Item {
             anchors.rightMargin: 12
             anchors.verticalCenter: parent.verticalCenter
             color: "#ffffff"
-            font.pixelSize: Theme.fontPx(15)
+            font.pixelSize: Theme.fontPx(16)
             clip: true
             focus: Overlay.mode === "clipboard"
             onTextChanged: {
@@ -152,7 +152,7 @@ Item {
                 Text {
                     text: root.confirmWipe ? "Clear all?" : "Clear"
                     font.family: Theme.bodyFontFamily
-                    font.pixelSize: Theme.fontPx(11)
+                    font.pixelSize: Theme.fontPx(13)
                     font.bold: root.confirmWipe
                     color: root.confirmWipe ? Theme.islandBg : Theme.secondaryText
                     anchors.verticalCenter: parent.verticalCenter
@@ -267,7 +267,7 @@ Item {
                 }
                 color: row.modelData.image ? Theme.secondaryText : "#ffffff"
                 font.family: Theme.bodyFontFamily
-                font.pixelSize: Theme.fontPx(12)
+                font.pixelSize: Theme.fontPx(14)
                 elide: Text.ElideRight
                 maximumLineCount: 1
             }
@@ -290,18 +290,15 @@ Item {
             text: root.items.length === 0 ? "Clipboard is empty" : "No matches (search skips images)"
             color: Theme.tertiaryText
             font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(11)
+            font.pixelSize: Theme.fontPx(14)
         }
     }
 
-    Text {
+    KeyHints {
         id: hint
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         anchors.margins: 10
-        text: "Enter: copy · Del: remove"
-        color: Theme.overlay1
-        font.family: Theme.bodyFontFamily
-        font.pixelSize: Theme.fontPx(10)
+        hints: [{ k: "Enter", t: "copy" }, { k: "Del", t: "remove" }]
     }
 }

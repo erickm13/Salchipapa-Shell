@@ -288,14 +288,11 @@ Item {
         }
     }
 
-    Text {
+    KeyHints {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         anchors.margins: 10
-        text: "Updates every 2 s · Esc: close"
-        color: Theme.overlay1
-        font.family: Theme.bodyFontFamily
-        font.pixelSize: Theme.fontPx(11)
+        hints: [{ t: "Updates every 2 s" }, { k: "Esc", t: "close" }]
     }
 
     focus: active

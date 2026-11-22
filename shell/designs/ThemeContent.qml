@@ -296,13 +296,11 @@ Item {
         }
     }
 
-    Text {
-        font.family: Theme.bodyFontFamily
+    KeyHints {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         anchors.margins: 12
-        text: "Enter to apply"
-        color: Theme.overlay1
-        font.pixelSize: Theme.fontPx(14)
+        size: 13
+        hints: [{ k: "← →", t: "browse" }, { k: "Enter", t: "apply" }, { k: "Esc", t: "close" }]
     }
 }

@@ -119,7 +119,7 @@ Item {
             anchors.rightMargin: 20
             anchors.verticalCenter: parent.verticalCenter
             color: "#ffffff"
-            font.pixelSize: Theme.fontPx(15)
+            font.pixelSize: Theme.fontPx(16)
             clip: true
             focus: Overlay.mode === "emoji"
             onTextChanged: {
@@ -254,7 +254,7 @@ Item {
             text: root.all.length === 0 ? "Loading…" : root.query !== "" ? "No matching emoji" : "No recent emoji yet"
             color: Theme.tertiaryText
             font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(11)
+            font.pixelSize: Theme.fontPx(12)
         }
     }
 
@@ -274,18 +274,15 @@ Item {
             text: root.current ? root.current.n : (root.query === "" ? root.tabs[root.tab].name : "")
             color: Theme.text
             font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(12)
+            font.pixelSize: Theme.fontPx(13)
             elide: Text.ElideRight
         }
-        Text {
+        KeyHints {
             id: hint
             anchors.right: parent.right
             anchors.rightMargin: 14
             anchors.verticalCenter: parent.verticalCenter
-            text: "Enter: pick · Tab: category"
-            color: Theme.overlay1
-            font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(10)
+            hints: [{ k: "Tab", t: "category" }, { k: "Enter", t: "pick" }]
         }
     }
 }

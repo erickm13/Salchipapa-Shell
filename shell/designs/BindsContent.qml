@@ -656,14 +656,11 @@ Item {
             font.family: Theme.bodyFontFamily
             font.pixelSize: Theme.fontPx(11)
         }
-        Text {
+        KeyHints {
             anchors.right: parent.right
             anchors.rightMargin: 14
             anchors.verticalCenter: parent.verticalCenter
-            text: "Tab: switch tab · ↑/↓ or Ctrl+J/K: move · Esc: close"
-            color: Theme.overlay1
-            font.family: Theme.bodyFontFamily
-            font.pixelSize: Theme.fontPx(11)
+            hints: [{ k: "Tab", t: "switch tab" }, { k: "↑ ↓", t: "move" }, { k: "Esc", t: "close" }]
         }
     }
 }
